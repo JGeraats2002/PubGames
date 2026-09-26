@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.HostTeamPage"
+             x:DataType="vm:HostTeamViewModel"
+             Title="Host team">
+
+	<ScrollView>
+		<VerticalStackLayout Padding="20" Spacing="16">
+
+			<Label Text="Pending approvals" FontSize="16" />
+			<CollectionView ItemsSource="{Binding PendingApprovals}">
+				<CollectionView.EmptyView>
+					<Label Text="Nothing waiting on you." TextColor="{StaticResource TextSecondary}" FontSize="13" />
+				</CollectionView.EmptyView>
+				<CollectionView.ItemTemplate>
+					<DataTemplate x:DataType="models:ApprovalRequest">
+						<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
+							<VerticalStackLayout Spacing="8">
+								<Label>
+									<Label.FormattedText>
+										<FormattedString>
+											<Span Text="{Binding RequestedByUserId}" />
+											<Span Text=" wants to " />
+											<Span Text="{Binding Type}" />
+										</FormattedString>
+									</Label.FormattedText>
+								</Label>
+								<HorizontalStackLayout Spacing="8">
+									<Button Text="Deny" Clicked="OnDenyClicked"
+									        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
+									        BorderColor="{StaticResource Border}" BorderWidth="1" />
+									<Button Text="Approve" Clicked="OnApproveClicked" BackgroundColor="{StaticResource Danger}" />
+								</HorizontalStackLayout>
+							</VerticalStackLayout>
+						</Frame>
+					</DataTemplate>
+				</CollectionView.ItemTemplate>
+			</CollectionView>
+
+			<Label Text="Team" FontSize="16" Margin="0,10,0,0" />
+			<CollectionView ItemsSource="{Binding Members}">
+				<CollectionView.ItemTemplate>
+					<DataTemplate x:DataType="models:HostMember">
+						<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
+							<VerticalStackLayout Spacing="6">
+								<Label Text="{Binding UserId}" />
+								<Label Text="{Binding Role}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+
+								<Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}">
+									<Label Text="Can add games" VerticalOptions="Center" FontSize="12" />
+									<Switch Grid.Column="1" IsToggled="{Binding CanAddGames}" Toggled="OnCanAddToggled" BindingContext="{Binding .}" />
+								</Grid>
+								<Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}">
+									<Label Text="Can delete games" VerticalOptions="Center" FontSize="12" />
+									<Switch Grid.Column="1" IsToggled="{Binding CanDeleteGames}" Toggled="OnCanDeleteToggled" BindingContext="{Binding .}" />
+								</Grid>
+
+								<Button Text="Promote to head host" Clicked="OnPromoteClicked"
+								        IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}"
+								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+							</VerticalStackLayout>
+						</Frame>
+					</DataTemplate>
+				</CollectionView.ItemTemplate>
+			</CollectionView>
+
+		</VerticalStackLayout>
+	</ScrollView>
+
+</ContentPage>

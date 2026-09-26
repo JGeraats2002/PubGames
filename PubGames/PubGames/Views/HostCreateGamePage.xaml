@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.HostCreateGamePage"
+             x:DataType="vm:HostCreateGameViewModel"
+             Title="New game">
+
+	<ScrollView>
+		<VerticalStackLayout Padding="20" Spacing="14">
+
+			<Label Text="Game name" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Placeholder="e.g. Kings cup" Text="{Binding Name}" />
+
+			<Label Text="Cover image" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
+			<Button Text="Upload cover image" Clicked="OnUploadCoverClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+
+			<Label Text="Pricing" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
+			<HorizontalStackLayout Spacing="8">
+				<CheckBox IsChecked="{Binding IsPaid}" />
+				<Label Text="This game is paid" VerticalOptions="Center" />
+			</HorizontalStackLayout>
+			<Entry Placeholder="0,50" Text="{Binding Price}" Keyboard="Numeric" IsVisible="{Binding IsPaid}" />
+			<Label Text="One-time price per player, you set this." FontSize="11" TextColor="{StaticResource TextSecondary}" />
+
+			<Label Text="Scoring type" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
+			<Picker ItemsSource="{Binding ScoringTypeOptions}" SelectedItem="{Binding ScoringType}" />
+
+			<Label Text="How to play" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
+			<Editor Placeholder="Explain the rules..." Text="{Binding RulesText}" AutoSize="TextChanges" MinimumHeightRequest="120" />
+			<Button Text="Insert image into rules" Clicked="OnInsertRulesImageClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+
+			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" Margin="0,6,0,0" />
+
+			<Button Text="Publish game" Command="{Binding PublishCommand}" Margin="0,10,0,0" />
+
+		</VerticalStackLayout>
+	</ScrollView>
+
+</ContentPage>

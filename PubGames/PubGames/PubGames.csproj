@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net10.0-android36.0</TargetFrameworks>
+		<!-- Add net8.0-ios;net8.0-maccatalyst;net8.0-windows10.0.19041.0 if you want to target
+		     more than Android later. Kept Android-only for now since that's the priority. -->
+		<OutputType>Exe</OutputType>
+		<RootNamespace>PubGames</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<ApplicationTitle>Pub Games</ApplicationTitle>
+		<ApplicationId>com.yourcompany.pubgames</ApplicationId>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<MauiIcon Include="Resources\Images\appicon.svg" ForegroundFile="Resources\Images\appiconfg.svg" Color="#3C3489" />
+		<MauiSplashScreen Include="Resources\Images\splash.svg" Color="#3C3489" BaseSize="128,128" />
+		<!-- appicon.svg / appiconfg.svg / splash.svg are already registered above via
+		     MauiIcon/MauiSplashScreen - excluding them here so they aren't also
+		     processed as plain MauiImage, which caused the "duplicate file names
+		     detected: appicon" build error. -->
+		<MauiImage Include="Resources\Images\*" Exclude="Resources\Images\appicon.svg;Resources\Images\appiconfg.svg;Resources\Images\splash.svg" />
+		<!-- Drop .ttf files into Resources\Fonts and add them back here
+		     (plus .ConfigureFonts in MauiProgram.cs) once you have real font
+		     files - left out so the project builds with nothing missing. -->
+		<!-- <MauiFont Include="Resources\Fonts\*" /> -->
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.90" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+		<PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
+		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3.android" Version="2.1.13" />
+		<!-- Add Xamarin.GooglePlayServices / Plugin.InAppBilling (or the official
+		     Google.Android.PlayBilling bindings) when you wire up real purchases.
+		     Add Firebase.Auth / Firebase.Firestore (via Plugin.Firebase) for the
+		     cloud account + sync layer. Both left out so the project restores
+		     cleanly without extra setup on first open. -->
+	</ItemGroup>
+
+</Project>

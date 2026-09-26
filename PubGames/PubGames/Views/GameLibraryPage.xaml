@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.GameLibraryPage"
+             x:DataType="vm:GameLibraryViewModel"
+             Title="Game library">
+
+	<VerticalStackLayout Padding="20" Spacing="12">
+
+		<SearchBar Placeholder="Search games" Text="{Binding SearchText}" />
+
+		<CollectionView ItemsSource="{Binding VisibleGames}">
+			<CollectionView.EmptyView>
+				<Label Text="No games match yet." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+			</CollectionView.EmptyView>
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="models:PubGame">
+					<Grid Padding="10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+						<Grid.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
+						</Grid.GestureRecognizers>
+						<Frame WidthRequest="36" HeightRequest="36" CornerRadius="8" Padding="0"
+						       BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center" />
+						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+							<Label Text="{Binding Name}" />
+							<Label Text="{Binding ScoringType}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+						</VerticalStackLayout>
+						<Label Grid.Column="2" VerticalOptions="Center"
+						       Text="{Binding Price, StringFormat='€{0:0.00}'}"
+						       IsVisible="{Binding IsPaid}"
+						       TextColor="{StaticResource Primary}" />
+					</Grid>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+
+	</VerticalStackLayout>
+
+</ContentPage>

@@ -23,6 +23,17 @@ service cloud.firestore {
       allow write: if isAdmin() && request.resource.data.id == gameId;
     }
 
+    // Game images (covers and rules pictures) while on the free plan - see FirestoreImageStore.
+    match /images/{imageId} {
+      allow read: if isSignedIn();
+      // Size cap keeps each image well under Firestore's 1 MiB document limit.
+      allow create, update: if isAdmin()
+        && request.resource.data.id == imageId
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 700 * 1024;
+      allow delete: if isAdmin();
+    }
+
     // Everything else is locked until it gets its own rules.
     match /{document=**} {
       allow read, write: if false;

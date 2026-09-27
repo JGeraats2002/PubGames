@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -21,23 +22,19 @@ public partial class HostCreateGamePage : ContentPage
 			await _vm.DeleteAsync();
 	}
 
-	private async void OnUploadCoverClicked(object? sender, EventArgs e)
-	{
-		var result = await MediaPicker.Default.PickPhotoAsync();
-		if (result is null) return;
-
-		// TODO: upload result.FullPath (or OpenReadAsync stream) to your cloud
-		// storage (e.g. Firebase Storage / S3) and set _vm.CoverImageUrl to the
-		// resulting public URL.
-	}
-
+	/// <summary>Lives here rather than in the ViewModel because it needs the editor's cursor position.</summary>
 	private async void OnInsertRulesImageClicked(object? sender, EventArgs e)
 	{
-		var result = await MediaPicker.Default.PickPhotoAsync();
-		if (result is null) return;
+		// Read the cursor before the picker opens; the editor loses focus meanwhile.
+		var text = _vm.RulesText ?? string.Empty;
+		var cursor = Math.Clamp(RulesEditor.CursorPosition, 0, text.Length);
 
-		// TODO: upload the image, then insert a markdown/HTML image reference
-		// at the cursor position in _vm.RulesText, e.g.:
-		// _vm.RulesText += $"\n![rules image]({uploadedUrl})\n";
+		var reference = await _vm.UploadImageAsync();
+		if (reference is null) return;
+
+		// Own line so the rules page shows the picture between paragraphs.
+		var tag = "\n" + RulesBlock.RulesImageTag(reference) + "\n";
+		_vm.RulesText = text.Insert(cursor, tag);
+		RulesEditor.CursorPosition = cursor + tag.Length;
 	}
 }

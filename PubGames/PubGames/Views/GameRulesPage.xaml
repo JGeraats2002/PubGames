@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.GameRulesPage"
              x:DataType="vm:GameRulesViewModel"
              Title="{Binding GameName}">
@@ -14,11 +15,29 @@
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
+			<Border StrokeThickness="0" HeightRequest="180" Margin="0,6,0,0"
+			        IsVisible="{Binding HasCover}">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="10" />
+				</Border.StrokeShape>
+				<Image Source="{Binding CoverImageRef, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+			</Border>
+
 			<Label Text="{Binding GameName}" FontSize="24" FontAttributes="Bold" Margin="0,6,0,0" />
 			<Label Text="{Binding PlayersSummary}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 
 			<Label Text="How to play" FontSize="16" Margin="0,10,0,0" />
-			<Label Text="{Binding RulesText}" FontSize="15" LineHeight="1.3" />
+			<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding RulesBlocks}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="models:RulesBlock">
+						<Grid>
+							<Label Text="{Binding Text}" IsVisible="{Binding IsText}" FontSize="15" LineHeight="1.3" />
+							<Image Source="{Binding ImageRef, Converter={StaticResource ImageRefConverter}}"
+							       IsVisible="{Binding IsImage}" Aspect="AspectFit" HorizontalOptions="Fill" />
+						</Grid>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
 
 			<Button Text="Start game" Command="{Binding StartGameCommand}" Margin="0,20,0,0" />
 

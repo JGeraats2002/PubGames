@@ -15,6 +15,7 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	private readonly ICloudSyncService _cloud;
 	private readonly IPermissionService _permissions;
 	private readonly IAuthService _auth;
+	private readonly IImageStore _images;
 
 	// TODO: replace with the org the user picked once multiple orgs exist.
 	private const string CurrentHostOrgId = AuthService.DefaultHostOrgId;
@@ -37,8 +38,17 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	[ObservableProperty]
 	private string rulesText = string.Empty;
 
+	/// <summary>Image reference from IImageStore (not necessarily a URL, despite the model's field name).</summary>
 	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasCover), nameof(CoverButtonText))]
 	private string? coverImageUrl;
+
+	[ObservableProperty]
+	[NotifyCanExecuteChangedFor(nameof(UploadCoverCommand), nameof(PublishCommand))]
+	private bool isUploading;
+
+	public bool HasCover => !string.IsNullOrEmpty(CoverImageUrl);
+	public string CoverButtonText => HasCover ? "Change cover image" : "Upload cover image";
 
 	[ObservableProperty]
 	private bool isPaid;
@@ -61,9 +71,10 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	/// <summary>Bound to the scoring type Picker.</summary>
 	public List<ScoringType> ScoringTypeOptions { get; } = Enum.GetValues<ScoringType>().ToList();
 
-	public HostCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions, IAuthService auth)
+	public HostCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions, IAuthService auth, IImageStore images)
 	{
 		_auth = auth;
+		_images = images;
 		_local = local;
 		_cloud = cloud;
 		_permissions = permissions;
@@ -85,7 +96,48 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 		ScoringType = _editing.ScoringType;
 	}
 
+	private bool CanUpload() => !IsUploading;
+
+	[RelayCommand(CanExecute = nameof(CanUpload))]
+	private async Task UploadCoverAsync()
+	{
+		var reference = await UploadImageAsync();
+		if (reference is not null)
+			CoverImageUrl = reference;
+	}
+
 	[RelayCommand]
+	private void RemoveCover() => CoverImageUrl = null;
+
+	/// <summary>Picks and uploads one image. Returns its reference, or null if cancelled or failed (StatusMessage says why).</summary>
+	public async Task<string?> UploadImageAsync()
+	{
+		if (IsUploading) return null;
+
+		IsUploading = true;
+		StatusMessage = "Uploading image...";
+		try
+		{
+			var reference = await _images.PickAndUploadAsync();
+			StatusMessage = string.Empty;
+			return reference;
+		}
+		catch (HttpRequestException)
+		{
+			StatusMessage = "No connection - couldn't upload the image.";
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = ex.Message;
+		}
+		finally
+		{
+			IsUploading = false;
+		}
+		return null;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanUpload))]
 	private async Task PublishAsync()
 	{
 		if (!_auth.IsSignedIn)

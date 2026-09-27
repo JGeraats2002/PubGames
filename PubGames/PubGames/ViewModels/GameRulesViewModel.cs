@@ -21,7 +21,14 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	private string gameName = string.Empty;
 
 	[ObservableProperty]
-	private string rulesText = string.Empty;
+	[NotifyPropertyChangedFor(nameof(HasCover))]
+	private string? coverImageRef;
+
+	public bool HasCover => !string.IsNullOrEmpty(CoverImageRef);
+
+	/// <summary>The rules split into text and images, in order.</summary>
+	[ObservableProperty]
+	private List<RulesBlock> rulesBlocks = new();
 
 	[ObservableProperty]
 	private string playersSummary = string.Empty;
@@ -41,9 +48,10 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 		{
 			_game = game;
 			GameName = game.Name;
-			RulesText = string.IsNullOrWhiteSpace(game.RulesText)
-				? "No rules written for this game yet."
-				: game.RulesText;
+			CoverImageRef = game.CoverImageUrl;
+			RulesBlocks = string.IsNullOrWhiteSpace(game.RulesText)
+				? [new RulesBlock("No rules written for this game yet.", null)]
+				: RulesBlock.Parse(game.RulesText);
 		}
 
 		if (query.TryGetValue("players", out var p) && p is List<Player> players)

@@ -26,6 +26,8 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IGoogleSignInProvider, GoogleSignInProvider>();
 		builder.Services.AddSingleton<IAuthService, AuthService>();
 		builder.Services.AddSingleton<FirestoreClient>();
+		// Swap for a Firebase Storage implementation when moving to the Blaze plan; existing images keep working.
+		builder.Services.AddSingleton<IImageStore, FirestoreImageStore>();
 
 		// --- ViewModels (transient: fresh state each time you navigate to the page) ---
 		builder.Services.AddTransient<PlayerEntryViewModel>();

@@ -23,8 +23,13 @@
 						<Grid.GestureRecognizers>
 							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
 						</Grid.GestureRecognizers>
-						<Frame WidthRequest="36" HeightRequest="36" CornerRadius="8" Padding="0"
-						       BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center" />
+						<Border WidthRequest="44" HeightRequest="44" StrokeThickness="0"
+						        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="8" />
+							</Border.StrokeShape>
+							<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+						</Border>
 						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
 							<Label Text="{Binding Name}" />
 							<Label Text="{Binding ScoringType}" FontSize="11" TextColor="{StaticResource TextSecondary}" />

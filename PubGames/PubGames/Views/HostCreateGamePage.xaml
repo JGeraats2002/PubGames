@@ -14,9 +14,20 @@
 			<Entry Placeholder="e.g. Kings cup" Text="{Binding Name}" />
 
 			<Label Text="Cover image" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Button Text="Upload cover image" Clicked="OnUploadCoverClicked"
-			        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Border IsVisible="{Binding HasCover}" StrokeThickness="0" HeightRequest="180">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+			</Border>
+			<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+				<Button Text="{Binding CoverButtonText}" Command="{Binding UploadCoverCommand}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
+				        BorderColor="{StaticResource Border}" BorderWidth="1" />
+				<Button Grid.Column="1" Text="Remove" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
+				        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			</Grid>
 
 			<Label Text="Pricing" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
 			<HorizontalStackLayout Spacing="8">
@@ -30,10 +41,14 @@
 			<Picker ItemsSource="{Binding ScoringTypeOptions}" SelectedItem="{Binding ScoringType}" />
 
 			<Label Text="How to play" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Editor Placeholder="Explain the rules..." Text="{Binding RulesText}" AutoSize="TextChanges" MinimumHeightRequest="120" />
+			<Editor x:Name="RulesEditor" Placeholder="Explain the rules..." Text="{Binding RulesText}" AutoSize="TextChanges" MinimumHeightRequest="120" />
 			<Button Text="Insert image into rules" Clicked="OnInsertRulesImageClicked"
+			        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Label Text="The image goes where your cursor is, as ![image](...). Players see the picture there."
+			       FontSize="11" TextColor="{StaticResource TextSecondary}" />
+			<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{StaticResource Primary}" />
 
 			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" Margin="0,6,0,0" />
 

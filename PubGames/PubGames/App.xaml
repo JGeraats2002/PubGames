@@ -7,6 +7,7 @@
 		<ResourceDictionary>
 
 			<services:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+			<services:ImageRefConverter x:Key="ImageRefConverter" />
 
 			<Color x:Key="Primary">#3C3489</Color>
 			<Color x:Key="PrimaryDark">#26215C</Color>

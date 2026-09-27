@@ -20,11 +20,18 @@
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="models:PubGame">
-					<Grid Padding="10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+					<Grid Padding="10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
 						<Grid.GestureRecognizers>
 							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
 						</Grid.GestureRecognizers>
-						<VerticalStackLayout VerticalOptions="Center">
+						<Border WidthRequest="44" HeightRequest="44" StrokeThickness="0"
+						        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="8" />
+							</Border.StrokeShape>
+							<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+						</Border>
+						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
 							<Label Text="{Binding Name}" />
 							<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
 								<Label.FormattedText>
@@ -36,7 +43,7 @@
 								</Label.FormattedText>
 							</Label>
 						</VerticalStackLayout>
-						<Label Grid.Column="1" Text="Edit ›" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
+						<Label Grid.Column="2" Text="Edit ›" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
 					</Grid>
 				</DataTemplate>
 			</CollectionView.ItemTemplate>

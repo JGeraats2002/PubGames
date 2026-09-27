@@ -46,7 +46,7 @@
 					<DataTemplate x:DataType="models:HostMember">
 						<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
 							<VerticalStackLayout Spacing="6">
-								<Label Text="{Binding UserId}" />
+								<Label Text="{Binding Label}" />
 								<Label Text="{Binding Role}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 
 								<Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}">

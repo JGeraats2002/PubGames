@@ -9,9 +9,9 @@ namespace PubGames.ViewModels;
 public partial class PlayerEntryViewModel : ObservableObject
 {
 	private readonly ILocalDatabaseService _local;
+	private readonly IAuthService _auth;
 
-	// TODO: replace with your real logged-in account id (from auth state).
-	private const string CurrentAccountId = "local-account";
+	private string CurrentAccountId => _auth.AccountId;
 
 	public ObservableCollection<Player> SelectedPlayers { get; } = new();
 	public ObservableCollection<Player> SavedPlayers { get; } = new();
@@ -19,13 +19,15 @@ public partial class PlayerEntryViewModel : ObservableObject
 	[ObservableProperty]
 	private string newPlayerName = string.Empty;
 
-	public PlayerEntryViewModel(ILocalDatabaseService local)
+	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth)
 	{
 		_local = local;
+		_auth = auth;
 	}
 
 	public async Task LoadAsync()
 	{
+		await _auth.InitializeAsync();
 		var saved = await _local.GetPlayersAsync(CurrentAccountId);
 		SavedPlayers.Clear();
 		foreach (var p in saved)

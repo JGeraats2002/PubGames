@@ -34,6 +34,12 @@ public class HostMember
 	[Indexed]
 	public string UserId { get; set; } = string.Empty;
 
+	/// <summary>Cached from the member's account so the Team page can show a name instead of a uid.</summary>
+	public string DisplayName { get; set; } = string.Empty;
+
+	[Ignore]
+	public string Label => string.IsNullOrEmpty(DisplayName) ? UserId : DisplayName;
+
 	public HostRole Role { get; set; } = HostRole.Subhost;
 
 	/// <summary>Subhosts default to true; irrelevant once Role == HeadHost (head hosts always can).</summary>

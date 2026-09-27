@@ -14,6 +14,9 @@ public partial class ParticipantRow : ObservableObject
 
 	public int Score => Participant.Score;
 	public bool IsActive => Participant.IsActive;
+
+	/// <summary>Call after mutating Participant.Score so bound UI refreshes.</summary>
+	public void NotifyScoreChanged() => OnPropertyChanged(nameof(Score));
 }
 
 public partial class ScoreboardViewModel : ObservableObject
@@ -53,7 +56,7 @@ public partial class ScoreboardViewModel : ObservableObject
 	{
 		row.Participant.Score += delta;
 		await _local.SaveParticipantAsync(row.Participant);
-		row.OnPropertyChanged(nameof(ParticipantRow.Score));
+		row.NotifyScoreChanged();
 	}
 
 	/// <summary>

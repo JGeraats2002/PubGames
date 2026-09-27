@@ -7,6 +7,13 @@ public interface IPermissionService
 	bool CanPublishDirectly(HostMember member);
 	bool CanDeleteDirectly(HostMember member);
 	bool CanManageTeam(HostMember member);
+
+	/// <summary>
+	/// The membership to check permissions against for this user in this org:
+	/// app admins always act as head host, even without a stored row; null means
+	/// the user isn't on this org's team at all.
+	/// </summary>
+	HostMember? ResolveMember(IEnumerable<HostMember> members, AppUser? user, string hostOrgId);
 }
 
 /// <summary>
@@ -25,4 +32,14 @@ public class PermissionService : IPermissionService
 
 	public bool CanManageTeam(HostMember member) =>
 		member.HasFullRights;
+
+	public HostMember? ResolveMember(IEnumerable<HostMember> members, AppUser? user, string hostOrgId)
+	{
+		if (user is null) return null;
+
+		if (user.IsAdmin)
+			return new HostMember { UserId = user.Uid, HostOrgId = hostOrgId, DisplayName = user.DisplayName, Role = HostRole.HeadHost };
+
+		return members.FirstOrDefault(m => m.UserId == user.Uid);
+	}
 }

@@ -11,16 +11,19 @@ public partial class HostTeamViewModel : ObservableObject
 	private readonly ILocalDatabaseService _local;
 	private readonly ICloudSyncService _cloud;
 	private readonly IPermissionService _permissions;
+	private readonly IAuthService _auth;
 
-	// TODO: replace with real values from auth/org state.
-	private const string CurrentUserId = "current-user";
-	private const string CurrentHostOrgId = "current-org";
+	// TODO: replace with the org the user picked once multiple orgs exist.
+	private const string CurrentHostOrgId = AuthService.DefaultHostOrgId;
+
+	private string CurrentUserId => _auth.AccountId;
 
 	public ObservableCollection<HostMember> Members { get; } = new();
 	public ObservableCollection<ApprovalRequest> PendingApprovals { get; } = new();
 
-	public HostTeamViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions)
+	public HostTeamViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions, IAuthService auth)
 	{
+		_auth = auth;
 		_local = local;
 		_cloud = cloud;
 		_permissions = permissions;
@@ -28,6 +31,7 @@ public partial class HostTeamViewModel : ObservableObject
 
 	public async Task LoadAsync()
 	{
+		await _auth.InitializeAsync();
 		Members.Clear();
 		foreach (var m in await _local.GetHostMembersAsync(CurrentHostOrgId))
 			Members.Add(m);
@@ -37,7 +41,7 @@ public partial class HostTeamViewModel : ObservableObject
 			PendingApprovals.Add(r);
 	}
 
-	private HostMember? CurrentMember() => Members.FirstOrDefault(m => m.UserId == CurrentUserId);
+	private HostMember? CurrentMember() => _permissions.ResolveMember(Members, _auth.CurrentUser, CurrentHostOrgId);
 
 	[RelayCommand]
 	private async Task SetCanAddGamesAsync((HostMember member, bool value) args)

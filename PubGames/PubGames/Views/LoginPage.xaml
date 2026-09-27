@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Primary}">
+
+	<Grid RowDefinitions="*,Auto" Padding="28,0,28,40">
+
+		<VerticalStackLayout Grid.Row="0" VerticalOptions="Center" Spacing="10">
+			<Label Text="Pub Games" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
+			<Label Text="Scores, rules and games for your night out" FontSize="14"
+			       TextColor="#CECBF6" HorizontalOptions="Center" HorizontalTextAlignment="Center" />
+		</VerticalStackLayout>
+
+		<VerticalStackLayout Grid.Row="1" Spacing="14">
+			<ActivityIndicator IsRunning="True" Color="White"
+			                   IsVisible="{Binding ShowSignIn, Converter={StaticResource InvertedBoolConverter}}" />
+
+			<Button Text="Sign in with Google" Command="{Binding SignInCommand}" IsVisible="{Binding ShowSignIn}"
+			        BackgroundColor="White" TextColor="{StaticResource PrimaryDark}" FontAttributes="Bold" />
+
+			<Label Text="Your players, scores and unlocked games are saved to your account."
+			       IsVisible="{Binding ShowSignIn}"
+			       FontSize="12" TextColor="#CECBF6" HorizontalTextAlignment="Center" />
+
+			<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="#F7C1C1" HorizontalTextAlignment="Center" />
+		</VerticalStackLayout>
+
+	</Grid>
+
+</ContentPage>

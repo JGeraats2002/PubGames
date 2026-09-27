@@ -9,10 +9,10 @@ namespace PubGames.ViewModels;
 public partial class GameLibraryViewModel : ObservableObject
 {
 	private readonly ILocalDatabaseService _local;
+	private readonly IAuthService _auth;
 	private List<PubGame> _allGames = new();
 
-	// TODO: replace with real account id from auth state.
-	private const string CurrentAccountId = "local-account";
+	private string CurrentAccountId => _auth.AccountId;
 
 	public ObservableCollection<PubGame> VisibleGames { get; } = new();
 
@@ -23,13 +23,15 @@ public partial class GameLibraryViewModel : ObservableObject
 	[ObservableProperty]
 	private string? activeCategoryFilter;
 
-	public GameLibraryViewModel(ILocalDatabaseService local)
+	public GameLibraryViewModel(ILocalDatabaseService local, IAuthService auth)
 	{
 		_local = local;
+		_auth = auth;
 	}
 
 	public async Task LoadAsync()
 	{
+		await _auth.InitializeAsync();
 		_allGames = await _local.GetGamesAsync();
 		ApplyFilters();
 	}

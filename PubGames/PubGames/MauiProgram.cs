@@ -23,6 +23,8 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ILocalDatabaseService, LocalDatabaseService>();
 		builder.Services.AddSingleton<ICloudSyncService, CloudSyncService>();
 		builder.Services.AddSingleton<IPermissionService, PermissionService>();
+		builder.Services.AddSingleton<IGoogleSignInProvider, GoogleSignInProvider>();
+		builder.Services.AddSingleton<IAuthService, AuthService>();
 
 		// --- ViewModels (transient: fresh state each time you navigate to the page) ---
 		builder.Services.AddTransient<PlayerEntryViewModel>();
@@ -30,6 +32,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<ScoreboardViewModel>();
 		builder.Services.AddTransient<HostCreateGameViewModel>();
 		builder.Services.AddTransient<HostTeamViewModel>();
+		builder.Services.AddTransient<AccountViewModel>();
+		builder.Services.AddTransient<LoginViewModel>();
 
 		// --- Pages ---
 		builder.Services.AddTransient<PlayerEntryPage>();
@@ -37,6 +41,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<ScoreboardPage>();
 		builder.Services.AddTransient<HostCreateGamePage>();
 		builder.Services.AddTransient<HostTeamPage>();
+		builder.Services.AddTransient<AccountPage>();
+		builder.Services.AddTransient<LoginPage>();
 
 		return builder.Build();
 	}

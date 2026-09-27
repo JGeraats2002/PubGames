@@ -6,25 +6,35 @@
        Shell.FlyoutBehavior="Disabled"
        Title="Pub Games">
 
-	<!-- The app opens directly on player entry, per the design: no home screen first. -->
-	<ShellContent Title="Players"
-	              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
-	              Route="players" />
+	<!-- Only shown once signed in (App swaps between LoginPage and this shell).
+	     Opens directly on player entry, per the design: no home screen first.
+	     Android shows at most 5 bottom tabs, so the host pages share one tab. -->
+	<TabBar>
+		<ShellContent Title="Players"
+		              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
+		              Route="players" />
 
-	<ShellContent Title="Library"
-	              ContentTemplate="{DataTemplate views:GameLibraryPage}"
-	              Route="library" />
+		<ShellContent Title="Library"
+		              ContentTemplate="{DataTemplate views:GameLibraryPage}"
+		              Route="library" />
 
-	<ShellContent Title="Score"
-	              ContentTemplate="{DataTemplate views:ScoreboardPage}"
-	              Route="scoreboard" />
+		<ShellContent Title="Score"
+		              ContentTemplate="{DataTemplate views:ScoreboardPage}"
+		              Route="scoreboard" />
 
-	<ShellContent Title="Host"
-	              ContentTemplate="{DataTemplate views:HostCreateGamePage}"
-	              Route="host/create" />
+		<!-- Hidden for regular players; visible to app admins and host team members. -->
+		<Tab x:Name="HostTab" Title="Host" Route="host">
+			<ShellContent Title="Create game"
+			              ContentTemplate="{DataTemplate views:HostCreateGamePage}"
+			              Route="create" />
+			<ShellContent Title="Team"
+			              ContentTemplate="{DataTemplate views:HostTeamPage}"
+			              Route="team" />
+		</Tab>
 
-	<ShellContent Title="Team"
-	              ContentTemplate="{DataTemplate views:HostTeamPage}"
-	              Route="host/team" />
+		<ShellContent Title="Account"
+		              ContentTemplate="{DataTemplate views:AccountPage}"
+		              Route="account" />
+	</TabBar>
 
 </Shell>

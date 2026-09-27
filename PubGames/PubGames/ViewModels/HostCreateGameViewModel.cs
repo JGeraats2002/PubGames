@@ -10,10 +10,12 @@ public partial class HostCreateGameViewModel : ObservableObject
 	private readonly ILocalDatabaseService _local;
 	private readonly ICloudSyncService _cloud;
 	private readonly IPermissionService _permissions;
+	private readonly IAuthService _auth;
 
-	// TODO: replace with real values from auth/org state.
-	private const string CurrentUserId = "current-user";
-	private const string CurrentHostOrgId = "current-org";
+	// TODO: replace with the org the user picked once multiple orgs exist.
+	private const string CurrentHostOrgId = AuthService.DefaultHostOrgId;
+
+	private string CurrentUserId => _auth.AccountId;
 
 	[ObservableProperty]
 	private string name = string.Empty;
@@ -42,8 +44,9 @@ public partial class HostCreateGameViewModel : ObservableObject
 	/// <summary>Bound to the scoring type Picker.</summary>
 	public List<ScoringType> ScoringTypeOptions { get; } = Enum.GetValues<ScoringType>().ToList();
 
-	public HostCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions)
+	public HostCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions, IAuthService auth)
 	{
+		_auth = auth;
 		_local = local;
 		_cloud = cloud;
 		_permissions = permissions;
@@ -52,6 +55,12 @@ public partial class HostCreateGameViewModel : ObservableObject
 	[RelayCommand]
 	private async Task PublishAsync()
 	{
+		if (!_auth.IsSignedIn)
+		{
+			StatusMessage = "Sign in on the Account tab to create games.";
+			return;
+		}
+
 		if (string.IsNullOrWhiteSpace(Name))
 		{
 			StatusMessage = "Give the game a name first.";
@@ -71,8 +80,9 @@ public partial class HostCreateGameViewModel : ObservableObject
 		};
 
 		var members = await _local.GetHostMembersAsync(CurrentHostOrgId);
-		var me = members.FirstOrDefault(m => m.UserId == CurrentUserId)
-			?? new HostMember { UserId = CurrentUserId, HostOrgId = CurrentHostOrgId, Role = HostRole.HeadHost };
+		// Signed-in users who aren't on the team yet can still propose games, but only via approval.
+		var me = _permissions.ResolveMember(members, _auth.CurrentUser, CurrentHostOrgId)
+			?? new HostMember { UserId = CurrentUserId, HostOrgId = CurrentHostOrgId, CanAddGames = false };
 
 		if (_permissions.CanPublishDirectly(me))
 		{

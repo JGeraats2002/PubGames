@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.HostLibraryPage"
+             x:DataType="vm:HostLibraryViewModel"
+             Title="Library">
+
+	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">
+
+		<Button Grid.Row="0" Text="+ New game" Clicked="OnNewGameClicked" />
+
+		<Label Grid.Row="1" Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+
+		<CollectionView Grid.Row="2" ItemsSource="{Binding Games}">
+			<CollectionView.EmptyView>
+				<Label Text="No games yet. Tap &quot;+ New game&quot; to add the first one."
+				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+			</CollectionView.EmptyView>
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="models:PubGame">
+					<Grid Padding="10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+						<Grid.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
+						</Grid.GestureRecognizers>
+						<VerticalStackLayout VerticalOptions="Center">
+							<Label Text="{Binding Name}" />
+							<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
+								<Label.FormattedText>
+									<FormattedString>
+										<Span Text="{Binding Status}" />
+										<Span Text=" · " />
+										<Span Text="{Binding ScoringType}" />
+									</FormattedString>
+								</Label.FormattedText>
+							</Label>
+						</VerticalStackLayout>
+						<Label Grid.Column="1" Text="Edit ›" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
+					</Grid>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+
+	</Grid>
+
+</ContentPage>

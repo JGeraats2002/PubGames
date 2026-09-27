@@ -7,26 +7,18 @@
        Title="Pub Games">
 
 	<!-- Only shown once signed in (App swaps between LoginPage and this shell).
-	     Opens directly on player entry, per the design: no home screen first.
-	     Android shows at most 5 bottom tabs, so the host pages share one tab. -->
+	     Players is the start of a game night: players → choose game → rules → scoreboard,
+	     all pushed onto this tab's stack (see routes in AppShell.xaml.cs). -->
 	<TabBar>
 		<ShellContent Title="Players"
 		              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
 		              Route="players" />
 
-		<ShellContent Title="Library"
-		              ContentTemplate="{DataTemplate views:GameLibraryPage}"
-		              Route="library" />
-
-		<ShellContent Title="Score"
-		              ContentTemplate="{DataTemplate views:ScoreboardPage}"
-		              Route="scoreboard" />
-
 		<!-- Hidden for regular players; visible to app admins and host team members. -->
 		<Tab x:Name="HostTab" Title="Host" Route="host">
-			<ShellContent Title="Create game"
-			              ContentTemplate="{DataTemplate views:HostCreateGamePage}"
-			              Route="create" />
+			<ShellContent Title="Library"
+			              ContentTemplate="{DataTemplate views:HostLibraryPage}"
+			              Route="library" />
 			<ShellContent Title="Team"
 			              ContentTemplate="{DataTemplate views:HostTeamPage}"
 			              Route="team" />

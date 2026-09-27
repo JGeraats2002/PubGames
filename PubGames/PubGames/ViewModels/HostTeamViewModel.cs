@@ -21,6 +21,9 @@ public partial class HostTeamViewModel : ObservableObject
 	public ObservableCollection<HostMember> Members { get; } = new();
 	public ObservableCollection<ApprovalRequest> PendingApprovals { get; } = new();
 
+	[ObservableProperty]
+	private string statusMessage = string.Empty;
+
 	public HostTeamViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions, IAuthService auth)
 	{
 		_auth = auth;
@@ -96,6 +99,22 @@ public partial class HostTeamViewModel : ObservableObject
 			{
 				// Denied: fall back to Draft so the host can revise and resubmit.
 				game.Status = GameStatus.Draft;
+			}
+
+			// Publishing or deleting changes what everyone sees, so it has to reach the cloud.
+			if (args.approve)
+			{
+				try
+				{
+					await _cloud.SaveGameAsync(game);
+				}
+				catch (Exception ex)
+				{
+					StatusMessage = ex is HttpRequestException
+						? "No connection - try approving again when you're online."
+						: ex.Message;
+					return;
+				}
 			}
 			await _local.SaveGameAsync(game);
 		}

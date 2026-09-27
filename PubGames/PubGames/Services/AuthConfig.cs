@@ -2,8 +2,7 @@ namespace PubGames.Services;
 
 /// <summary>
 /// Values from the Firebase console. None of these are secrets - the Web API
-/// key and OAuth client id ship inside every Firebase app - but the admin
-/// list is only enforced client-side until Firestore rules check it too.
+/// key and OAuth client id ship inside every Firebase app.
 /// </summary>
 public static class AuthConfig
 {
@@ -17,7 +16,14 @@ public static class AuthConfig
 	/// </summary>
 	public const string GoogleWebClientId = "737835893040-vgbin8mt2kp74279etk3sqtdn5nskb92.apps.googleusercontent.com";
 
-	/// <summary>Google accounts that are app administrators (full rights in every host org).</summary>
+	/// <summary>Firebase console → Project settings → General → Project ID. Used for Firestore.</summary>
+	public const string FirebaseProjectId = "pubgames-92835";
+
+	/// <summary>
+	/// Google accounts that are app administrators. Keep in sync with isAdmin()
+	/// in firestore.rules - the rules are what actually protect the cloud data.
+	/// Admins have full rights in every host org.
+	/// </summary>
 	public static readonly string[] AdminEmails =
 	[
 		"jjh.geraats@gmail.com",

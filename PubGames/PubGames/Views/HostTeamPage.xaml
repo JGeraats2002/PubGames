@@ -10,6 +10,8 @@
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="16">
 
+			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Danger}" FontSize="12" />
+
 			<Label Text="Pending approvals" FontSize="16" />
 			<CollectionView ItemsSource="{Binding PendingApprovals}">
 				<CollectionView.EmptyView>

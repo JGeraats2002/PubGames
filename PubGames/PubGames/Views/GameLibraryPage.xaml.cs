@@ -26,13 +26,15 @@ public partial class GameLibraryPage : ContentPage
 		if (!await _vm.IsOwnedAsync(game))
 		{
 			// TODO: show the unlock/paywall dialog and kick off Google Play
-			// Billing here before allowing navigation into the scoreboard.
-			await DisplayAlert(game.Name, $"Unlock for €{game.Price:0.00} to play.", "OK");
+			// Billing here before allowing navigation into the game.
+			await DisplayAlertAsync(game.Name, $"Unlock for €{game.Price:0.00} to play.", "OK");
 			return;
 		}
 
-		// TODO: create a GameSession + SessionParticipant rows for the chosen
-		// players (from PlayerEntryPage) before navigating.
-		await Shell.Current.GoToAsync(nameof(ScoreboardPage));
+		await Shell.Current.GoToAsync(nameof(GameRulesPage), new ShellNavigationQueryParameters
+		{
+			["game"] = game,
+			["players"] = _vm.Players
+		});
 	}
 }

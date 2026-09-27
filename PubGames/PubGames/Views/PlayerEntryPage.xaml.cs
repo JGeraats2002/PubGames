@@ -20,8 +20,15 @@ public partial class PlayerEntryPage : ContentPage
 
 	private async void OnChooseGameClicked(object? sender, EventArgs e)
 	{
-		// TODO: pass the selected players along (e.g. via a shared session-builder
-		// service) so the library page knows who's in the group before a game starts.
-		await Shell.Current.GoToAsync(nameof(GameLibraryPage));
+		if (_vm.SelectedPlayers.Count == 0)
+		{
+			await DisplayAlertAsync("Who's playing?", "Add at least one player first.", "OK");
+			return;
+		}
+
+		await Shell.Current.GoToAsync(nameof(GameLibraryPage), new ShellNavigationQueryParameters
+		{
+			["players"] = _vm.SelectedPlayers.ToList()
+		});
 	}
 }

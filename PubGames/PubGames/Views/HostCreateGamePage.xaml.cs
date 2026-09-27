@@ -10,6 +10,15 @@ public partial class HostCreateGamePage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		_vm.Finished += async (_, _) => await Shell.Current.GoToAsync("..");
+	}
+
+	private async void OnDeleteClicked(object? sender, EventArgs e)
+	{
+		var confirmed = await DisplayAlertAsync("Delete game?",
+			$"\"{_vm.Name}\" will disappear from every player's library.", "Delete", "Cancel");
+		if (confirmed)
+			await _vm.DeleteAsync();
 	}
 
 	private async void OnUploadCoverClicked(object? sender, EventArgs e)

@@ -12,14 +12,6 @@ public partial class ScoreboardPage : ContentPage
 		BindingContext = _vm = vm;
 	}
 
-	// TODO: pass the real session id in via query params (Shell "?sessionId=...")
-	// and load it here instead of this placeholder.
-	protected override async void OnAppearing()
-	{
-		base.OnAppearing();
-		await _vm.LoadAsync("current-session-id");
-	}
-
 	private async void OnIncrementClicked(object? sender, EventArgs e)
 	{
 		if (sender is Button { BindingContext: ParticipantRow row })

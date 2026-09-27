@@ -25,11 +25,14 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IPermissionService, PermissionService>();
 		builder.Services.AddSingleton<IGoogleSignInProvider, GoogleSignInProvider>();
 		builder.Services.AddSingleton<IAuthService, AuthService>();
+		builder.Services.AddSingleton<FirestoreClient>();
 
 		// --- ViewModels (transient: fresh state each time you navigate to the page) ---
 		builder.Services.AddTransient<PlayerEntryViewModel>();
 		builder.Services.AddTransient<GameLibraryViewModel>();
+		builder.Services.AddTransient<GameRulesViewModel>();
 		builder.Services.AddTransient<ScoreboardViewModel>();
+		builder.Services.AddTransient<HostLibraryViewModel>();
 		builder.Services.AddTransient<HostCreateGameViewModel>();
 		builder.Services.AddTransient<HostTeamViewModel>();
 		builder.Services.AddTransient<AccountViewModel>();
@@ -38,7 +41,9 @@ public static class MauiProgram
 		// --- Pages ---
 		builder.Services.AddTransient<PlayerEntryPage>();
 		builder.Services.AddTransient<GameLibraryPage>();
+		builder.Services.AddTransient<GameRulesPage>();
 		builder.Services.AddTransient<ScoreboardPage>();
+		builder.Services.AddTransient<HostLibraryPage>();
 		builder.Services.AddTransient<HostCreateGamePage>();
 		builder.Services.AddTransient<HostTeamPage>();
 		builder.Services.AddTransient<AccountPage>();

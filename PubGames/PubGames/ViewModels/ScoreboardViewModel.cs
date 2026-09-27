@@ -19,7 +19,7 @@ public partial class ParticipantRow : ObservableObject
 	public void NotifyScoreChanged() => OnPropertyChanged(nameof(Score));
 }
 
-public partial class ScoreboardViewModel : ObservableObject
+public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 {
 	private readonly ILocalDatabaseService _local;
 
@@ -28,20 +28,38 @@ public partial class ScoreboardViewModel : ObservableObject
 	[ObservableProperty]
 	private GameSession? session;
 
+	[ObservableProperty]
+	private string gameName = "Score";
+
 	public ScoreboardViewModel(ILocalDatabaseService local)
 	{
 		_local = local;
 	}
 
+	/// <summary>Opened from the rules page with the "sessionId" of the game that just started.</summary>
+	public async void ApplyQueryAttributes(IDictionary<string, object> query)
+	{
+		if (query.TryGetValue("sessionId", out var id) && id is string sessionId)
+			await LoadAsync(sessionId);
+	}
+
 	public async Task LoadAsync(string sessionId)
 	{
-		var participants = await _local.GetParticipantsAsync(sessionId);
-		Rows.Clear();
+		Session = await _local.GetSessionAsync(sessionId);
+		if (Session is null) return;
 
+		var game = await _local.GetGameAsync(Session.GameId);
+		GameName = game?.Name ?? "Score";
+
+		var participants = (await _local.GetParticipantsAsync(sessionId)).Where(p => p.IsActive).ToList();
+		var players = (await _local.GetPlayersByIdsAsync(participants.Select(p => p.PlayerId)))
+			.ToDictionary(p => p.Id);
+
+		Rows.Clear();
 		foreach (var participant in participants)
 		{
-			// In a real app, fetch the actual Player by participant.PlayerId.
-			var player = new Player { Id = participant.PlayerId, Name = participant.PlayerId };
+			var player = players.GetValueOrDefault(participant.PlayerId)
+				?? new Player { Id = participant.PlayerId, Name = "Unknown player" };
 			Rows.Add(new ParticipantRow { Participant = participant, Player = player });
 		}
 	}

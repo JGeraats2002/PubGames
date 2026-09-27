@@ -5,11 +5,13 @@
              xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.GameLibraryPage"
              x:DataType="vm:GameLibraryViewModel"
-             Title="Game library">
+             Title="Choose a game">
 
 	<VerticalStackLayout Padding="20" Spacing="12">
 
 		<SearchBar Placeholder="Search games" Text="{Binding SearchText}" />
+
+		<Label Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
 		<CollectionView ItemsSource="{Binding VisibleGames}">
 			<CollectionView.EmptyView>

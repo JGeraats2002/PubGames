@@ -9,15 +9,20 @@ public interface ILocalDatabaseService
 
 	// Players
 	Task<List<Player>> GetPlayersAsync(string accountId);
+	Task<List<Player>> GetPlayersByIdsAsync(IEnumerable<string> playerIds);
 	Task SavePlayerAsync(Player player);
 
 	// Games
+	/// <summary>Published games only - what players can pick from.</summary>
 	Task<List<PubGame>> GetGamesAsync();
+	/// <summary>Every game that isn't deleted, drafts included - the host library.</summary>
+	Task<List<PubGame>> GetManageableGamesAsync();
 	Task<PubGame?> GetGameAsync(string gameId);
 	Task SaveGameAsync(PubGame game);
 	Task<List<GameCategory>> GetCategoriesForGameAsync(string gameId);
 
 	// Sessions
+	Task<GameSession?> GetSessionAsync(string sessionId);
 	Task SaveSessionAsync(GameSession session);
 	Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId);
 	Task SaveParticipantAsync(SessionParticipant participant);
@@ -71,6 +76,13 @@ public class LocalDatabaseService : ILocalDatabaseService
 		return await db.Table<Player>().Where(p => p.OwnerAccountId == accountId).ToListAsync();
 	}
 
+	public async Task<List<Player>> GetPlayersByIdsAsync(IEnumerable<string> playerIds)
+	{
+		var ids = playerIds.ToList();
+		var db = await DbAsync();
+		return await db.Table<Player>().Where(p => ids.Contains(p.Id)).ToListAsync();
+	}
+
 	public async Task SavePlayerAsync(Player player)
 	{
 		var db = await DbAsync();
@@ -81,6 +93,12 @@ public class LocalDatabaseService : ILocalDatabaseService
 	{
 		var db = await DbAsync();
 		return await db.Table<PubGame>().Where(g => g.Status == GameStatus.Published).ToListAsync();
+	}
+
+	public async Task<List<PubGame>> GetManageableGamesAsync()
+	{
+		var db = await DbAsync();
+		return await db.Table<PubGame>().Where(g => g.Status != GameStatus.Deleted).OrderBy(g => g.Name).ToListAsync();
 	}
 
 	public async Task<PubGame?> GetGameAsync(string gameId)
@@ -102,6 +120,12 @@ public class LocalDatabaseService : ILocalDatabaseService
 		var categoryIds = links.Select(l => l.CategoryId).ToList();
 		var all = await db.Table<GameCategory>().ToListAsync();
 		return all.Where(c => categoryIds.Contains(c.Id)).ToList();
+	}
+
+	public async Task<GameSession?> GetSessionAsync(string sessionId)
+	{
+		var db = await DbAsync();
+		return await db.Table<GameSession>().Where(s => s.Id == sessionId).FirstOrDefaultAsync();
 	}
 
 	public async Task SaveSessionAsync(GameSession session)

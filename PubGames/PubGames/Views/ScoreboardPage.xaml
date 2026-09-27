@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.ScoreboardPage"
              x:DataType="vm:ScoreboardViewModel"
-             Title="Score">
+             Title="{Binding GameName}">
 
 	<VerticalStackLayout Padding="20" Spacing="10">
 

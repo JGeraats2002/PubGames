@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Paste into Firebase console → Firestore Database → Rules → Publish.
+// These rules are what actually protect the cloud data; the app's own checks
+// are just UI. Keep the admin list in sync with AuthConfig.AdminEmails.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['jjh.geraats@gmail.com'];
+    }
+
+    match /games/{gameId} {
+      // Every signed-in user sees published games; admins also see drafts and deleted ones.
+      allow read: if isSignedIn() && (resource.data.status == 'Published' || isAdmin());
+      // Only admins create, edit, publish or delete games, and the id field must match the document.
+      allow write: if isAdmin() && request.resource.data.id == gameId;
+    }
+
+    // Everything else is locked until it gets its own rules.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

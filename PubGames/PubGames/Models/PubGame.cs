@@ -3,8 +3,8 @@ using SQLite;
 namespace PubGames.Models;
 
 /// <summary>
-/// A game in the library. Content (name/rules/images) is authored by a host;
-/// categories and scoring type are set at creation; pricing is host-controlled
+/// A game in the library. Content (name/rules/images) is authored by an admin or moderator;
+/// categories and scoring type are set at creation; pricing is admin-controlled
 /// per the "only some games are paid" decision.
 /// </summary>
 public class PubGame
@@ -23,13 +23,13 @@ public class PubGame
 
 	public bool IsPaid { get; set; }
 
-	/// <summary>Price in euros, e.g. 0.50m. Ignored when IsPaid is false. Host-set, not fixed by the platform.</summary>
+	/// <summary>Price in euros, e.g. 0.50m. Ignored when IsPaid is false. Admin-set, not fixed by the platform.</summary>
 	public decimal Price { get; set; }
 
-	/// <summary>Which host org owns/manages this game.</summary>
-	public string HostOrgId { get; set; } = string.Empty;
+	/// <summary>Which team owns/manages this game.</summary>
+	public string TeamId { get; set; } = string.Empty;
 
-	/// <summary>Which specific host/subhost user authored it.</summary>
+	/// <summary>Which admin/moderator account authored it.</summary>
 	public string CreatedByUserId { get; set; } = string.Empty;
 
 	public GameStatus Status { get; set; } = GameStatus.Draft;

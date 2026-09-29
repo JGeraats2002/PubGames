@@ -32,6 +32,13 @@ public class FirestoreClient
 		await SendAsync(request);
 	}
 
+	/// <summary>Deletes collection/id. Deleting a document that doesn't exist is not an error.</summary>
+	public async Task DeleteAsync(string collection, string id)
+	{
+		using var request = await CreateRequestAsync(HttpMethod.Delete, $"{BaseUrl}/{collection}/{Uri.EscapeDataString(id)}");
+		await SendAsync(request);
+	}
+
 	/// <summary>One document's fields, or null if it doesn't exist.</summary>
 	public async Task<Dictionary<string, object?>?> GetAsync(string collection, string id, CancellationToken ct = default)
 	{
@@ -120,6 +127,7 @@ public class FirestoreClient
 		double or decimal or float => new JsonObject { ["doubleValue"] = Convert.ToDouble(value) },
 		byte[] bytes => new JsonObject { ["bytesValue"] = Convert.ToBase64String(bytes) },
 		DateTime d => new JsonObject { ["timestampValue"] = DateTime.SpecifyKind(d, DateTimeKind.Utc).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture) },
+		IDictionary<string, object?> map => new JsonObject { ["mapValue"] = new JsonObject { ["fields"] = ToFields(map) } },
 		_ => throw new ArgumentException($"Unsupported Firestore field type {value.GetType().Name}")
 	};
 
@@ -139,7 +147,7 @@ public class FirestoreClient
 
 public class CloudException(int statusCode, string details)
 	: Exception(statusCode == 403
-		? "The cloud refused this change - only app administrators can publish games and upload images."
+		? "The cloud refused this change - you don't have permission for it. Ask an admin to check your rights on the Team page."
 		: $"Cloud request failed ({statusCode}): {details}")
 {
 	public int StatusCode { get; } = statusCode;

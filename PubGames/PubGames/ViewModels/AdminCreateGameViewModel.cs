@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PubGames.Models;
@@ -7,18 +8,19 @@ namespace PubGames.ViewModels;
 
 /// <summary>
 /// Create a new game, or edit/delete an existing one when opened with a
-/// "gameId" navigation parameter from the host library.
+/// "gameId" navigation parameter from the admin library.
 /// </summary>
-public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributable
+public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttributable
 {
 	private readonly ILocalDatabaseService _local;
 	private readonly ICloudSyncService _cloud;
 	private readonly IPermissionService _permissions;
 	private readonly IAuthService _auth;
+	private readonly ITeamService _team;
 	private readonly IImageStore _images;
 
-	// TODO: replace with the org the user picked once multiple orgs exist.
-	private const string CurrentHostOrgId = AuthService.DefaultHostOrgId;
+	// TODO: replace with the team the user picked once multiple teams exist.
+	private const string CurrentTeamId = AuthService.DefaultTeamId;
 
 	private string CurrentUserId => _auth.AccountId;
 
@@ -35,8 +37,8 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	[ObservableProperty]
 	private string name = string.Empty;
 
-	[ObservableProperty]
-	private string rulesText = string.Empty;
+	/// <summary>The rules as text boxes with the pictures shown in between; saved as RulesText.</summary>
+	public ObservableCollection<EditableRulesBlock> RulesBlocks { get; private set; } = EditableRulesBlock.FromRulesText(string.Empty);
 
 	/// <summary>Image reference from IImageStore (not necessarily a URL, despite the model's field name).</summary>
 	[ObservableProperty]
@@ -71,9 +73,11 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	/// <summary>Bound to the scoring type Picker.</summary>
 	public List<ScoringType> ScoringTypeOptions { get; } = Enum.GetValues<ScoringType>().ToList();
 
-	public HostCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions, IAuthService auth, IImageStore images)
+	public AdminCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions,
+		IAuthService auth, ITeamService team, IImageStore images)
 	{
 		_auth = auth;
+		_team = team;
 		_images = images;
 		_local = local;
 		_cloud = cloud;
@@ -89,7 +93,8 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 
 		IsEditing = true;
 		Name = _editing.Name;
-		RulesText = _editing.RulesText;
+		RulesBlocks = EditableRulesBlock.FromRulesText(_editing.RulesText);
+		OnPropertyChanged(nameof(RulesBlocks));
 		CoverImageUrl = _editing.CoverImageUrl;
 		IsPaid = _editing.IsPaid;
 		Price = _editing.IsPaid ? _editing.Price : 0.50m;
@@ -109,8 +114,20 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	[RelayCommand]
 	private void RemoveCover() => CoverImageUrl = null;
 
+	/// <summary>Uploads a picture and shows it in the rules where the cursor was (at the end when no text box was tapped).</summary>
+	public async Task InsertRulesImageAsync(EditableRulesBlock? at, int cursor)
+	{
+		var reference = await UploadImageAsync();
+		if (reference is not null)
+			EditableRulesBlock.InsertImage(RulesBlocks, at, cursor, reference);
+	}
+
+	[RelayCommand]
+	private void RemoveRulesImage(EditableRulesBlock image) =>
+		EditableRulesBlock.RemoveImage(RulesBlocks, image);
+
 	/// <summary>Picks and uploads one image. Returns its reference, or null if cancelled or failed (StatusMessage says why).</summary>
-	public async Task<string?> UploadImageAsync()
+	private async Task<string?> UploadImageAsync()
 	{
 		if (IsUploading) return null;
 
@@ -152,31 +169,45 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 			return;
 		}
 
+		var me = _team.Me;
+		if (me is null)
+		{
+			StatusMessage = "Only admins and moderators can create games.";
+			return;
+		}
+
+		var canPublish = _permissions.CanPublishDirectly(me);
+		if (!canPublish && _editing is { Status: GameStatus.Published or GameStatus.PendingDeletionApproval })
+		{
+			StatusMessage = "You can't change published games - ask an admin for publish rights or to make the change.";
+			return;
+		}
+
 		var game = _editing ?? new PubGame
 		{
-			HostOrgId = CurrentHostOrgId,
+			TeamId = CurrentTeamId,
 			CreatedByUserId = CurrentUserId
 		};
+		var previousStatus = game.Status;
 		game.Name = Name.Trim();
-		game.RulesText = RulesText;
+		game.RulesText = EditableRulesBlock.ToRulesText(RulesBlocks);
 		game.CoverImageUrl = CoverImageUrl;
 		game.ScoringType = ScoringType;
 		game.IsPaid = IsPaid;
 		game.Price = IsPaid ? Price : 0m;
 
-		var members = await _local.GetHostMembersAsync(CurrentHostOrgId);
-		// Signed-in users who aren't on the team yet can still propose games, but only via approval.
-		var me = _permissions.ResolveMember(members, _auth.CurrentUser, CurrentHostOrgId)
-			?? new HostMember { UserId = CurrentUserId, HostOrgId = CurrentHostOrgId, CanAddGames = false };
-
-		if (_permissions.CanPublishDirectly(me))
+		if (canPublish)
 		{
 			game.Status = GameStatus.Published;
 			game.PublishedAt ??= DateTime.UtcNow;
 
 			// Cloud first: a change only counts once everyone else can actually see it.
 			StatusMessage = IsEditing ? "Saving..." : "Publishing...";
-			if (!await TrySaveToCloudAsync(game)) return;
+			if (!await TrySaveToCloudAsync(game))
+			{
+				game.Status = previousStatus;
+				return;
+			}
 
 			await _local.SaveGameAsync(game);
 			StatusMessage = IsEditing
@@ -186,18 +217,38 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 		}
 		else
 		{
+			// The game goes to the cloud (hidden from players) so the admin who approves it can see it.
 			game.Status = GameStatus.PendingPublishApproval;
+			StatusMessage = "Sending for approval...";
+			if (!await TrySaveToCloudAsync(game))
+			{
+				game.Status = previousStatus;
+				return;
+			}
 			await _local.SaveGameAsync(game);
 
-			await _cloud.SubmitApprovalRequestAsync(new ApprovalRequest
+			try
 			{
-				GameId = game.Id,
-				HostOrgId = CurrentHostOrgId,
-				Type = ApprovalRequestType.PublishGame,
-				RequestedByUserId = CurrentUserId
-			});
+				await _cloud.SubmitApprovalRequestAsync(new ApprovalRequest
+				{
+					GameId = game.Id,
+					GameName = game.Name,
+					TeamId = CurrentTeamId,
+					Type = ApprovalRequestType.PublishGame,
+					RequestedByUserId = CurrentUserId,
+					RequestedByEmail = TeamMember.NormalizeEmail(_auth.CurrentUser!.Email),
+					RequestedByName = _auth.CurrentUser.DisplayName
+				});
+			}
+			catch (Exception ex)
+			{
+				StatusMessage = ex is HttpRequestException
+					? "No connection - the game is saved, tap Publish again when you're online."
+					: ex.Message;
+				return;
+			}
 
-			StatusMessage = "You don't have publish permission - sent to your head host for approval.";
+			StatusMessage = "You don't have publish permission - sent to an admin for approval.";
 		}
 	}
 
@@ -206,11 +257,10 @@ public partial class HostCreateGameViewModel : ObservableObject, IQueryAttributa
 	{
 		if (_editing is null) return;
 
-		var members = await _local.GetHostMembersAsync(CurrentHostOrgId);
-		var me = _permissions.ResolveMember(members, _auth.CurrentUser, CurrentHostOrgId);
+		var me = _team.Me;
 		if (me is null || !_permissions.CanDeleteDirectly(me))
 		{
-			StatusMessage = "You don't have permission to delete games.";
+			StatusMessage = "You don't have permission to delete games - ask an admin.";
 			return;
 		}
 

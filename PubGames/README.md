@@ -2,10 +2,11 @@
 
 This is a working project scaffold for everything we designed: player entry,
 searchable multi-category game library, a scoreboard where players can be
-added/removed/reordered mid-game without touching anyone's score, a host
+added/removed/reordered mid-game without touching anyone's score, an admin
 game-creation flow (name, custom pricing, scoring type, rules with inline
-images, direct-publish vs approval-request based on permission), and host
-team management (subhosts, permission toggles, promotion to head host,
+pictures shown right in the editor, direct-publish vs approval-request based
+on permission), and admin team management (add/remove moderators by email
+with explanatory emails, permission toggles, promotion to admin,
 approve/deny requests).
 
 ## 1. Open it
@@ -28,8 +29,9 @@ to `<TargetFrameworks>` in `PubGames.csproj`.
 - Local SQLite storage (`Services/LocalDatabaseService.cs`) — offline-first,
   so the app works with no signal at the pub.
 - Permission logic (`Services/PermissionService.cs`) — single source of truth
-  for "can this host member publish/delete directly, or does it need
-  approval".
+  for "can this admin/moderator publish/delete directly, or does it need
+  approval". Team membership lives in the Firestore "team" collection
+  (`Services/TeamService.cs`); `firestore.rules` enforces the same rules.
 - All five screens, wired to their ViewModels via dependency injection.
 - The mid-game player add/remove/reorder logic
   (`ViewModels/ScoreboardViewModel.cs`) — read the comments there, this is
@@ -45,11 +47,11 @@ to `<TargetFrameworks>` in `PubGames.csproj`.
   UI needs `Plugin.InAppBilling` (or the official Play Billing bindings)
   wired in. Never mark a game "owned" from the client alone — always verify
   server-side first, or people can fake unlocks.
-- Push notifications for the head-host approval inbox — right now
+- Push notifications for the admin approval inbox — right now
   `PendingApprovals` only loads on page appear; wire a push notification
-  (Firebase Cloud Messaging is the standard choice on Android) so a head
-  host finds out immediately, not just next time they open the Team tab.
-- Auth/accounts — `CurrentAccountId` / `CurrentUserId` / `CurrentHostOrgId`
+  (Firebase Cloud Messaging is the standard choice on Android) so an
+  admin finds out immediately, not just next time they open the Team tab.
+- Auth/accounts — `CurrentAccountId` / `CurrentUserId` / `CurrentTeamId`
   are hardcoded placeholders scattered through the ViewModels (search for
   `TODO: replace with real`). Wire these to whatever auth provider you pick
   (Firebase Auth is the easiest fit alongside Firestore).
@@ -59,7 +61,7 @@ to `<TargetFrameworks>` in `PubGames.csproj`.
 
 ## 3. Suggested build order
 
-1. Stand up the backend (auth + a `purchases`, `games`, `host_members`,
+1. Stand up the backend (auth + a `purchases`, `games`, `team`,
    `approval_requests` schema matching the models 1:1 makes this fast).
 2. Wire real auth, replace the `Current...Id` placeholders.
 3. Wire `CloudSyncService` against it.

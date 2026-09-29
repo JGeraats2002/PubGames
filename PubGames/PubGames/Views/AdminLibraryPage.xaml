@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
-             x:Class="PubGames.Views.HostLibraryPage"
-             x:DataType="vm:HostLibraryViewModel"
+             x:Class="PubGames.Views.AdminLibraryPage"
+             x:DataType="vm:AdminLibraryViewModel"
              Title="Library">
 
 	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">

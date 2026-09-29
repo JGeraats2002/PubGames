@@ -12,15 +12,15 @@
 			<Label Text="{Binding DisplayName}" FontSize="20" />
 			<Label Text="{Binding Email}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
 
-			<Border IsVisible="{Binding IsAdmin}" BackgroundColor="{StaticResource Accent}"
+			<Border IsVisible="{Binding IsTeamMember}" BackgroundColor="{StaticResource Accent}"
 			        StrokeThickness="0" Padding="10,4" HorizontalOptions="Start" Margin="0,4,0,0">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="6" />
 				</Border.StrokeShape>
-				<Label Text="App administrator" TextColor="White" FontSize="12" />
+				<Label Text="{Binding RoleName}" TextColor="White" FontSize="12" />
 			</Border>
-			<Label IsVisible="{Binding IsAdmin}" FontSize="12" TextColor="{StaticResource TextSecondary}"
-			       Text="You have head-host rights on every team: publish and delete games directly, manage hosts and resolve approvals." />
+			<Label IsVisible="{Binding IsTeamMember}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+			       Text="{Binding RoleDescription}" />
 
 			<Button Text="Sign out" Command="{Binding SignOutCommand}" Margin="0,16,0,0"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"

@@ -5,23 +5,23 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
-/// <summary>The host's own game list: every game including drafts, to open for editing or deleting.</summary>
-public partial class HostLibraryViewModel : ObservableObject
+/// <summary>The admin library: every game including drafts, for admins and moderators to open for editing or deleting.</summary>
+public partial class AdminLibraryViewModel : ObservableObject
 {
 	private readonly ILocalDatabaseService _local;
 	private readonly ICloudSyncService _cloud;
-	private readonly IAuthService _auth;
+	private readonly ITeamService _team;
 
 	public ObservableCollection<PubGame> Games { get; } = new();
 
 	[ObservableProperty]
 	private string syncMessage = string.Empty;
 
-	public HostLibraryViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IAuthService auth)
+	public AdminLibraryViewModel(ILocalDatabaseService local, ICloudSyncService cloud, ITeamService team)
 	{
 		_local = local;
 		_cloud = cloud;
-		_auth = auth;
+		_team = team;
 	}
 
 	public async Task LoadAsync()
@@ -30,8 +30,8 @@ public partial class HostLibraryViewModel : ObservableObject
 
 		try
 		{
-			// Only admins may read drafts from the cloud; other hosts see the public library plus their own local drafts.
-			if (_auth.CurrentUser?.IsAdmin == true)
+			// Only team members may read drafts and pending games from the cloud (see firestore.rules).
+			if (_team.Me is not null)
 				await _cloud.PullAllGamesAsync();
 			else
 				await _cloud.PullPublishedGamesAsync();

@@ -14,13 +14,13 @@
 		              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
 		              Route="players" />
 
-		<!-- Hidden for regular players; visible to app admins and host team members. -->
-		<Tab x:Name="HostTab" Title="Host" Route="host">
+		<!-- Hidden for regular players; visible to admins and moderators (Team: admins only). -->
+		<Tab x:Name="AdminTab" Title="Admin" Route="admin">
 			<ShellContent Title="Library"
-			              ContentTemplate="{DataTemplate views:HostLibraryPage}"
+			              ContentTemplate="{DataTemplate views:AdminLibraryPage}"
 			              Route="library" />
-			<ShellContent Title="Team"
-			              ContentTemplate="{DataTemplate views:HostTeamPage}"
+			<ShellContent x:Name="TeamContent" Title="Team"
+			              ContentTemplate="{DataTemplate views:AdminTeamPage}"
 			              Route="team" />
 		</Tab>
 

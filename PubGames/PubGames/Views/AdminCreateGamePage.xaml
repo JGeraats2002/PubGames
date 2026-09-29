@@ -3,8 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
-             x:Class="PubGames.Views.HostCreateGamePage"
-             x:DataType="vm:HostCreateGameViewModel"
+             x:Class="PubGames.Views.AdminCreateGamePage"
+             x:DataType="vm:AdminCreateGameViewModel"
              Title="{Binding PageTitle}">
 
 	<ScrollView>
@@ -40,13 +40,36 @@
 			<Label Text="Scoring type" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
 			<Picker ItemsSource="{Binding ScoringTypeOptions}" SelectedItem="{Binding ScoringType}" />
 
+			<!-- The rules as players will see them: text boxes with the pictures shown in between. -->
 			<Label Text="How to play" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Editor x:Name="RulesEditor" Placeholder="Explain the rules..." Text="{Binding RulesText}" AutoSize="TextChanges" MinimumHeightRequest="120" />
-			<Button Text="Insert image into rules" Clicked="OnInsertRulesImageClicked"
+			<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding RulesBlocks}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="models:EditableRulesBlock">
+						<Grid>
+							<Editor Text="{Binding Text}" IsVisible="{Binding IsText}" Placeholder="Explain the rules..."
+							        AutoSize="TextChanges" MinimumHeightRequest="60" Focused="OnRulesEditorFocused" />
+							<Grid IsVisible="{Binding IsImage}">
+								<Border StrokeThickness="0">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="8" />
+									</Border.StrokeShape>
+									<Image Source="{Binding ImageRef, Converter={StaticResource ImageRefConverter}}"
+									       Aspect="AspectFit" HorizontalOptions="Fill" MaximumHeightRequest="320" />
+								</Border>
+								<Button Text="✕" Clicked="OnRemoveRulesImageClicked"
+								        HorizontalOptions="End" VerticalOptions="Start" Margin="6"
+								        WidthRequest="36" HeightRequest="36" Padding="0" CornerRadius="18" FontSize="14"
+								        BackgroundColor="{StaticResource Danger}" TextColor="White" />
+							</Grid>
+						</Grid>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+			<Button Text="Add picture here" Clicked="OnInsertRulesImageClicked"
 			        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Label Text="The image goes where your cursor is, as ![image](...). Players see the picture there."
+			<Label Text="Tap in the text where the picture should go, then tap Add picture here. You see it right away, just like players will. Tap ✕ to remove a picture."
 			       FontSize="11" TextColor="{StaticResource TextSecondary}" />
 			<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{StaticResource Primary}" />
 

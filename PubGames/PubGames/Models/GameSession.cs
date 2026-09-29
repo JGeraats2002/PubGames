@@ -15,7 +15,7 @@ public class GameSession
 	[Indexed]
 	public string GameId { get; set; } = string.Empty;
 
-	/// <summary>The account that hosted/played this session (for "my history").</summary>
+	/// <summary>The account that started/played this session (for "my history").</summary>
 	public string AccountId { get; set; } = string.Empty;
 
 	public DateTime StartedAt { get; set; } = DateTime.UtcNow;

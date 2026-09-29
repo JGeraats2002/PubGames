@@ -30,22 +30,31 @@ public interface ICloudSyncService
 	/// </summary>
 	Task PullPublishedGamesAsync();
 
-	/// <summary>Admins only: downloads every game including drafts and deleted ones, for the host library.</summary>
+	/// <summary>Admins and moderators only: downloads every game including drafts and deleted ones, for the admin library.</summary>
 	Task PullAllGamesAsync();
 
+	/// <summary>One game straight from the cloud (null if it doesn't exist), also saved locally.</summary>
+	Task<PubGame?> PullGameAsync(string gameId);
+
+	/// <summary>Files the request in the cloud so every admin sees it. Throws when offline.</summary>
 	Task SubmitApprovalRequestAsync(ApprovalRequest request);
-	Task ResolveApprovalRequestAsync(string requestId, bool approved, string resolvedByUserId);
+
+	/// <summary>Admins only: the team's open requests, refreshed into local storage. Throws when offline.</summary>
+	Task<List<ApprovalRequest>> PullPendingApprovalsAsync(string teamId);
+
+	/// <summary>Writes the request's new status (set by the caller) to the cloud, then locally.</summary>
+	Task ResolveApprovalRequestAsync(ApprovalRequest request);
 }
 
 /// <summary>
-/// Placeholder implementation. Replace the bodies below with real HTTP calls
-/// (or Firebase SDK calls) to your backend once it exists. Kept as a stub so
-/// the rest of the app - and the offline-first local flow - works and is
-/// testable before the backend is built.
+/// Firestore-backed sync for games and approval requests. Account data,
+/// sessions and purchases are still stubs (see the TODOs) until those get
+/// their own collections and rules.
 /// </summary>
 public class CloudSyncService : ICloudSyncService
 {
 	private const string GamesCollection = "games";
+	private const string ApprovalsCollection = "approvals";
 
 	private readonly ILocalDatabaseService _local;
 	private readonly FirestoreClient _firestore;
@@ -67,7 +76,7 @@ public class CloudSyncService : ICloudSyncService
 			["scoringType"] = game.ScoringType.ToString(),
 			["isPaid"] = game.IsPaid,
 			["price"] = game.Price,
-			["hostOrgId"] = game.HostOrgId,
+			["teamId"] = game.TeamId,
 			["createdByUserId"] = game.CreatedByUserId,
 			["status"] = game.Status.ToString(),
 			["createdAt"] = game.CreatedAt,
@@ -98,6 +107,15 @@ public class CloudSyncService : ICloudSyncService
 			await _local.SaveGameAsync(game!);
 	}
 
+	public async Task<PubGame?> PullGameAsync(string gameId)
+	{
+		var doc = await _firestore.GetAsync(GamesCollection, gameId);
+		var game = doc is null ? null : ToGame(doc);
+		if (game is not null)
+			await _local.SaveGameAsync(game);
+		return game;
+	}
+
 	private static PubGame? ToGame(Dictionary<string, object?> f)
 	{
 		if (f.GetValueOrDefault("id") is not string id) return null;
@@ -111,7 +129,8 @@ public class CloudSyncService : ICloudSyncService
 			ScoringType = Enum.TryParse<ScoringType>(f.GetValueOrDefault("scoringType") as string, out var st) ? st : ScoringType.Custom,
 			IsPaid = f.GetValueOrDefault("isPaid") as bool? ?? false,
 			Price = Convert.ToDecimal(f.GetValueOrDefault("price") ?? 0d),
-			HostOrgId = f.GetValueOrDefault("hostOrgId") as string ?? string.Empty,
+			// Games saved before the host -> admin rename have "hostOrgId" instead.
+			TeamId = f.GetValueOrDefault("teamId") as string ?? f.GetValueOrDefault("hostOrgId") as string ?? string.Empty,
 			CreatedByUserId = f.GetValueOrDefault("createdByUserId") as string ?? string.Empty,
 			Status = Enum.TryParse<GameStatus>(f.GetValueOrDefault("status") as string, out var s) ? s : GameStatus.Draft,
 			CreatedAt = f.GetValueOrDefault("createdAt") as DateTime? ?? DateTime.UtcNow,
@@ -141,18 +160,73 @@ public class CloudSyncService : ICloudSyncService
 		return Task.FromResult(false);
 	}
 
-	public Task SubmitApprovalRequestAsync(ApprovalRequest request)
+	public async Task SubmitApprovalRequestAsync(ApprovalRequest request)
 	{
-		// TODO: POST the request; backend should push a notification to every
-		// head host on the org (the "Sanne wants to delete Kings cup" card).
-		return _local.SaveApprovalRequestAsync(request);
+		// TODO: push a notification to every admin on the team (the "Sanne wants
+		// to delete Kings cup" card); for now they see it when opening the Team tab.
+		await SaveApprovalAsync(request);
+		await _local.SaveApprovalRequestAsync(request);
 	}
 
-	public Task ResolveApprovalRequestAsync(string requestId, bool approved, string resolvedByUserId)
+	public async Task<List<ApprovalRequest>> PullPendingApprovalsAsync(string teamId)
 	{
-		// TODO: PATCH the request status server-side, and if approved, apply
-		// the underlying action (publish or delete the game) there too, so
-		// it's consistent even if this device goes offline right after.
-		return Task.CompletedTask;
+		var docs = await _firestore.WhereEqualAsync(ApprovalsCollection, "status", nameof(ApprovalRequestStatus.Pending));
+		var pending = docs.Select(ToApproval).Where(r => r is not null && r.TeamId == teamId).Select(r => r!).ToList();
+
+		// Requests another admin already resolved drop out of the local cache.
+		var pendingIds = pending.Select(r => r.Id).ToHashSet();
+		foreach (var stale in (await _local.GetPendingApprovalsAsync(teamId)).Where(r => !pendingIds.Contains(r.Id)))
+		{
+			stale.Status = ApprovalRequestStatus.Denied;
+			await _local.SaveApprovalRequestAsync(stale);
+		}
+		foreach (var request in pending)
+			await _local.SaveApprovalRequestAsync(request);
+
+		return pending;
+	}
+
+	public async Task ResolveApprovalRequestAsync(ApprovalRequest request)
+	{
+		await SaveApprovalAsync(request);
+		await _local.SaveApprovalRequestAsync(request);
+	}
+
+	private Task SaveApprovalAsync(ApprovalRequest r) =>
+		_firestore.SetAsync(ApprovalsCollection, r.Id, new Dictionary<string, object?>
+		{
+			["id"] = r.Id,
+			["gameId"] = r.GameId,
+			["teamId"] = r.TeamId,
+			["gameName"] = r.GameName,
+			["type"] = r.Type.ToString(),
+			["requestedByUserId"] = r.RequestedByUserId,
+			["requestedByEmail"] = r.RequestedByEmail,
+			["requestedByName"] = r.RequestedByName,
+			["status"] = r.Status.ToString(),
+			["resolvedByUserId"] = r.ResolvedByUserId,
+			["requestedAt"] = r.RequestedAt,
+			["resolvedAt"] = r.ResolvedAt
+		});
+
+	private static ApprovalRequest? ToApproval(Dictionary<string, object?> f)
+	{
+		if (f.GetValueOrDefault("id") is not string id) return null;
+
+		return new ApprovalRequest
+		{
+			Id = id,
+			GameId = f.GetValueOrDefault("gameId") as string ?? string.Empty,
+			TeamId = f.GetValueOrDefault("teamId") as string ?? string.Empty,
+			GameName = f.GetValueOrDefault("gameName") as string ?? string.Empty,
+			Type = Enum.TryParse<ApprovalRequestType>(f.GetValueOrDefault("type") as string, out var t) ? t : ApprovalRequestType.PublishGame,
+			RequestedByUserId = f.GetValueOrDefault("requestedByUserId") as string ?? string.Empty,
+			RequestedByEmail = f.GetValueOrDefault("requestedByEmail") as string ?? string.Empty,
+			RequestedByName = f.GetValueOrDefault("requestedByName") as string ?? string.Empty,
+			Status = Enum.TryParse<ApprovalRequestStatus>(f.GetValueOrDefault("status") as string, out var s) ? s : ApprovalRequestStatus.Pending,
+			ResolvedByUserId = f.GetValueOrDefault("resolvedByUserId") as string,
+			RequestedAt = f.GetValueOrDefault("requestedAt") as DateTime? ?? DateTime.UtcNow,
+			ResolvedAt = f.GetValueOrDefault("resolvedAt") as DateTime?
+		};
 	}
 }

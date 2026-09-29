@@ -7,16 +7,14 @@ public partial class App : Application
 {
 	private readonly IServiceProvider _services;
 	private readonly IAuthService _auth;
-	private readonly ILocalDatabaseService _local;
-	private readonly IPermissionService _permissions;
+	private readonly ITeamService _team;
 
-	public App(IServiceProvider services, IAuthService auth, ILocalDatabaseService local, IPermissionService permissions)
+	public App(IServiceProvider services, IAuthService auth, ITeamService team)
 	{
 		InitializeComponent();
 		_services = services;
 		_auth = auth;
-		_local = local;
-		_permissions = permissions;
+		_team = team;
 
 		// Sign-in, restored session and sign-out all land here, so the root page always matches auth state.
 		_auth.SignedInChanged += (_, _) => MainThread.BeginInvokeOnMainThread(async () => await ShowRootPageAsync());
@@ -37,8 +35,7 @@ public partial class App : Application
 			return;
 		}
 
-		var members = await _local.GetHostMembersAsync(AuthService.DefaultHostOrgId);
-		var canHost = _permissions.ResolveMember(members, _auth.CurrentUser, AuthService.DefaultHostOrgId) is not null;
-		window.Page = new AppShell(canHost);
+		var me = await _team.RefreshMyMembershipAsync();
+		window.Page = new AppShell(me);
 	}
 }

@@ -6,4 +6,11 @@
 	<uses-permission android:name="com.android.vending.BILLING" />
 	<!-- Photo picker on Android 12 and older; newer versions need no permission. -->
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+	<!-- Lets the app find a mail app (Gmail) for the moderator emails on Android 11+. -->
+	<queries>
+		<intent>
+			<action android:name="android.intent.action.SENDTO" />
+			<data android:scheme="mailto" />
+		</intent>
+	</queries>
 </manifest>

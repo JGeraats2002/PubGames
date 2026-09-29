@@ -15,7 +15,7 @@ public interface ILocalDatabaseService
 	// Games
 	/// <summary>Published games only - what players can pick from.</summary>
 	Task<List<PubGame>> GetGamesAsync();
-	/// <summary>Every game that isn't deleted, drafts included - the host library.</summary>
+	/// <summary>Every game that isn't deleted, drafts included - the admin library.</summary>
 	Task<List<PubGame>> GetManageableGamesAsync();
 	Task<PubGame?> GetGameAsync(string gameId);
 	Task SaveGameAsync(PubGame game);
@@ -27,11 +27,13 @@ public interface ILocalDatabaseService
 	Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId);
 	Task SaveParticipantAsync(SessionParticipant participant);
 
-	// Host / approvals
-	Task<List<HostMember>> GetHostMembersAsync(string hostOrgId);
-	Task SaveHostMemberAsync(HostMember member);
+	// Team / approvals (cached copies of the cloud, for offline use)
+	Task<List<TeamMember>> GetTeamMembersAsync(string teamId);
+	Task<TeamMember?> GetTeamMemberAsync(string email);
+	Task SaveTeamMemberAsync(TeamMember member);
+	Task DeleteTeamMemberAsync(string email);
 	Task SaveApprovalRequestAsync(ApprovalRequest request);
-	Task<List<ApprovalRequest>> GetPendingApprovalsAsync(string hostOrgId);
+	Task<List<ApprovalRequest>> GetPendingApprovalsAsync(string teamId);
 
 	// Purchases
 	Task<bool> IsGameOwnedAsync(string accountId, string gameId);
@@ -60,8 +62,8 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await _db.CreateTableAsync<GameCategoryLink>();
 		await _db.CreateTableAsync<GameSession>();
 		await _db.CreateTableAsync<SessionParticipant>();
-		await _db.CreateTableAsync<HostOrg>();
-		await _db.CreateTableAsync<HostMember>();
+		await _db.CreateTableAsync<Team>();
+		await _db.CreateTableAsync<TeamMember>();
 		await _db.CreateTableAsync<ApprovalRequest>();
 		await _db.CreateTableAsync<Purchase>();
 
@@ -149,16 +151,28 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await db.InsertOrReplaceAsync(participant);
 	}
 
-	public async Task<List<HostMember>> GetHostMembersAsync(string hostOrgId)
+	public async Task<List<TeamMember>> GetTeamMembersAsync(string teamId)
 	{
 		var db = await DbAsync();
-		return await db.Table<HostMember>().Where(m => m.HostOrgId == hostOrgId).ToListAsync();
+		return await db.Table<TeamMember>().Where(m => m.TeamId == teamId).ToListAsync();
 	}
 
-	public async Task SaveHostMemberAsync(HostMember member)
+	public async Task<TeamMember?> GetTeamMemberAsync(string email)
+	{
+		var db = await DbAsync();
+		return await db.FindAsync<TeamMember>(email);
+	}
+
+	public async Task SaveTeamMemberAsync(TeamMember member)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(member);
+	}
+
+	public async Task DeleteTeamMemberAsync(string email)
+	{
+		var db = await DbAsync();
+		await db.DeleteAsync<TeamMember>(email);
 	}
 
 	public async Task SaveApprovalRequestAsync(ApprovalRequest request)
@@ -167,11 +181,11 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await db.InsertOrReplaceAsync(request);
 	}
 
-	public async Task<List<ApprovalRequest>> GetPendingApprovalsAsync(string hostOrgId)
+	public async Task<List<ApprovalRequest>> GetPendingApprovalsAsync(string teamId)
 	{
 		var db = await DbAsync();
 		return await db.Table<ApprovalRequest>()
-			.Where(r => r.HostOrgId == hostOrgId && r.Status == ApprovalRequestStatus.Pending)
+			.Where(r => r.TeamId == teamId && r.Status == ApprovalRequestStatus.Pending)
 			.ToListAsync();
 	}
 

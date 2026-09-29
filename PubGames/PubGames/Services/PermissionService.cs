@@ -4,42 +4,26 @@ namespace PubGames.Services;
 
 public interface IPermissionService
 {
-	bool CanPublishDirectly(HostMember member);
-	bool CanDeleteDirectly(HostMember member);
-	bool CanManageTeam(HostMember member);
-
-	/// <summary>
-	/// The membership to check permissions against for this user in this org:
-	/// app admins always act as head host, even without a stored row; null means
-	/// the user isn't on this org's team at all.
-	/// </summary>
-	HostMember? ResolveMember(IEnumerable<HostMember> members, AppUser? user, string hostOrgId);
+	bool CanPublishDirectly(TeamMember member);
+	bool CanDeleteDirectly(TeamMember member);
+	bool CanManageTeam(TeamMember member);
 }
 
 /// <summary>
-/// Single source of truth for permission checks, so the same rule is used
-/// whether it's a button being enabled in the UI or a request being resolved
-/// server-side. Head hosts always pass every check; subhosts are gated by
-/// their individual toggles, which a head host can change at any time.
+/// Single source of truth for permission checks in the app, so the same rule
+/// is used wherever a button is enabled or an action is attempted. Mirrors
+/// canAddGames()/canDeleteGames()/isAdmin() in firestore.rules, which enforce
+/// it in the cloud. Admins always pass every check; moderators are gated by
+/// their individual toggles, which an admin can change at any time.
 /// </summary>
 public class PermissionService : IPermissionService
 {
-	public bool CanPublishDirectly(HostMember member) =>
+	public bool CanPublishDirectly(TeamMember member) =>
 		member.HasFullRights || member.CanAddGames;
 
-	public bool CanDeleteDirectly(HostMember member) =>
+	public bool CanDeleteDirectly(TeamMember member) =>
 		member.HasFullRights || member.CanDeleteGames;
 
-	public bool CanManageTeam(HostMember member) =>
+	public bool CanManageTeam(TeamMember member) =>
 		member.HasFullRights;
-
-	public HostMember? ResolveMember(IEnumerable<HostMember> members, AppUser? user, string hostOrgId)
-	{
-		if (user is null) return null;
-
-		if (user.IsAdmin)
-			return new HostMember { UserId = user.Uid, HostOrgId = hostOrgId, DisplayName = user.DisplayName, Role = HostRole.HeadHost };
-
-		return members.FirstOrDefault(m => m.UserId == user.Uid);
-	}
 }

@@ -20,9 +20,10 @@ public static class AuthConfig
 	public const string FirebaseProjectId = "pubgames-92835";
 
 	/// <summary>
-	/// Google accounts that are app administrators. Keep in sync with isAdmin()
-	/// in firestore.rules - the rules are what actually protect the cloud data.
-	/// Admins have full rights in every host org.
+	/// Built-in admins: Google accounts that are always admin and can't be
+	/// removed from inside the app. Keep in sync with isBuiltInAdmin() in
+	/// firestore.rules - the rules are what actually protect the cloud data.
+	/// Further admins and moderators are added by email on the Team page.
 	/// </summary>
 	public static readonly string[] AdminEmails =
 	[

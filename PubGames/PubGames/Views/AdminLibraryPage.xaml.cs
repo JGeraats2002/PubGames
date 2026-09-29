@@ -3,11 +3,11 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
-public partial class HostLibraryPage : ContentPage
+public partial class AdminLibraryPage : ContentPage
 {
-	private readonly HostLibraryViewModel _vm;
+	private readonly AdminLibraryViewModel _vm;
 
-	public HostLibraryPage(HostLibraryViewModel vm)
+	public AdminLibraryPage(AdminLibraryViewModel vm)
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
@@ -21,11 +21,11 @@ public partial class HostLibraryPage : ContentPage
 	}
 
 	private async void OnNewGameClicked(object? sender, EventArgs e) =>
-		await Shell.Current.GoToAsync(nameof(HostCreateGamePage));
+		await Shell.Current.GoToAsync(nameof(AdminCreateGamePage));
 
 	private async void OnGameTapped(object? sender, TappedEventArgs e)
 	{
 		if (e.Parameter is PubGame game)
-			await Shell.Current.GoToAsync(nameof(HostCreateGamePage), new Dictionary<string, object> { ["gameId"] = game.Id });
+			await Shell.Current.GoToAsync(nameof(AdminCreateGamePage), new Dictionary<string, object> { ["gameId"] = game.Id });
 	}
 }

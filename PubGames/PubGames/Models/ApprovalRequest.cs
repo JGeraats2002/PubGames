@@ -17,10 +17,11 @@ public enum ApprovalRequestStatus
 
 /// <summary>
 /// Covers both "publish this new game" and "delete this game" requests from
-/// a subhost who lacks the matching permission. The game itself is not
+/// a moderator who lacks the matching permission. The game itself is not
 /// blocked while pending: a publish-pending game just isn't in the public
 /// library yet, and a delete-pending game stays fully playable with a
-/// warning badge until a head host resolves the request.
+/// warning badge until an admin resolves the request. Stored in the cloud
+/// "approvals" collection so it reaches every admin's phone.
 /// </summary>
 public class ApprovalRequest
 {
@@ -31,11 +32,22 @@ public class ApprovalRequest
 	public string GameId { get; set; } = string.Empty;
 
 	[Indexed]
-	public string HostOrgId { get; set; } = string.Empty;
+	public string TeamId { get; set; } = string.Empty;
+
+	/// <summary>Shown on the admin's approval card so they don't have to look the game up.</summary>
+	public string GameName { get; set; } = string.Empty;
 
 	public ApprovalRequestType Type { get; set; }
 
 	public string RequestedByUserId { get; set; } = string.Empty;
+
+	/// <summary>Checked by firestore.rules: a moderator can only file requests in their own name.</summary>
+	public string RequestedByEmail { get; set; } = string.Empty;
+
+	public string RequestedByName { get; set; } = string.Empty;
+
+	[Ignore]
+	public string Summary => $"{(string.IsNullOrEmpty(RequestedByName) ? RequestedByEmail : RequestedByName)} wants to {(Type == ApprovalRequestType.DeleteGame ? "delete" : "publish")} \"{GameName}\"";
 
 	public ApprovalRequestStatus Status { get; set; } = ApprovalRequestStatus.Pending;
 

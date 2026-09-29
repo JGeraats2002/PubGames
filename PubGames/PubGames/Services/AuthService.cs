@@ -1,11 +1,10 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using PubGames.Models;
-
 namespace PubGames.Services;
 
 /// <summary>The signed-in account. Uid is the Firebase user id and is the account id used everywhere else.</summary>
+/// IsAdmin means a built-in admin from AuthConfig.AdminEmails; team roles come from ITeamService.
 public record AppUser(string Uid, string Email, string DisplayName, bool IsAdmin);
 
 /// <summary>Platform-specific "pick a Google account" step. Returns a Google ID token.</summary>
@@ -45,22 +44,21 @@ public interface IAuthService
 public class AuthService : IAuthService
 {
 	public const string GuestAccountId = "local-account";
-	public const string DefaultHostOrgId = "current-org";
+	/// <summary>Value kept from when teams were called host orgs, so existing games still match.</summary>
+	public const string DefaultTeamId = "current-org";
 
 	private const string RefreshTokenKey = "auth_refresh_token";
 	private const string UserKey = "auth_user";
 
 	private readonly IGoogleSignInProvider _google;
-	private readonly ILocalDatabaseService _local;
 	private readonly HttpClient _http = new();
 
 	private string? _idToken;
 	private DateTime _idTokenExpiresAt;
 
-	public AuthService(IGoogleSignInProvider google, ILocalDatabaseService local)
+	public AuthService(IGoogleSignInProvider google)
 	{
 		_google = google;
-		_local = local;
 	}
 
 	public AppUser? CurrentUser { get; private set; }
@@ -102,7 +100,6 @@ public class AuthService : IAuthService
 			return false;
 		}
 
-		await EnsureAdminMembershipAsync();
 		SignedInChanged?.Invoke(this, EventArgs.Empty);
 		return true;
 	}
@@ -132,7 +129,6 @@ public class AuthService : IAuthService
 		await SecureStorage.Default.SetAsync(RefreshTokenKey, body.RefreshToken);
 		await SecureStorage.Default.SetAsync(UserKey, JsonSerializer.Serialize(CurrentUser));
 
-		await EnsureAdminMembershipAsync();
 		SignedInChanged?.Invoke(this, EventArgs.Empty);
 	}
 
@@ -169,23 +165,6 @@ public class AuthService : IAuthService
 		SetIdToken(body.IdToken, body.ExpiresIn);
 		if (body.RefreshToken != refreshToken)
 			await SecureStorage.Default.SetAsync(RefreshTokenKey, body.RefreshToken);
-	}
-
-	/// <summary>Admins get a head-host row in the default org so they show up on the Team page.</summary>
-	private async Task EnsureAdminMembershipAsync()
-	{
-		if (CurrentUser is not { IsAdmin: true } user) return;
-
-		var members = await _local.GetHostMembersAsync(DefaultHostOrgId);
-		var me = members.FirstOrDefault(m => m.UserId == user.Uid);
-		if (me is { Role: HostRole.HeadHost } && me.DisplayName == user.DisplayName) return;
-
-		me ??= new HostMember { HostOrgId = DefaultHostOrgId, UserId = user.Uid };
-		me.Role = HostRole.HeadHost;
-		me.CanAddGames = true;
-		me.CanDeleteGames = true;
-		me.DisplayName = user.DisplayName;
-		await _local.SaveHostMemberAsync(me);
 	}
 
 	private void ClearSession()

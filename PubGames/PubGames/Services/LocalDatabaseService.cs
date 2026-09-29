@@ -8,6 +8,7 @@ public interface ILocalDatabaseService
 	Task InitAsync();
 
 	// Players
+	/// <summary>The account's saved players (not one-off players added to a single game), alphabetical.</summary>
 	Task<List<Player>> GetPlayersAsync(string accountId);
 	Task<List<Player>> GetPlayersByIdsAsync(IEnumerable<string> playerIds);
 	Task SavePlayerAsync(Player player);
@@ -91,7 +92,10 @@ public class LocalDatabaseService : ILocalDatabaseService
 	public async Task<List<Player>> GetPlayersAsync(string accountId)
 	{
 		var db = await DbAsync();
-		return await db.Table<Player>().Where(p => p.OwnerAccountId == accountId).ToListAsync();
+		return await db.Table<Player>()
+			.Where(p => p.OwnerAccountId == accountId && !p.IsTemporary)
+			.OrderBy(p => p.Name)
+			.ToListAsync();
 	}
 
 	public async Task<List<Player>> GetPlayersByIdsAsync(IEnumerable<string> playerIds)
@@ -192,10 +196,18 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.ToListAsync();
 	}
 
+	/// <summary>
+	/// Not InsertOrReplace: SessionParticipant has an auto-increment id, and
+	/// InsertOrReplace writes the unset id (0) as-is, so every new player would
+	/// overwrite the previous one. Insert assigns a fresh id; later saves update it.
+	/// </summary>
 	public async Task SaveParticipantAsync(SessionParticipant participant)
 	{
 		var db = await DbAsync();
-		await db.InsertOrReplaceAsync(participant);
+		if (participant.Id == 0)
+			await db.InsertAsync(participant);
+		else
+			await db.UpdateAsync(participant);
 	}
 
 	public async Task<List<TeamMember>> GetTeamMembersAsync(string teamId)

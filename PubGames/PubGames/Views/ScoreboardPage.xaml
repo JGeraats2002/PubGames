@@ -6,32 +6,18 @@
              x:DataType="vm:ScoreboardViewModel"
              Title="{Binding GameName}">
 
-	<VerticalStackLayout Padding="20" Spacing="10">
+	<Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
 
-		<!-- Drag-to-reorder in MAUI: CollectionView doesn't do free drag-reorder
-		     out of the box. For production, either use a community drag-drop
-		     behavior package, or long-press + up/down arrow buttons per row
-		     that call vm.ReorderAsync(index, index±1) - simplest to ship first. -->
-		<CollectionView ItemsSource="{Binding Rows}">
-			<CollectionView.ItemTemplate>
-				<DataTemplate x:DataType="vm:ParticipantRow">
-					<Grid Padding="10" ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
-						<Frame Grid.Column="0" WidthRequest="30" HeightRequest="30" CornerRadius="15" Padding="0"
-						       BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
-							<Label Text="{Binding Player.AvatarInitials}" FontSize="11" HorizontalOptions="Center" VerticalOptions="Center" />
-						</Frame>
-						<Label Grid.Column="1" Text="{Binding Player.Name}" VerticalOptions="Center" />
-						<Label Grid.Column="2" Text="{Binding Score}" VerticalOptions="Center" />
-						<Button Grid.Column="3" Text="+1" Clicked="OnIncrementClicked" WidthRequest="48" Padding="0" FontSize="12" />
-						<Button Grid.Column="4" Text="✕" Clicked="OnRemoveClicked" WidthRequest="40" Padding="0"
-						        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" />
-					</Grid>
-				</DataTemplate>
-			</CollectionView.ItemTemplate>
-		</CollectionView>
+		<Label x:Name="Explanation" Text="{Binding Rules.Explanation}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 
-		<Button Text="Add player" Clicked="OnAddPlayerClicked" />
+		<!-- One card per player, all on screen at once: filled in by ScoreboardPage.xaml.cs,
+		     which gives every card an exact height so they fit the screen (two columns above 8 players). -->
+		<Grid Grid.Row="1" x:Name="Board" RowSpacing="8" ColumnSpacing="8" VerticalOptions="Start" />
 
-	</VerticalStackLayout>
+		<Button Grid.Row="2" x:Name="ChangePlayersButton" Text="Change players" Clicked="OnChangePlayersClicked"
+		        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+		        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+
+	</Grid>
 
 </ContentPage>

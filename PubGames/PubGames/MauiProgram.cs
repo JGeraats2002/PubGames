@@ -39,6 +39,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<GameLibraryViewModel>();
 		builder.Services.AddTransient<GameRulesViewModel>();
 		builder.Services.AddTransient<ScoreboardViewModel>();
+		builder.Services.AddTransient<SessionPlayersViewModel>();
 		builder.Services.AddTransient<AdminLibraryViewModel>();
 		builder.Services.AddTransient<AdminCreateGameViewModel>();
 		builder.Services.AddTransient<AdminTeamViewModel>();
@@ -55,6 +56,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<GameLibraryPage>();
 		builder.Services.AddTransient<GameRulesPage>();
 		builder.Services.AddTransient<ScoreboardPage>();
+		builder.Services.AddTransient<SessionPlayersPage>();
 		builder.Services.AddTransient<AdminLibraryPage>();
 		builder.Services.AddTransient<AdminCreateGamePage>();
 		builder.Services.AddTransient<AdminTeamPage>();

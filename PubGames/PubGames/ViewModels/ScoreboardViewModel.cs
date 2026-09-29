@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using PubGames.Models;
 using PubGames.Services;
 
@@ -15,10 +14,25 @@ public partial class ParticipantRow : ObservableObject
 	public int Score => Participant.Score;
 	public bool IsActive => Participant.IsActive;
 
-	/// <summary>Call after mutating Participant.Score so bound UI refreshes.</summary>
-	public void NotifyScoreChanged() => OnPropertyChanged(nameof(Score));
+	/// <summary>1-based seat number as shown on screen.</summary>
+	public int Seat => Participant.Position + 1;
+
+	[ObservableProperty]
+	private bool isLeader;
+
+	/// <summary>Call after mutating Participant.Score or Position so bound UI refreshes.</summary>
+	public void NotifyChanged()
+	{
+		OnPropertyChanged(nameof(Score));
+		OnPropertyChanged(nameof(Seat));
+	}
 }
 
+/// <summary>
+/// Step 4 of a game night: the live scoreboard. Every active player is on
+/// screen at once, in seat order; players can be changed at any time via
+/// "Change players" (SessionPlayersPage) without touching anyone's score.
+/// </summary>
 public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 {
 	private readonly ILocalDatabaseService _local;
@@ -30,6 +44,12 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 
 	[ObservableProperty]
 	private string gameName = "Score";
+
+	[ObservableProperty]
+	private ScoringRules rules = ScoringRules.For(ScoringType.PointTally);
+
+	/// <summary>Raised after the players were (re)loaded, so the page can rebuild its layout.</summary>
+	public event EventHandler? RowsReloaded;
 
 	public ScoreboardViewModel(ILocalDatabaseService local)
 	{
@@ -50,8 +70,17 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 
 		var game = await _local.GetGameAsync(Session.GameId);
 		GameName = game?.Name ?? "Score";
+		Rules = ScoringRules.For(game?.ScoringType ?? ScoringType.Custom);
 
-		var participants = (await _local.GetParticipantsAsync(sessionId)).Where(p => p.IsActive).ToList();
+		await ReloadPlayersAsync();
+	}
+
+	/// <summary>Re-reads who's playing, e.g. after coming back from "Change players".</summary>
+	public async Task ReloadPlayersAsync()
+	{
+		if (Session is null) return;
+
+		var participants = (await _local.GetParticipantsAsync(Session.Id)).Where(p => p.IsActive).ToList();
 		var players = (await _local.GetPlayersByIdsAsync(participants.Select(p => p.PlayerId)))
 			.ToDictionary(p => p.Id);
 
@@ -62,73 +91,35 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 				?? new Player { Id = participant.PlayerId, Name = "Unknown player" };
 			Rows.Add(new ParticipantRow { Participant = participant, Player = player });
 		}
+		UpdateLeaders();
+		RowsReloaded?.Invoke(this, EventArgs.Empty);
 	}
 
 	/// <summary>
 	/// Adjusting one player's score never touches anyone else's row - each
-	/// SessionParticipant is stored and updated independently. Bind +/- score
-	/// buttons to this with the row as CommandParameter and a fixed delta
-	/// (e.g. two buttons: one calling AdjustScore(row, 1), one AdjustScore(row, -1)).
+	/// SessionParticipant is stored and updated independently.
 	/// </summary>
 	public async Task AdjustScoreAsync(ParticipantRow row, int delta)
 	{
+		if (delta == 0) return;
 		row.Participant.Score += delta;
 		await _local.SaveParticipantAsync(row.Participant);
-		row.NotifyScoreChanged();
+		row.NotifyChanged();
+		UpdateLeaders();
 	}
 
-	/// <summary>
-	/// Removing a player mid-game: flip IsActive off, leave Score exactly as
-	/// it is. Their row disappears from active play but their score stays on
-	/// record for the session history.
-	/// </summary>
-	[RelayCommand]
-	private async Task RemovePlayerAsync(ParticipantRow row)
+	/// <summary>Highlights whoever is winning right now (nobody while all scores are equal).</summary>
+	private void UpdateLeaders()
 	{
-		row.Participant.IsActive = false;
-		await _local.SaveParticipantAsync(row.Participant);
-		Rows.Remove(row);
-	}
-
-	/// <summary>
-	/// Adding a player mid-game: new SessionParticipant row starting at 0,
-	/// placed at the end of the current seat order. Everyone else's Score
-	/// and Position are untouched.
-	/// </summary>
-	[RelayCommand]
-	private async Task AddPlayerAsync(Player player)
-	{
-		if (Session is null) return;
-
-		var participant = new SessionParticipant
+		if (Rules.HighestWins is not { } highestWins || Rows.Count < 2)
 		{
-			SessionId = Session.Id,
-			PlayerId = player.Id,
-			Score = 0,
-			Position = Rows.Count,
-			IsActive = true
-		};
-
-		await _local.SaveParticipantAsync(participant);
-		Rows.Add(new ParticipantRow { Participant = participant, Player = player });
-	}
-
-	/// <summary>
-	/// Drag-to-reorder: only rewrites the Position field for the rows that
-	/// moved. Scores are never read or written by this method.
-	/// </summary>
-	public async Task ReorderAsync(int fromIndex, int toIndex)
-	{
-		if (fromIndex == toIndex) return;
-
-		var moved = Rows[fromIndex];
-		Rows.RemoveAt(fromIndex);
-		Rows.Insert(toIndex, moved);
-
-		for (var i = 0; i < Rows.Count; i++)
-		{
-			Rows[i].Participant.Position = i;
-			await _local.SaveParticipantAsync(Rows[i].Participant);
+			foreach (var row in Rows) row.IsLeader = false;
+			return;
 		}
+
+		var best = highestWins ? Rows.Max(r => r.Score) : Rows.Min(r => r.Score);
+		var allEqual = Rows.All(r => r.Score == best);
+		foreach (var row in Rows)
+			row.IsLeader = !allEqual && row.Score == best;
 	}
 }

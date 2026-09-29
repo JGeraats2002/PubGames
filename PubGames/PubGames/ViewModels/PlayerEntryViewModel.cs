@@ -51,7 +51,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 		{
 			OwnerAccountId = CurrentAccountId,
 			Name = NewPlayerName.Trim(),
-			AvatarInitials = InitialsFrom(NewPlayerName)
+			AvatarInitials = Player.InitialsFrom(NewPlayerName)
 		};
 
 		await _local.SavePlayerAsync(player);
@@ -62,12 +62,4 @@ public partial class PlayerEntryViewModel : ObservableObject
 
 	[RelayCommand]
 	private void RemoveSelectedPlayer(Player player) => SelectedPlayers.Remove(player);
-
-	private static string InitialsFrom(string name)
-	{
-		var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-		return parts.Length >= 2
-			? $"{parts[0][0]}{parts[1][0]}".ToUpperInvariant()
-			: name.Length >= 2 ? name[..2].ToUpperInvariant() : name.ToUpperInvariant();
-	}
 }

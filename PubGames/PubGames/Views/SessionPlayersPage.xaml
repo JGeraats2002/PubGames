@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.SessionPlayersPage"
+             x:DataType="vm:SessionPlayersViewModel"
+             Title="Change players">
+
+	<Grid RowDefinitions="*,Auto" Padding="16" RowSpacing="12">
+
+		<ScrollView>
+			<VerticalStackLayout Spacing="14">
+
+				<Label Text="Changes here never affect anyone's score. Seat order is the order on the scoreboard."
+				       FontSize="12" TextColor="{StaticResource TextSecondary}" />
+
+				<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+
+				<!-- Playing now, in seat order. -->
+				<Label Text="Playing now" FontSize="16" />
+				<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Rows}">
+					<BindableLayout.EmptyView>
+						<Label Text="Nobody is playing yet - add players below." TextColor="{StaticResource TextSecondary}" />
+					</BindableLayout.EmptyView>
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="vm:ParticipantRow">
+							<Border Padding="10,6" Stroke="{StaticResource Border}">
+								<Border.StrokeShape>
+									<RoundRectangle CornerRadius="8" />
+								</Border.StrokeShape>
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
+									<Label Text="{Binding Seat}" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+									<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+										<Label Text="{Binding Player.Name}" LineBreakMode="TailTruncation" />
+										<Label Text="{Binding Score, StringFormat='Score: {0}'}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+									</VerticalStackLayout>
+									<Button Grid.Column="2" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="38" HeightRequest="38" Padding="0"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									<Button Grid.Column="3" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="38" HeightRequest="38" Padding="0"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									<Button Grid.Column="4" Text="Replace" Clicked="OnReplaceClicked" HeightRequest="38" Padding="8,0" FontSize="12"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									<Button Grid.Column="5" Text="✕" Clicked="OnRemoveClicked" WidthRequest="38" HeightRequest="38" Padding="0"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+
+				<!-- Saved players who aren't playing. -->
+				<Label Text="Add a saved player" FontSize="16" Margin="0,8,0,0" IsVisible="{Binding HasAvailablePlayers}" />
+				<FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding AvailablePlayers}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="models:Player">
+							<Border Margin="0,0,8,8" Padding="12,6" Stroke="{StaticResource Border}">
+								<Border.StrokeShape>
+									<RoundRectangle CornerRadius="16" />
+								</Border.StrokeShape>
+								<Border.GestureRecognizers>
+									<TapGestureRecognizer Tapped="OnSavedPlayerTapped" CommandParameter="{Binding .}" />
+								</Border.GestureRecognizers>
+								<Label Text="{Binding Name, StringFormat='+ {0}'}" FontSize="13" />
+							</Border>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</FlexLayout>
+
+				<!-- Someone who isn't a saved player yet. -->
+				<Label Text="Add a new player" FontSize="16" Margin="0,8,0,0" />
+				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+					<Entry Placeholder="Name" Text="{Binding NewPlayerName}" />
+					<Button Grid.Column="1" Text="Add" Clicked="OnAddNewClicked" />
+				</Grid>
+				<HorizontalStackLayout Spacing="6">
+					<CheckBox IsChecked="{Binding SaveNewPlayer}" VerticalOptions="Center" />
+					<Label Text="Save to my players, for next time" VerticalOptions="Center" FontSize="13" />
+				</HorizontalStackLayout>
+
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<Button Grid.Row="1" Text="Back to the scoreboard" Clicked="OnDoneClicked" />
+
+	</Grid>
+
+</ContentPage>

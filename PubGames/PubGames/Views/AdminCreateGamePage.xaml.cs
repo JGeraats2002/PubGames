@@ -14,15 +14,43 @@ public partial class AdminCreateGamePage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
-		_vm.Finished += async (_, _) => await Shell.Current.GoToAsync("..");
+		_vm.Finished += async (_, message) =>
+		{
+			if (message is not null)
+				await DisplayAlertAsync("Done", message, "OK");
+			await Shell.Current.GoToAsync("..");
+		};
+	}
+
+	protected override async void OnAppearing()
+	{
+		base.OnAppearing();
+		await _vm.LoadCategoriesAsync();
+	}
+
+	private void OnCategoryTapped(object? sender, TappedEventArgs e)
+	{
+		if (e.Parameter is CategoryChoice choice)
+			choice.IsSelected = !choice.IsSelected;
 	}
 
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
-		var confirmed = await DisplayAlertAsync("Delete game?",
-			$"\"{_vm.Name}\" will disappear from every player's library.", "Delete", "Cancel");
+		var confirmed = _vm.IsModerator
+			? await DisplayAlertAsync("Request deletion?",
+				$"An admin reviews your request. \"{_vm.Name}\" stays in every player's library until an admin approves.", "Request deletion", "Cancel")
+			: await DisplayAlertAsync("Delete game?",
+				$"\"{_vm.Name}\" will disappear from every player's library.", "Delete", "Cancel");
 		if (confirmed)
 			await _vm.DeleteAsync();
+	}
+
+	private async void OnWithdrawClicked(object? sender, EventArgs e)
+	{
+		var confirmed = await DisplayAlertAsync("Withdraw request?",
+			"Your request is taken back before an admin reviews it. Nothing changes for players.", "Withdraw", "Cancel");
+		if (confirmed)
+			await _vm.WithdrawAsync();
 	}
 
 	private void OnRulesEditorFocused(object? sender, FocusEventArgs e) =>

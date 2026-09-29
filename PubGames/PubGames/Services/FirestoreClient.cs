@@ -128,8 +128,16 @@ public class FirestoreClient
 		byte[] bytes => new JsonObject { ["bytesValue"] = Convert.ToBase64String(bytes) },
 		DateTime d => new JsonObject { ["timestampValue"] = DateTime.SpecifyKind(d, DateTimeKind.Utc).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture) },
 		IDictionary<string, object?> map => new JsonObject { ["mapValue"] = new JsonObject { ["fields"] = ToFields(map) } },
+		IEnumerable<string> list => new JsonObject
+		{
+			["arrayValue"] = new JsonObject { ["values"] = new JsonArray(list.Select(item => (JsonNode)ToValue(item)).ToArray()) }
+		},
 		_ => throw new ArgumentException($"Unsupported Firestore field type {value.GetType().Name}")
 	};
+
+	/// <summary>An array field of strings (e.g. a game's category ids); empty when missing.</summary>
+	public static List<string> AsStringList(object? value) =>
+		value is List<object?> items ? items.OfType<string>().ToList() : [];
 
 	private static object? FromValue(JsonNode value)
 	{
@@ -141,6 +149,9 @@ public class FirestoreClient
 		if (obj.TryGetPropertyValue("bytesValue", out var by)) return Convert.FromBase64String(by!.GetValue<string>());
 		if (obj.TryGetPropertyValue("timestampValue", out var t))
 			return DateTime.Parse(t!.GetValue<string>(), CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
+		if (obj.TryGetPropertyValue("arrayValue", out var a))
+			// An empty array comes back without "values".
+			return a?["values"]?.AsArray().Select(v => FromValue(v!)).ToList() ?? new List<object?>();
 		return null;
 	}
 }

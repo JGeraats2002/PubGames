@@ -18,12 +18,11 @@ public enum TeamRole
 }
 
 /// <summary>
-/// One person's membership + permissions within a team, keyed by the Google
-/// account email an admin added them with (they may not have signed in yet,
-/// so there's no uid). Mirrors the cloud "team" collection, which is what
-/// firestore.rules check. Deletion/publish rights are checked from here at
-/// request time, not inferred from Role alone, since a moderator's
-/// permissions can be changed at any point by an admin.
+/// One person's membership within a team, keyed by the Google account email
+/// an admin added them with (they may not have signed in yet, so there's no
+/// uid). Mirrors the cloud "team" collection, which is what firestore.rules
+/// check. The role decides everything: admins change games directly,
+/// moderators submit review requests for an admin to approve.
 /// </summary>
 public class TeamMember
 {
@@ -42,12 +41,6 @@ public class TeamMember
 
 	public TeamRole Role { get; set; } = TeamRole.Moderator;
 
-	/// <summary>Moderators default to true; irrelevant once Role == Admin (admins always can).</summary>
-	public bool CanAddGames { get; set; } = true;
-
-	/// <summary>Moderators default to false; irrelevant once Role == Admin (admins always can).</summary>
-	public bool CanDeleteGames { get; set; }
-
 	public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
 	/// <summary>
@@ -57,7 +50,7 @@ public class TeamMember
 	[Ignore]
 	public bool IsBuiltInAdmin { get; set; }
 
-	public bool HasFullRights => Role == TeamRole.Admin;
+	public bool IsAdmin => Role == TeamRole.Admin;
 
 	[Ignore]
 	public string RoleName => Role == TeamRole.Admin ? "Admin" : "Moderator";

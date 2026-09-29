@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.CategoriesPage"
+             x:DataType="vm:CategoriesViewModel"
+             Title="Categories">
+
+	<Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="12">
+
+		<Button Text="{Binding AddButtonText}" Clicked="OnAddClicked" />
+
+		<Label Grid.Row="1" Text="{Binding Explanation}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+
+		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+
+		<CollectionView Grid.Row="3" ItemsSource="{Binding Categories}">
+			<CollectionView.EmptyView>
+				<Label Text="No categories yet." TextColor="{StaticResource TextSecondary}" />
+			</CollectionView.EmptyView>
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="vm:CategoryRow">
+					<Grid ColumnDefinitions="*,Auto" Padding="10">
+						<Grid.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnCategoryTapped" CommandParameter="{Binding .}" />
+						</Grid.GestureRecognizers>
+						<Label Text="{Binding Name}" VerticalOptions="Center" />
+						<Label Grid.Column="1" Text="{Binding CountLabel}" FontSize="12"
+						       TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+					</Grid>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+
+	</Grid>
+
+</ContentPage>

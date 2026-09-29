@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.ReviewRequestsPage"
+             x:DataType="vm:ReviewRequestsViewModel"
+             Title="Requests">
+
+	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">
+
+		<Label Grid.Row="0" Text="Moderators' new games, changes, deletions and new categories - nothing changes for players until you approve. New categories also land here, to add games to."
+		       FontSize="12" TextColor="{StaticResource TextSecondary}" />
+
+		<Label Grid.Row="1" Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+
+		<CollectionView Grid.Row="2" ItemsSource="{Binding Requests}">
+			<CollectionView.EmptyView>
+				<Label Text="No requests waiting for review." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+			</CollectionView.EmptyView>
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="models:ReviewRequest">
+					<Border Margin="0,0,0,8" Padding="12" Stroke="{StaticResource Border}">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<Border.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnRequestTapped" CommandParameter="{Binding .}" />
+						</Border.GestureRecognizers>
+						<Grid ColumnDefinitions="*,Auto">
+							<VerticalStackLayout Spacing="2">
+								<Label Text="{Binding Summary}" />
+								<Label Text="{Binding SubmittedLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+							</VerticalStackLayout>
+							<Label Grid.Column="1" Text="Review ›" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
+						</Grid>
+					</Border>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+
+	</Grid>
+
+</ContentPage>

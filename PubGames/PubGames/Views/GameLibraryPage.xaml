@@ -11,6 +11,37 @@
 
 		<SearchBar Placeholder="Search games" Text="{Binding SearchText}" />
 
+		<!-- Category filter: "All" plus each category that has games. -->
+		<ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+			<HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding CategoryFilters}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="models:CategoryChoice">
+						<Border Padding="14,6" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="16" />
+							</Border.StrokeShape>
+							<Border.Triggers>
+								<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+									<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+									<Setter Property="Stroke" Value="{StaticResource Primary}" />
+								</DataTrigger>
+							</Border.Triggers>
+							<Border.GestureRecognizers>
+								<TapGestureRecognizer Tapped="OnCategoryFilterTapped" CommandParameter="{Binding .}" />
+							</Border.GestureRecognizers>
+							<Label Text="{Binding Category.Name}" FontSize="13">
+								<Label.Triggers>
+									<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+										<Setter Property="TextColor" Value="White" />
+									</DataTrigger>
+								</Label.Triggers>
+							</Label>
+						</Border>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</HorizontalStackLayout>
+		</ScrollView>
+
 		<Label Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
 		<CollectionView ItemsSource="{Binding VisibleGames}">
@@ -32,7 +63,7 @@
 						</Border>
 						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
 							<Label Text="{Binding Name}" />
-							<Label Text="{Binding ScoringType}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+							<Label Text="{Binding CategoryLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 						</VerticalStackLayout>
 						<Label Grid.Column="2" VerticalOptions="Center"
 						       Text="{Binding Price, StringFormat='€{0:0.00}'}"

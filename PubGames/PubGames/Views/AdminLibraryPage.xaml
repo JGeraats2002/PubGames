@@ -9,13 +9,64 @@
 
 	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">
 
-		<Button Grid.Row="0" Text="+ New game" Clicked="OnNewGameClicked" />
+		<Button Grid.Row="0" Text="{Binding NewGameButtonText}" Clicked="OnNewGameClicked" />
 
 		<Label Grid.Row="1" Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
 		<CollectionView Grid.Row="2" ItemsSource="{Binding Games}">
+			<CollectionView.Header>
+				<VerticalStackLayout Spacing="8">
+
+					<!-- Admins: shortcut to the review requests. -->
+					<Border IsVisible="{Binding HasRequestsToReview}" BackgroundColor="{StaticResource Accent}"
+					        StrokeThickness="0" Padding="12,10" Margin="0,0,0,8">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<Border.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnRequestsToReviewTapped" />
+						</Border.GestureRecognizers>
+						<Label Text="{Binding RequestsToReviewText}" TextColor="White" />
+					</Border>
+
+					<!-- Everyone on the team: shortcut to unread messages and review decisions. -->
+					<Border IsVisible="{Binding HasUnreadMessages}" BackgroundColor="{StaticResource Primary}"
+					        StrokeThickness="0" Padding="12,10" Margin="0,0,0,8">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<Border.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnUnreadMessagesTapped" />
+						</Border.GestureRecognizers>
+						<Label Text="{Binding UnreadMessagesText}" TextColor="White" />
+					</Border>
+
+					<!-- Moderators: their requests still waiting for review (decisions go to the Inbox). -->
+					<Label Text="My requests waiting for review" FontSize="16" IsVisible="{Binding HasMyRequests}" />
+					<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding MyRequests}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="models:ReviewRequest">
+								<Border Padding="12,10" Stroke="{StaticResource Border}">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="8" />
+									</Border.StrokeShape>
+									<Border.GestureRecognizers>
+										<TapGestureRecognizer Tapped="OnMyRequestTapped" CommandParameter="{Binding .}" />
+									</Border.GestureRecognizers>
+									<VerticalStackLayout Spacing="2">
+										<Label Text="{Binding Summary}" />
+										<Label Text="{Binding StatusLabel}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+									</VerticalStackLayout>
+								</Border>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+
+					<Label Text="Games" FontSize="16" Margin="0,10,0,0" IsVisible="{Binding HasMyRequests}" />
+				</VerticalStackLayout>
+			</CollectionView.Header>
 			<CollectionView.EmptyView>
-				<Label Text="No games yet. Tap &quot;+ New game&quot; to add the first one."
+				<Label Text="No games yet. Tap the button above to add the first one."
 				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
@@ -36,11 +87,18 @@
 							<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
 								<Label.FormattedText>
 									<FormattedString>
-										<Span Text="{Binding Status}" />
+										<Span Text="{Binding StatusLabel}" />
 										<Span Text=" · " />
 										<Span Text="{Binding ScoringType}" />
 									</FormattedString>
 								</Label.FormattedText>
+							</Label>
+							<Label Text="{Binding CategoryLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}">
+								<Label.Triggers>
+									<DataTrigger TargetType="Label" Binding="{Binding HasNoCategory}" Value="True">
+										<Setter Property="TextColor" Value="{StaticResource Warning}" />
+									</DataTrigger>
+								</Label.Triggers>
 							</Label>
 						</VerticalStackLayout>
 						<Label Grid.Column="2" Text="Edit ›" VerticalOptions="Center" TextColor="{StaticResource Primary}" />

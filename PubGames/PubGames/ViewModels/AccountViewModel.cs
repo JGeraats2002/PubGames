@@ -44,9 +44,8 @@ public partial class AccountViewModel : ObservableObject
 		RoleDescription = me switch
 		{
 			null => string.Empty,
-			{ HasFullRights: true } => "Full rights: publish and delete games directly, manage moderators and resolve approvals.",
-			_ => (me.CanAddGames ? "You can publish games directly" : "Your new games go to an admin for approval")
-				+ (me.CanDeleteGames ? " and delete games." : "; deleting games is up to an admin.")
+			{ IsAdmin: true } => "Full rights: publish, edit and delete games and add categories directly, review moderators' requests and manage the team.",
+			_ => "You propose new games, changes, deletions and new categories as review requests. An admin approves them before players see anything; the decision arrives in your Inbox."
 		};
 	}
 

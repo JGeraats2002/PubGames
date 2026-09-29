@@ -20,27 +20,15 @@ public partial class AdminTeamPage : ContentPage
 		await _vm.LoadAsync();
 	}
 
-	// Toggled also fires when the list is rebuilt; only real changes get saved.
-	private void OnCanAddToggled(object? sender, ToggledEventArgs e)
-	{
-		if (sender is Switch { BindingContext: TeamMember member } && member.CanAddGames != e.Value)
-			_vm.SetCanAddGamesCommand.Execute((member, e.Value));
-	}
-
-	private void OnCanDeleteToggled(object? sender, ToggledEventArgs e)
-	{
-		if (sender is Switch { BindingContext: TeamMember member } && member.CanDeleteGames != e.Value)
-			_vm.SetCanDeleteGamesCommand.Execute((member, e.Value));
-	}
-
-	private async void OnPromoteClicked(object? sender, EventArgs e)
+	private async void OnMakeAdminClicked(object? sender, EventArgs e)
 	{
 		if (sender is not Button { BindingContext: TeamMember member }) return;
 
 		var confirmed = await DisplayAlertAsync("Make admin?",
-			$"{member.Label} gets full rights: publishing, deleting, managing the team and approving requests.", "Make admin", "Cancel");
+			$"{member.Label} gets full rights: publishing, editing and deleting games directly, reviewing requests and managing the team.",
+			"Make admin", "Cancel");
 		if (confirmed)
-			_vm.PromoteToAdminCommand.Execute(member);
+			_vm.MakeAdminCommand.Execute(member);
 	}
 
 	/// <summary>An admin must pick a reason; it's included in the email the person receives.</summary>
@@ -60,17 +48,5 @@ public partial class AdminTeamPage : ContentPage
 		if (string.IsNullOrWhiteSpace(reason) || reason == "Cancel") return;
 
 		await _vm.RemoveMemberAsync(member, reason.Trim());
-	}
-
-	private void OnApproveClicked(object? sender, EventArgs e)
-	{
-		if (sender is Button { BindingContext: ApprovalRequest request })
-			_vm.ResolveApprovalCommand.Execute((request, true));
-	}
-
-	private void OnDenyClicked(object? sender, EventArgs e)
-	{
-		if (sender is Button { BindingContext: ApprovalRequest request })
-			_vm.ResolveApprovalCommand.Execute((request, false));
 	}
 }

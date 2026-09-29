@@ -17,41 +17,11 @@
 				<VerticalStackLayout Spacing="8">
 					<Entry Placeholder="Their Google account email" Text="{Binding NewModeratorEmail}"
 					       Keyboard="Email" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
-					<Grid ColumnDefinitions="*,Auto">
-						<Label Text="Can publish games directly" VerticalOptions="Center" FontSize="12" />
-						<Switch Grid.Column="1" IsToggled="{Binding NewModeratorCanAddGames}" />
-					</Grid>
-					<Grid ColumnDefinitions="*,Auto">
-						<Label Text="Can delete games" VerticalOptions="Center" FontSize="12" />
-						<Switch Grid.Column="1" IsToggled="{Binding NewModeratorCanDeleteGames}" />
-					</Grid>
 					<Button Text="Add moderator" Command="{Binding AddModeratorCommand}" />
-					<Label Text="They get an email listing their permissions and explaining how to add and edit games. They sign in with this Google account to get the Admin tab."
+					<Label Text="Moderators propose new games, changes and deletions; you approve or reject them on the Requests page. They get an email explaining how it works, and sign in with this Google account to get the Admin tab."
 					       FontSize="11" TextColor="{StaticResource TextSecondary}" />
 				</VerticalStackLayout>
 			</Frame>
-
-			<Label Text="Pending approvals" FontSize="16" Margin="0,10,0,0" />
-			<CollectionView ItemsSource="{Binding PendingApprovals}">
-				<CollectionView.EmptyView>
-					<Label Text="Nothing waiting on you." TextColor="{StaticResource TextSecondary}" FontSize="13" />
-				</CollectionView.EmptyView>
-				<CollectionView.ItemTemplate>
-					<DataTemplate x:DataType="models:ApprovalRequest">
-						<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
-							<VerticalStackLayout Spacing="8">
-								<Label Text="{Binding Summary}" />
-								<HorizontalStackLayout Spacing="8">
-									<Button Text="Deny" Clicked="OnDenyClicked"
-									        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
-									        BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button Text="Approve" Clicked="OnApproveClicked" BackgroundColor="{StaticResource Danger}" />
-								</HorizontalStackLayout>
-							</VerticalStackLayout>
-						</Frame>
-					</DataTemplate>
-				</CollectionView.ItemTemplate>
-			</CollectionView>
 
 			<Label Text="Team" FontSize="16" Margin="0,10,0,0" />
 			<CollectionView ItemsSource="{Binding Members}">
@@ -70,18 +40,9 @@
 									</Label.FormattedText>
 								</Label>
 
-								<Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}">
-									<Label Text="Can publish games directly" VerticalOptions="Center" FontSize="12" />
-									<Switch Grid.Column="1" IsToggled="{Binding CanAddGames, Mode=OneWay}" Toggled="OnCanAddToggled" />
-								</Grid>
-								<Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}">
-									<Label Text="Can delete games" VerticalOptions="Center" FontSize="12" />
-									<Switch Grid.Column="1" IsToggled="{Binding CanDeleteGames, Mode=OneWay}" Toggled="OnCanDeleteToggled" />
-								</Grid>
-
 								<HorizontalStackLayout Spacing="8" IsVisible="{Binding IsBuiltInAdmin, Converter={StaticResource InvertedBoolConverter}}">
-									<Button Text="Make admin" Clicked="OnPromoteClicked"
-									        IsVisible="{Binding HasFullRights, Converter={StaticResource InvertedBoolConverter}}"
+									<Button Text="Make admin" Clicked="OnMakeAdminClicked"
+									        IsVisible="{Binding IsAdmin, Converter={StaticResource InvertedBoolConverter}}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
 									<Button Text="Remove" Clicked="OnRemoveClicked"

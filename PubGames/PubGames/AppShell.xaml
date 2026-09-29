@@ -8,17 +8,27 @@
 
 	<!-- Only shown once signed in (App swaps between LoginPage and this shell).
 	     Players is the start of a game night: players → choose game → rules → scoreboard,
-	     all pushed onto this tab's stack (see routes in AppShell.xaml.cs). -->
-	<TabBar>
+	     all pushed onto this tab's stack (see routes in AppShell.xaml.cs).
+	     Absolute routes include the tab bar's route: AppShell.RequestsRoute. -->
+	<TabBar Route="main">
 		<ShellContent Title="Players"
 		              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
 		              Route="players" />
 
-		<!-- Hidden for regular players; visible to admins and moderators (Team: admins only). -->
+		<!-- Hidden for regular players; visible to admins and moderators (Requests and Team: admins only). -->
 		<Tab x:Name="AdminTab" Title="Admin" Route="admin">
 			<ShellContent Title="Library"
 			              ContentTemplate="{DataTemplate views:AdminLibraryPage}"
 			              Route="library" />
+			<ShellContent Title="Categories"
+			              ContentTemplate="{DataTemplate views:CategoriesPage}"
+			              Route="categories" />
+			<ShellContent Title="Inbox"
+			              ContentTemplate="{DataTemplate views:InboxPage}"
+			              Route="inbox" />
+			<ShellContent x:Name="RequestsContent" Title="Requests"
+			              ContentTemplate="{DataTemplate views:ReviewRequestsPage}"
+			              Route="requests" />
 			<ShellContent x:Name="TeamContent" Title="Team"
 			              ContentTemplate="{DataTemplate views:AdminTeamPage}"
 			              Route="team" />

@@ -14,11 +14,15 @@ service cloud.firestore {
       return request.auth.token.email.lower();
     }
 
+    function builtInAdminEmails() {
+      return ['jjh.geraats@gmail.com'];
+    }
+
     // Always admin, can't be removed from inside the app.
     function isBuiltInAdmin() {
       return isSignedIn()
         && request.auth.token.email_verified == true
-        && request.auth.token.email in ['jjh.geraats@gmail.com'];
+        && request.auth.token.email in builtInAdminEmails();
     }
 
     function memberPath() {
@@ -40,37 +44,96 @@ service cloud.firestore {
       return isBuiltInAdmin() || (isTeamMember() && member().role == 'Admin');
     }
 
-    function canAddGames() {
-      return isAdmin() || (isTeamMember() && member().canAddGames == true);
-    }
-
-    function canDeleteGames() {
-      return isAdmin() || (isTeamMember() && member().canDeleteGames == true);
+    // Anyone who works on the library: admins (built-in or added) and moderators.
+    function isOnTeam() {
+      return isAdmin() || isTeamMember();
     }
 
     match /games/{gameId} {
-      // Every signed-in user sees published games; admins and moderators also see drafts, pending and deleted ones.
-      allow read: if isSignedIn() && (resource.data.status == 'Published' || isAdmin() || isTeamMember());
+      // Every signed-in user sees published games; the team also sees drafts and deleted ones.
+      allow read: if isSignedIn() && (resource.data.status == 'Published' || isOnTeam());
 
+      // Only admins change games (directly, or by approving a moderator's review request).
       // The id field must match the document.
-      // - Publish rights: create, edit and publish; marking Deleted also needs delete rights.
-      // - Without publish rights: only new/draft/pending games, and only as "waiting for approval".
-      allow create, update: if request.resource.data.id == gameId && (
-        (canAddGames() && (request.resource.data.status != 'Deleted' || canDeleteGames()))
-        || (isTeamMember()
-            && request.resource.data.status == 'PendingPublishApproval'
-            && (resource == null || resource.data.status in ['Draft', 'PendingPublishApproval']))
-      );
+      allow create, update: if isAdmin() && request.resource.data.id == gameId;
     }
 
-    // Publish/delete requests from moderators without the matching permission.
-    match /approvals/{requestId} {
-      allow read: if isAdmin() || (isTeamMember() && resource.data.requestedByEmail == myEmail());
-      allow create: if isTeamMember()
-        && request.resource.data.id == requestId
-        && request.resource.data.requestedByEmail == myEmail()
-        && request.resource.data.status == 'Pending';
-      allow update: if isAdmin();
+    // Game categories. Everyone reads them (players filter by category); only admins
+    // add them (directly, or by approving a moderator's New category request).
+    match /categories/{categoryId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.id == categoryId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 30;
+      allow delete: if isAdmin();
+    }
+
+    // Things for an admin to review: moderators' proposals (new game, changes to a game,
+    // deletion, new category) and the automatic "add games to category" requests.
+    match /reviewRequests/{requestId} {
+      function isMine(data) {
+        return isOnTeam() && data.submittedByEmail == myEmail();
+      }
+
+      // Admins see all; moderators see their own, including the admin's decision.
+      allow read: if isAdmin() || isMine(resource.data);
+
+      // Submitted in your own name, always as waiting for review. Only admins
+      // create "add games to category" requests (the app does, when a category is added).
+      allow create: if request.resource.data.id == requestId
+        && isMine(request.resource.data)
+        && request.resource.data.status == 'WaitingForReview'
+        && (request.resource.data.type != 'AddGamesToCategory' || isAdmin());
+
+      // Admins record their decision. Moderators may replace their own request while it's still
+      // waiting (or resubmit it after a rejection), but can never mark it approved.
+      allow update: if isAdmin()
+        || (isMine(resource.data)
+            && isMine(request.resource.data)
+            && resource.data.status != 'Approved'
+            && request.resource.data.status == 'WaitingForReview');
+
+      // Moderators withdraw their own request while it's still waiting.
+      allow delete: if isAdmin()
+        || (isMine(resource.data) && resource.data.status == 'WaitingForReview');
+    }
+
+    // Short messages between admins and moderators (the Inbox), including review decisions.
+    // toEmail is a team member's lower-case email, or 'admins' for one message shared by all admins.
+    match /messages/{messageId} {
+      function isRecipient(data) {
+        return data.toEmail == myEmail() || (data.toEmail == 'admins' && isAdmin());
+      }
+
+      function isValidRecipient(to) {
+        return to == 'admins'
+          || to in builtInAdminEmails()
+          || exists(/databases/$(database)/documents/team/$(to));
+      }
+
+      allow read: if isOnTeam() && isRecipient(resource.data);
+
+      // Sent in your own name, to someone on the team, and short.
+      allow create: if isOnTeam()
+        && request.resource.data.id == messageId
+        && request.resource.data.fromEmail == myEmail()
+        && isValidRecipient(request.resource.data.toEmail)
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.isRead == false
+        // Only admins send review decisions.
+        && (request.resource.data.kind == 'Message' || isAdmin());
+
+      // The recipient can only mark it read.
+      allow update: if isOnTeam()
+        && isRecipient(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+
+      // The recipient decides whether to keep or delete it.
+      allow delete: if isOnTeam() && isRecipient(resource.data);
     }
 
     // Team members, one document per lower-case email. Everyone can read their own
@@ -90,7 +153,7 @@ service cloud.firestore {
     match /images/{imageId} {
       allow read: if isSignedIn();
       // Size cap keeps each image well under Firestore's 1 MiB document limit.
-      allow create, update: if (isAdmin() || isTeamMember())
+      allow create, update: if isOnTeam()
         && request.resource.data.id == imageId
         && request.resource.data.data is bytes
         && request.resource.data.data.size() <= 700 * 1024;

@@ -24,7 +24,14 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 	private readonly ILocalDatabaseService _local;
 	private readonly IAuthService _auth;
 	private readonly ICloudSyncService _cloud;
+	private readonly ICategoryService _categories;
 	private List<PubGame> _allGames = new();
+
+	/// <summary>Filter buttons: "All" plus every category that has games. Selecting one shows only its games.</summary>
+	public ObservableCollection<CategoryChoice> CategoryFilters { get; } = new();
+
+	/// <summary>Stands for "no filter" in CategoryFilters.</summary>
+	private static readonly GameCategory AllCategories = new() { Id = string.Empty, Name = "All" };
 
 	/// <summary>Shown when the cloud couldn't be reached and the list is the last-downloaded copy.</summary>
 	[ObservableProperty]
@@ -37,15 +44,16 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 	[ObservableProperty]
 	private string searchText = string.Empty;
 
-	/// <summary>null/empty = "All" category selected.</summary>
+	/// <summary>Id of the selected category; empty = "All".</summary>
 	[ObservableProperty]
-	private string? activeCategoryFilter;
+	private string activeCategoryFilter = string.Empty;
 
-	public GameLibraryViewModel(ILocalDatabaseService local, IAuthService auth, ICloudSyncService cloud)
+	public GameLibraryViewModel(ILocalDatabaseService local, IAuthService auth, ICloudSyncService cloud, ICategoryService categories)
 	{
 		_local = local;
 		_auth = auth;
 		_cloud = cloud;
+		_categories = categories;
 	}
 
 	public async Task LoadAsync()
@@ -53,12 +61,12 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		await _auth.InitializeAsync();
 
 		// Show the saved copy straight away, then refresh it from the cloud.
-		_allGames = await _local.GetGamesAsync();
-		ApplyFilters();
+		await ShowLocalAsync();
 
 		try
 		{
 			await _cloud.PullPublishedGamesAsync();
+			await _categories.PullAsync();
 			SyncMessage = string.Empty;
 		}
 		catch (Exception ex)
@@ -69,17 +77,40 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 			return;
 		}
 
+		await ShowLocalAsync();
+	}
+
+	private async Task ShowLocalAsync()
+	{
 		_allGames = await _local.GetGamesAsync();
+		var categories = await _categories.GetCachedAsync();
+		foreach (var game in _allGames)
+			game.CategoryLabel = _categories.LabelFor(game.CategoryIds, categories);
+
+		// Only categories that have games, so a filter never shows an empty list.
+		var used = _allGames.SelectMany(g => g.CategoryIds).ToHashSet();
+		if (!used.Contains(ActiveCategoryFilter))
+			ActiveCategoryFilter = string.Empty;
+		CategoryFilters.Clear();
+		foreach (var category in categories.Where(c => used.Contains(c.Id)).Prepend(AllCategories))
+			CategoryFilters.Add(new CategoryChoice { Category = category, IsSelected = category.Id == ActiveCategoryFilter });
+
 		ApplyFilters();
 	}
 
 	partial void OnSearchTextChanged(string value) => ApplyFilters();
-	partial void OnActiveCategoryFilterChanged(string? value) => ApplyFilters();
+
+	partial void OnActiveCategoryFilterChanged(string value)
+	{
+		foreach (var filter in CategoryFilters)
+			filter.IsSelected = filter.Category.Id == value;
+		ApplyFilters();
+	}
 
 	[RelayCommand]
-	private void SelectCategory(string? category) => ActiveCategoryFilter = category;
+	private void SelectCategory(CategoryChoice filter) => ActiveCategoryFilter = filter.Category.Id;
 
-	private async void ApplyFilters()
+	private void ApplyFilters()
 	{
 		VisibleGames.Clear();
 
@@ -89,12 +120,8 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 			    !game.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
 				continue;
 
-			if (!string.IsNullOrWhiteSpace(ActiveCategoryFilter))
-			{
-				var categories = await _local.GetCategoriesForGameAsync(game.Id);
-				if (!categories.Any(c => c.Name.Equals(ActiveCategoryFilter, StringComparison.OrdinalIgnoreCase)))
-					continue;
-			}
+			if (ActiveCategoryFilter.Length > 0 && !game.CategoryIds.Contains(ActiveCategoryFilter))
+				continue;
 
 			VisibleGames.Add(game);
 		}

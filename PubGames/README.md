@@ -2,12 +2,30 @@
 
 This is a working project scaffold for everything we designed: player entry,
 searchable multi-category game library, a scoreboard where players can be
-added/removed/reordered mid-game without touching anyone's score, an admin
+added/removed/reordered mid-game without touching anyone's score, a
 game-creation flow (name, custom pricing, scoring type, rules with inline
-pictures shown right in the editor, direct-publish vs approval-request based
-on permission), and admin team management (add/remove moderators by email
-with explanatory emails, permission toggles, promotion to admin,
-approve/deny requests).
+pictures shown right in the editor), and team management.
+
+Roles and terms used throughout the app and code:
+- **Admin** — publishes, edits and deletes games directly, reviews requests,
+  manages the team (add/remove moderators by email, with explanatory emails;
+  make someone admin).
+- **Moderator** — never changes games directly. Everything is a **review
+  request** of one of three kinds: **New game**, **Changes to a game**,
+  **Deletion**. Buttons: *Submit for review*, *Request deletion*, *Withdraw
+  request*. Followed under **My requests** in the Library.
+- **Review status** — *Waiting for review*, *Approved*, *Rejected* (with the
+  admin's reason). Admins decide on the **Requests** page (*Approve* /
+  *Reject*), which shows what changes plus a preview. Players keep seeing
+  the current version until a request is approved. Moderators can also
+  propose a **New category**.
+- **Inbox** — short messages (max 500 characters) between admins and
+  moderators, plus **review decisions** sent automatically when an admin
+  approves or rejects. The recipient keeps or deletes each message; a
+  rejected game/change offers *Edit and submit again*.
+- **Categories** — every game is in at least one (defaults: Family, Friends,
+  Pub, Home, Cards, Dice, Analog, Digital); players filter by category.
+  Adding a category creates an **Add games to category** request for admins.
 
 ## 1. Open it
 
@@ -29,10 +47,11 @@ to `<TargetFrameworks>` in `PubGames.csproj`.
 - Local SQLite storage (`Services/LocalDatabaseService.cs`) — offline-first,
   so the app works with no signal at the pub.
 - Permission logic (`Services/PermissionService.cs`) — single source of truth
-  for "can this admin/moderator publish/delete directly, or does it need
-  approval". Team membership lives in the Firestore "team" collection
-  (`Services/TeamService.cs`); `firestore.rules` enforces the same rules.
-- All five screens, wired to their ViewModels via dependency injection.
+  for "can this person change games directly, or submit a review request".
+  Team membership lives in the Firestore "team" collection
+  (`Services/TeamService.cs`), review requests in "reviewRequests";
+  `firestore.rules` enforces the same rules.
+- All screens, wired to their ViewModels via dependency injection.
 - The mid-game player add/remove/reorder logic
   (`ViewModels/ScoreboardViewModel.cs`) — read the comments there, this is
   the piece that keeps scores stable no matter what you do to the player
@@ -47,10 +66,10 @@ to `<TargetFrameworks>` in `PubGames.csproj`.
   UI needs `Plugin.InAppBilling` (or the official Play Billing bindings)
   wired in. Never mark a game "owned" from the client alone — always verify
   server-side first, or people can fake unlocks.
-- Push notifications for the admin approval inbox — right now
-  `PendingApprovals` only loads on page appear; wire a push notification
-  (Firebase Cloud Messaging is the standard choice on Android) so an
-  admin finds out immediately, not just next time they open the Team tab.
+- Push notifications for review requests — right now admins only see new
+  requests when they open the Library or Requests page; wire a push
+  notification (Firebase Cloud Messaging is the standard choice on Android)
+  so an admin finds out immediately.
 - Auth/accounts — `CurrentAccountId` / `CurrentUserId` / `CurrentTeamId`
   are hardcoded placeholders scattered through the ViewModels (search for
   `TODO: replace with real`). Wire these to whatever auth provider you pick
@@ -62,7 +81,7 @@ to `<TargetFrameworks>` in `PubGames.csproj`.
 ## 3. Suggested build order
 
 1. Stand up the backend (auth + a `purchases`, `games`, `team`,
-   `approval_requests` schema matching the models 1:1 makes this fast).
+   `reviewRequests` schema matching the models 1:1 makes this fast).
 2. Wire real auth, replace the `Current...Id` placeholders.
 3. Wire `CloudSyncService` against it.
 4. Wire Google Play Billing for the unlock flow.

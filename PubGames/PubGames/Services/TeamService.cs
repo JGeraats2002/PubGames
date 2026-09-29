@@ -25,7 +25,7 @@ public interface ITeamService
 	/// <summary>Admins only: same as GetCachedMembersAsync but refreshed from the cloud first. Throws when offline.</summary>
 	Task<List<TeamMember>> PullMembersAsync();
 
-	/// <summary>Creates or updates the member (role, permissions) in the cloud, then locally.</summary>
+	/// <summary>Creates or updates the member (role) in the cloud, then locally.</summary>
 	Task SaveMemberAsync(TeamMember member);
 
 	/// <summary>Removes the member from the cloud, then locally. Their access ends next time their app refreshes.</summary>
@@ -110,8 +110,6 @@ public class TeamService : ITeamService
 			["teamId"] = member.TeamId,
 			["displayName"] = member.DisplayName,
 			["role"] = member.Role.ToString(),
-			["canAddGames"] = member.CanAddGames,
-			["canDeleteGames"] = member.CanDeleteGames,
 			["addedAt"] = member.AddedAt
 		});
 		await _local.SaveTeamMemberAsync(member);
@@ -147,8 +145,6 @@ public class TeamService : ITeamService
 		TeamId = CurrentTeamId,
 		DisplayName = displayName,
 		Role = TeamRole.Admin,
-		CanAddGames = true,
-		CanDeleteGames = true,
 		IsBuiltInAdmin = true
 	};
 
@@ -158,8 +154,6 @@ public class TeamService : ITeamService
 		TeamId = f.GetValueOrDefault("teamId") as string ?? CurrentTeamId,
 		DisplayName = f.GetValueOrDefault("displayName") as string ?? string.Empty,
 		Role = Enum.TryParse<TeamRole>(f.GetValueOrDefault("role") as string, out var role) ? role : TeamRole.Moderator,
-		CanAddGames = f.GetValueOrDefault("canAddGames") as bool? ?? false,
-		CanDeleteGames = f.GetValueOrDefault("canDeleteGames") as bool? ?? false,
 		AddedAt = f.GetValueOrDefault("addedAt") as DateTime? ?? DateTime.UtcNow
 	};
 }

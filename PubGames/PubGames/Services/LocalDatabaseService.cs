@@ -19,7 +19,12 @@ public interface ILocalDatabaseService
 	Task<List<PubGame>> GetManageableGamesAsync();
 	Task<PubGame?> GetGameAsync(string gameId);
 	Task SaveGameAsync(PubGame game);
-	Task<List<GameCategory>> GetCategoriesForGameAsync(string gameId);
+
+	// Categories
+	/// <summary>All categories, alphabetical.</summary>
+	Task<List<GameCategory>> GetCategoriesAsync();
+	Task SaveCategoryAsync(GameCategory category);
+	Task DeleteCategoryAsync(string categoryId);
 
 	// Sessions
 	Task<GameSession?> GetSessionAsync(string sessionId);
@@ -27,13 +32,24 @@ public interface ILocalDatabaseService
 	Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId);
 	Task SaveParticipantAsync(SessionParticipant participant);
 
-	// Team / approvals (cached copies of the cloud, for offline use)
+	// Team / review requests (cached copies of the cloud, for offline use)
 	Task<List<TeamMember>> GetTeamMembersAsync(string teamId);
 	Task<TeamMember?> GetTeamMemberAsync(string email);
 	Task SaveTeamMemberAsync(TeamMember member);
 	Task DeleteTeamMemberAsync(string email);
-	Task SaveApprovalRequestAsync(ApprovalRequest request);
-	Task<List<ApprovalRequest>> GetPendingApprovalsAsync(string teamId);
+	Task<ReviewRequest?> GetReviewRequestAsync(string requestId);
+	Task SaveReviewRequestAsync(ReviewRequest request);
+	Task DeleteReviewRequestAsync(string requestId);
+	/// <summary>Requests an admin still has to review, oldest first.</summary>
+	Task<List<ReviewRequest>> GetRequestsWaitingForReviewAsync(string teamId);
+	/// <summary>Everything this moderator submitted, newest first.</summary>
+	Task<List<ReviewRequest>> GetRequestsSubmittedByAsync(string email);
+
+	// Inbox
+	/// <summary>Messages to any of these recipients (an email and/or InboxMessage.AllAdmins), newest first.</summary>
+	Task<List<InboxMessage>> GetMessagesToAsync(IEnumerable<string> recipients);
+	Task SaveMessageAsync(InboxMessage message);
+	Task DeleteMessageAsync(string messageId);
 
 	// Purchases
 	Task<bool> IsGameOwnedAsync(string accountId, string gameId);
@@ -59,12 +75,12 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await _db.CreateTableAsync<Player>();
 		await _db.CreateTableAsync<PubGame>();
 		await _db.CreateTableAsync<GameCategory>();
-		await _db.CreateTableAsync<GameCategoryLink>();
+		await _db.CreateTableAsync<InboxMessage>();
 		await _db.CreateTableAsync<GameSession>();
 		await _db.CreateTableAsync<SessionParticipant>();
 		await _db.CreateTableAsync<Team>();
 		await _db.CreateTableAsync<TeamMember>();
-		await _db.CreateTableAsync<ApprovalRequest>();
+		await _db.CreateTableAsync<ReviewRequest>();
 		await _db.CreateTableAsync<Purchase>();
 
 		return _db;
@@ -115,13 +131,44 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await db.InsertOrReplaceAsync(game);
 	}
 
-	public async Task<List<GameCategory>> GetCategoriesForGameAsync(string gameId)
+	public async Task<List<GameCategory>> GetCategoriesAsync()
 	{
 		var db = await DbAsync();
-		var links = await db.Table<GameCategoryLink>().Where(l => l.GameId == gameId).ToListAsync();
-		var categoryIds = links.Select(l => l.CategoryId).ToList();
-		var all = await db.Table<GameCategory>().ToListAsync();
-		return all.Where(c => categoryIds.Contains(c.Id)).ToList();
+		return await db.Table<GameCategory>().OrderBy(c => c.Name).ToListAsync();
+	}
+
+	public async Task SaveCategoryAsync(GameCategory category)
+	{
+		var db = await DbAsync();
+		await db.InsertOrReplaceAsync(category);
+	}
+
+	public async Task DeleteCategoryAsync(string categoryId)
+	{
+		var db = await DbAsync();
+		await db.DeleteAsync<GameCategory>(categoryId);
+	}
+
+	public async Task<List<InboxMessage>> GetMessagesToAsync(IEnumerable<string> recipients)
+	{
+		var to = recipients.ToList();
+		var db = await DbAsync();
+		return await db.Table<InboxMessage>()
+			.Where(m => to.Contains(m.ToEmail))
+			.OrderByDescending(m => m.SentAt)
+			.ToListAsync();
+	}
+
+	public async Task SaveMessageAsync(InboxMessage message)
+	{
+		var db = await DbAsync();
+		await db.InsertOrReplaceAsync(message);
+	}
+
+	public async Task DeleteMessageAsync(string messageId)
+	{
+		var db = await DbAsync();
+		await db.DeleteAsync<InboxMessage>(messageId);
 	}
 
 	public async Task<GameSession?> GetSessionAsync(string sessionId)
@@ -175,17 +222,39 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await db.DeleteAsync<TeamMember>(email);
 	}
 
-	public async Task SaveApprovalRequestAsync(ApprovalRequest request)
+	public async Task<ReviewRequest?> GetReviewRequestAsync(string requestId)
+	{
+		var db = await DbAsync();
+		return await db.FindAsync<ReviewRequest>(requestId);
+	}
+
+	public async Task SaveReviewRequestAsync(ReviewRequest request)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(request);
 	}
 
-	public async Task<List<ApprovalRequest>> GetPendingApprovalsAsync(string teamId)
+	public async Task DeleteReviewRequestAsync(string requestId)
 	{
 		var db = await DbAsync();
-		return await db.Table<ApprovalRequest>()
-			.Where(r => r.TeamId == teamId && r.Status == ApprovalRequestStatus.Pending)
+		await db.DeleteAsync<ReviewRequest>(requestId);
+	}
+
+	public async Task<List<ReviewRequest>> GetRequestsWaitingForReviewAsync(string teamId)
+	{
+		var db = await DbAsync();
+		return await db.Table<ReviewRequest>()
+			.Where(r => r.TeamId == teamId && r.Status == ReviewStatus.WaitingForReview)
+			.OrderBy(r => r.SubmittedAt)
+			.ToListAsync();
+	}
+
+	public async Task<List<ReviewRequest>> GetRequestsSubmittedByAsync(string email)
+	{
+		var db = await DbAsync();
+		return await db.Table<ReviewRequest>()
+			.Where(r => r.SubmittedByEmail == email)
+			.OrderByDescending(r => r.SubmittedAt)
 			.ToListAsync();
 	}
 

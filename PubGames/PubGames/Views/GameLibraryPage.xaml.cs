@@ -19,6 +19,12 @@ public partial class GameLibraryPage : ContentPage
 		await _vm.LoadAsync();
 	}
 
+	private void OnCategoryFilterTapped(object? sender, TappedEventArgs e)
+	{
+		if (e.Parameter is CategoryChoice filter)
+			_vm.SelectCategoryCommand.Execute(filter);
+	}
+
 	private async void OnGameTapped(object? sender, TappedEventArgs e)
 	{
 		if (e.Parameter is not PubGame game) return;

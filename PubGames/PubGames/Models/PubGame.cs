@@ -21,6 +21,21 @@ public class PubGame
 
 	public ScoringType ScoringType { get; set; } = ScoringType.PointTally;
 
+	/// <summary>The scoring type's settings (step, min, max, ...) as JSON; use ScoringSettings.</summary>
+	public string? ScoringSettingsText { get; set; }
+
+	[Ignore]
+	public ScoringSettings ScoringSettings
+	{
+		get => ScoringSettings.FromJson(ScoringSettingsText);
+		set => ScoringSettingsText = value.ToJson();
+	}
+
+	[Ignore]
+	public string ScoringLabel => ScoringType == ScoringType.PlusMinus
+		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.Summary})"
+		: $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.ResultSummary})";
+
 	public bool IsPaid { get; set; }
 
 	/// <summary>Price in euros, e.g. 0.50m. Ignored when IsPaid is false. Admin-set, not fixed by the platform.</summary>

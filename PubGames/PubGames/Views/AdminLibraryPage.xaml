@@ -7,13 +7,20 @@
              x:DataType="vm:AdminLibraryViewModel"
              Title="Library">
 
-	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">
+	<Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="12">
 
 		<Button Grid.Row="0" Text="{Binding NewGameButtonText}" Clicked="OnNewGameClicked" />
 
 		<Label Grid.Row="1" Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
-		<CollectionView Grid.Row="2" ItemsSource="{Binding Games}">
+		<!-- Search by game or category name, and/or show one category. -->
+		<VerticalStackLayout Grid.Row="2" Spacing="4">
+			<SearchBar Placeholder="Search games or categories" Text="{Binding SearchText}" />
+			<Picker Title="Category" ItemsSource="{Binding CategoryFilters}" SelectedItem="{Binding SelectedCategoryFilter}" />
+			<Label Text="{Binding ResultsText}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+		</VerticalStackLayout>
+
+		<CollectionView Grid.Row="3" ItemsSource="{Binding Games}">
 			<CollectionView.Header>
 				<VerticalStackLayout Spacing="8">
 
@@ -89,7 +96,7 @@
 									<FormattedString>
 										<Span Text="{Binding StatusLabel}" />
 										<Span Text=" · " />
-										<Span Text="{Binding ScoringType}" />
+										<Span Text="{Binding ScoringLabel}" />
 									</FormattedString>
 								</Label.FormattedText>
 							</Label>

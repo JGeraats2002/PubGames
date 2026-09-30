@@ -23,7 +23,8 @@
 			<Entry Placeholder="e.g. Kings cup" Text="{Binding Name}" />
 
 			<Label Text="Cover image" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Border IsVisible="{Binding HasCover}" StrokeThickness="0" HeightRequest="180">
+			<!-- Square, like the icon in the game lists, so both show the same part of the picture. -->
+			<Border IsVisible="{Binding HasCover}" StrokeThickness="0" WidthRequest="240" HeightRequest="240" HorizontalOptions="Center">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
@@ -47,7 +48,68 @@
 			<Label Text="One-time price per player, you set this." FontSize="11" TextColor="{StaticResource TextSecondary}" />
 
 			<Label Text="Scoring type" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Picker ItemsSource="{Binding ScoringTypeOptions}" SelectedItem="{Binding ScoringType}" />
+			<Picker ItemsSource="{Binding ScoringTypeOptions}" SelectedItem="{Binding SelectedScoringOption}" />
+
+			<!-- Plus / minus: the numbers the scoreboard uses. Each limit and the warning has its own switch. -->
+			<Border IsVisible="{Binding IsPlusMinus}" BackgroundColor="{StaticResource SurfaceMuted}"
+			        StrokeThickness="0" Padding="12">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<VerticalStackLayout Spacing="10">
+					<Label Text="Every tap on + or − changes a player's score by the step." FontSize="12"
+					       TextColor="{StaticResource TextSecondary}" />
+
+					<Grid ColumnDefinitions="*,100" ColumnSpacing="12">
+						<Label Text="Step (points per tap)" VerticalOptions="Center" />
+						<Entry Grid.Column="1" Text="{Binding ScoreStep}" Keyboard="Numeric" HorizontalTextAlignment="End" />
+					</Grid>
+
+					<Grid ColumnDefinitions="*,100" ColumnSpacing="12">
+						<Label Text="Starting score" VerticalOptions="Center" />
+						<Entry Grid.Column="1" Text="{Binding StartScore}" Keyboard="Telephone" HorizontalTextAlignment="End" />
+					</Grid>
+
+					<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+						<Label Text="Maximum score" VerticalOptions="Center" />
+						<Switch Grid.Column="1" IsToggled="{Binding HasMaxScore}" VerticalOptions="Center" />
+						<Entry Grid.Column="2" Text="{Binding MaxScore}" Keyboard="Telephone" Placeholder="e.g. 10"
+						       HorizontalTextAlignment="End" IsVisible="{Binding HasMaxScore}" />
+					</Grid>
+
+					<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+						<Label Text="Minimum score" VerticalOptions="Center" />
+						<Switch Grid.Column="1" IsToggled="{Binding HasMinScore}" VerticalOptions="Center" />
+						<Entry Grid.Column="2" Text="{Binding MinScore}" Keyboard="Telephone" Placeholder="e.g. 0"
+						       HorizontalTextAlignment="End" IsVisible="{Binding HasMinScore}" />
+					</Grid>
+
+					<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+						<Label Text="Warning at score" VerticalOptions="Center" />
+						<Switch Grid.Column="1" IsToggled="{Binding HasWarningScore}" VerticalOptions="Center" />
+						<Entry Grid.Column="2" Text="{Binding WarningScore}" Keyboard="Telephone" Placeholder="e.g. 9"
+						       HorizontalTextAlignment="End" IsVisible="{Binding HasWarningScore}" />
+					</Grid>
+					<Label Text="On the scoreboard, a player at the warning gets a dashed orange border and a ⚠ WARNING badge; at the maximum or minimum the whole card turns dark blue with a ▲ MAX / ▼ MIN badge."
+					       FontSize="11" TextColor="{StaticResource TextSecondary}" />
+				</VerticalStackLayout>
+			</Border>
+
+			<!-- For every scoring type. How many subgames to play, the players choose when they start. -->
+			<Label Text="Subgame results" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
+			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<VerticalStackLayout Spacing="10">
+					<Label Text="Result of each subgame" />
+					<Picker ItemsSource="{Binding ResultModeOptions}" SelectedItem="{Binding SelectedResultModeOption}" />
+					<Label Text="{Binding ScoreDirectionTitle}" />
+					<Picker ItemsSource="{Binding BestScoreOptions}" SelectedIndex="{Binding BestScoreIndex}" />
+					<Label Text="After each subgame the app picks the winner(s), places or loser(s) from the scores; players can change that before confirming. Players can share a win, place or loss. How many subgames they play, the players choose (1 unless they change it)."
+					       FontSize="11" TextColor="{StaticResource TextSecondary}" />
+				</VerticalStackLayout>
+			</Border>
 
 			<!-- Tap to select; at least one. Players filter games by these. -->
 			<Label Text="Categories (at least one)" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />

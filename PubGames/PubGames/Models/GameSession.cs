@@ -20,7 +20,14 @@ public class GameSession
 
 	public DateTime StartedAt { get; set; } = DateTime.UtcNow;
 
+	/// <summary>Set when the players finish the whole game; the final result is shown from then on.</summary>
 	public DateTime? EndedAt { get; set; }
+
+	/// <summary>The subgame being played, 1-based. Sessions from before subgames existed have 0: treat as 1.</summary>
+	public int CurrentRound { get; set; } = 1;
+
+	/// <summary>How many subgames the players chose to play; null means they finish whenever they like.</summary>
+	public int? SubgameCount { get; set; }
 
 	/// <summary>True once synced to the cloud; lets local-only sessions be created offline first.</summary>
 	public bool IsSynced { get; set; }

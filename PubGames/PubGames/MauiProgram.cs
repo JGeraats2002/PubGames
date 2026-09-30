@@ -28,6 +28,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<FirestoreClient>();
 		builder.Services.AddSingleton<ITeamService, TeamService>();
 		builder.Services.AddSingleton<ICategoryService, CategoryService>();
+		builder.Services.AddSingleton<GameNight>();
 		builder.Services.AddSingleton<IMessageService, MessageService>();
 		// Opens the admin's mail app prefilled. For fully automatic emails, switch to FirestoreEmailSender (see its comments).
 		builder.Services.AddSingleton<IEmailSender, ComposeEmailSender>();
@@ -40,6 +41,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<GameRulesViewModel>();
 		builder.Services.AddTransient<ScoreboardViewModel>();
 		builder.Services.AddTransient<SessionPlayersViewModel>();
+		builder.Services.AddTransient<RoundResultViewModel>();
+		builder.Services.AddTransient<StandingsViewModel>();
 		builder.Services.AddTransient<AdminLibraryViewModel>();
 		builder.Services.AddTransient<AdminCreateGameViewModel>();
 		builder.Services.AddTransient<AdminTeamViewModel>();
@@ -57,6 +60,8 @@ public static class MauiProgram
 		builder.Services.AddTransient<GameRulesPage>();
 		builder.Services.AddTransient<ScoreboardPage>();
 		builder.Services.AddTransient<SessionPlayersPage>();
+		builder.Services.AddTransient<RoundResultPage>();
+		builder.Services.AddTransient<StandingsPage>();
 		builder.Services.AddTransient<AdminLibraryPage>();
 		builder.Services.AddTransient<AdminCreateGamePage>();
 		builder.Services.AddTransient<AdminTeamPage>();

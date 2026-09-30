@@ -44,7 +44,7 @@
 			<!-- Preview, laid out like the rules page players see. Not for category requests. -->
 			<VerticalStackLayout Spacing="12" IsVisible="{Binding HasGamePreview}">
 			<Label Text="{Binding PreviewTitle}" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,16,0,0" />
-			<Border StrokeThickness="0" HeightRequest="180"
+			<Border StrokeThickness="0" WidthRequest="240" HeightRequest="240" HorizontalOptions="Center"
 			        IsVisible="{Binding PreviewHasCover}">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="10" />
@@ -57,7 +57,7 @@
 					<FormattedString>
 						<Span Text="{Binding Preview.PriceLabel}" />
 						<Span Text=" · " />
-						<Span Text="{Binding Preview.ScoringType}" />
+						<Span Text="{Binding Preview.ScoringLabel}" />
 					</FormattedString>
 				</Label.FormattedText>
 			</Label>

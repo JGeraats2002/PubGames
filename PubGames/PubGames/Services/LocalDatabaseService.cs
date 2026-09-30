@@ -32,6 +32,16 @@ public interface ILocalDatabaseService
 	Task SaveSessionAsync(GameSession session);
 	Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId);
 	Task SaveParticipantAsync(SessionParticipant participant);
+	/// <summary>Every subgame result of a session, in subgame order.</summary>
+	Task<List<RoundResult>> GetRoundResultsAsync(string sessionId);
+	/// <summary>Replaces the results of one subgame.</summary>
+	Task SaveRoundResultsAsync(string sessionId, int round, IEnumerable<RoundResult> results);
+	/// <summary>
+	/// Hands one player's subgame results in a session to another, who took
+	/// over their seat. Subgames the new player already has a result in (they
+	/// played earlier on another seat) keep that result.
+	/// </summary>
+	Task TransferRoundResultsAsync(string sessionId, string fromPlayerId, string toPlayerId);
 
 	// Team / review requests (cached copies of the cloud, for offline use)
 	Task<List<TeamMember>> GetTeamMembersAsync(string teamId);
@@ -79,6 +89,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await _db.CreateTableAsync<InboxMessage>();
 		await _db.CreateTableAsync<GameSession>();
 		await _db.CreateTableAsync<SessionParticipant>();
+		await _db.CreateTableAsync<RoundResult>();
 		await _db.CreateTableAsync<Team>();
 		await _db.CreateTableAsync<TeamMember>();
 		await _db.CreateTableAsync<ReviewRequest>();
@@ -208,6 +219,38 @@ public class LocalDatabaseService : ILocalDatabaseService
 			await db.InsertAsync(participant);
 		else
 			await db.UpdateAsync(participant);
+	}
+
+	public async Task<List<RoundResult>> GetRoundResultsAsync(string sessionId)
+	{
+		var db = await DbAsync();
+		return await db.Table<RoundResult>()
+			.Where(r => r.SessionId == sessionId)
+			.OrderBy(r => r.Round)
+			.ToListAsync();
+	}
+
+	public async Task SaveRoundResultsAsync(string sessionId, int round, IEnumerable<RoundResult> results)
+	{
+		var db = await DbAsync();
+		var list = results.ToList();
+		await db.RunInTransactionAsync(tx =>
+		{
+			tx.Execute($"DELETE FROM {nameof(RoundResult)} WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.Round)} = ?", sessionId, round);
+			foreach (var r in list)
+				tx.Insert(r);
+		});
+	}
+
+	public async Task TransferRoundResultsAsync(string sessionId, string fromPlayerId, string toPlayerId)
+	{
+		var db = await DbAsync();
+		await db.ExecuteAsync(
+			$"UPDATE {nameof(RoundResult)} SET {nameof(RoundResult.PlayerId)} = ? " +
+			$"WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.PlayerId)} = ? " +
+			$"AND {nameof(RoundResult.Round)} NOT IN (SELECT {nameof(RoundResult.Round)} FROM {nameof(RoundResult)} " +
+			$"WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.PlayerId)} = ?)",
+			toPlayerId, sessionId, fromPlayerId, sessionId, toPlayerId);
 	}
 
 	public async Task<List<TeamMember>> GetTeamMembersAsync(string teamId)

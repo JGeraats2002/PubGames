@@ -10,12 +10,33 @@
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="14">
 
+			<!-- How many subgames make up the game (1 unless changed); used by both Skip rules and Start game. -->
+			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<VerticalStackLayout Spacing="6">
+					<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+						<Label Text="Play" VerticalOptions="Center" />
+						<Button Grid.Column="1" Text="−" Clicked="OnFewerSubgamesClicked" WidthRequest="40" HeightRequest="40" Padding="0" FontSize="18"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						<Label Grid.Column="2" Text="{Binding SubgameCountText}" FontAttributes="Bold" WidthRequest="100"
+						       HorizontalTextAlignment="Center" VerticalOptions="Center" />
+						<Button Grid.Column="3" Text="+" Clicked="OnMoreSubgamesClicked" WidthRequest="40" HeightRequest="40" Padding="0" FontSize="18"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+					</Grid>
+					<Label Text="Not decided after that? You can add subgames during the game, and a tie at the end offers an extra one."
+					       FontSize="11" TextColor="{StaticResource TextSecondary}" />
+				</VerticalStackLayout>
+			</Border>
+
 			<!-- For groups who already know the game. -->
 			<Button Text="Skip rules" Command="{Binding StartGameCommand}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
-			<Border StrokeThickness="0" HeightRequest="180" Margin="0,6,0,0"
+			<!-- Square, like the icon in the game lists, so both show the same part of the picture. -->
+			<Border StrokeThickness="0" WidthRequest="240" HeightRequest="240" HorizontalOptions="Center" Margin="0,6,0,0"
 			        IsVisible="{Binding HasCover}">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="10" />

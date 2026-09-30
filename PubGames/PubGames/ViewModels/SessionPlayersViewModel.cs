@@ -18,6 +18,9 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 
 	private string _sessionId = string.Empty;
 
+	/// <summary>The game's starting score, for players who join during the game.</summary>
+	private int _startScore;
+
 	/// <summary>Everyone who was ever in this game, including removed players (their score is kept for if they rejoin).</summary>
 	private List<SessionParticipant> _allParticipants = new();
 
@@ -54,6 +57,9 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 		if (query.TryGetValue("sessionId", out var id) && id is string sessionId)
 		{
 			_sessionId = sessionId;
+			var session = await _local.GetSessionAsync(sessionId);
+			var game = session is null ? null : await _local.GetGameAsync(session.GameId);
+			_startScore = ScoringRules.For(game).StartScore;
 			await LoadAsync();
 		}
 	}
@@ -142,29 +148,34 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	}
 
 	/// <summary>
-	/// Someone else takes this seat. They either take over the leaving player's
-	/// score (e.g. a teammate stepping in) or start at 0.
+	/// Someone else takes this seat, and with it everything that belongs to it:
+	/// the score of the subgame being played and the results of earlier
+	/// subgames. The leaving player keeps nothing in this game's stats.
 	/// </summary>
-	public async Task ReplaceAsync(ParticipantRow row, Player replacement, bool takeOverScore)
+	public async Task ReplaceAsync(ParticipantRow row, Player replacement)
 	{
 		var seat = Rows.IndexOf(row);
+		var score = row.Participant.Score;
 		row.Participant.IsActive = false;
+		row.Participant.Score = _startScore;
 		await _local.SaveParticipantAsync(row.Participant);
 		Rows.Remove(row);
 
-		await SeatAsync(replacement, seat, startScore: takeOverScore ? row.Score : 0);
+		await _local.TransferRoundResultsAsync(_sessionId, row.Player.Id, replacement.Id);
+		await SeatAsync(replacement, seat, startScore: score);
 		await LoadAsync();
-		StatusMessage = $"{replacement.Name} took {row.Player.Name}'s seat{(takeOverScore ? " and score" : string.Empty)}.";
+		StatusMessage = $"{replacement.Name} took {row.Player.Name}'s seat, score and results.";
 	}
 
 	/// <summary>
 	/// Puts a player on a seat (0-based), shifting later seats down. A null
-	/// startScore reuses the score from an earlier stint in this game, if any.
+	/// startScore reuses the score from an earlier stint in this game, if any;
+	/// someone new starts at the game's starting score.
 	/// </summary>
 	private async Task SeatAsync(Player player, int seat, int? startScore)
 	{
 		var participant = _allParticipants.FirstOrDefault(p => p.PlayerId == player.Id && !p.IsActive)
-			?? new SessionParticipant { SessionId = _sessionId, PlayerId = player.Id };
+			?? new SessionParticipant { SessionId = _sessionId, PlayerId = player.Id, Score = _startScore };
 		participant.IsActive = true;
 		if (startScore is { } score)
 			participant.Score = score;

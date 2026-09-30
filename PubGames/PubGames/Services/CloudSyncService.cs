@@ -81,6 +81,7 @@ public class CloudSyncService : ICloudSyncService
 			["rulesText"] = game.RulesText,
 			["coverImageUrl"] = game.CoverImageUrl,
 			["scoringType"] = game.ScoringType.ToString(),
+			["scoringSettings"] = game.ScoringSettings.ToMap(),
 			["isPaid"] = game.IsPaid,
 			["price"] = game.Price,
 			["categoryIds"] = game.CategoryIds,
@@ -135,6 +136,7 @@ public class CloudSyncService : ICloudSyncService
 			RulesText = f.GetValueOrDefault("rulesText") as string ?? string.Empty,
 			CoverImageUrl = f.GetValueOrDefault("coverImageUrl") as string,
 			ScoringType = Enum.TryParse<ScoringType>(f.GetValueOrDefault("scoringType") as string, out var st) ? st : ScoringType.Custom,
+			ScoringSettings = ScoringSettings.FromMap(f.GetValueOrDefault("scoringSettings")),
 			IsPaid = f.GetValueOrDefault("isPaid") as bool? ?? false,
 			Price = Convert.ToDecimal(f.GetValueOrDefault("price") ?? 0d),
 			CategoryIds = FirestoreClient.AsStringList(f.GetValueOrDefault("categoryIds")),
@@ -193,6 +195,7 @@ public class CloudSyncService : ICloudSyncService
 			["proposedRulesText"] = r.ProposedRulesText,
 			["proposedCoverImageUrl"] = r.ProposedCoverImageUrl,
 			["proposedScoringType"] = r.ProposedScoringType.ToString(),
+			["proposedScoringSettings"] = ScoringSettings.FromJson(r.ProposedScoringSettingsText).ToMap(),
 			["proposedIsPaid"] = r.ProposedIsPaid,
 			["proposedPrice"] = r.ProposedPrice,
 			["proposedCategoryIds"] = r.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -268,6 +271,7 @@ public class CloudSyncService : ICloudSyncService
 			ProposedRulesText = f.GetValueOrDefault("proposedRulesText") as string ?? string.Empty,
 			ProposedCoverImageUrl = f.GetValueOrDefault("proposedCoverImageUrl") as string,
 			ProposedScoringType = Enum.TryParse<ScoringType>(f.GetValueOrDefault("proposedScoringType") as string, out var st) ? st : ScoringType.Custom,
+			ProposedScoringSettingsText = ScoringSettings.FromMap(f.GetValueOrDefault("proposedScoringSettings")).ToJson(),
 			ProposedIsPaid = f.GetValueOrDefault("proposedIsPaid") as bool? ?? false,
 			ProposedPrice = Convert.ToDecimal(f.GetValueOrDefault("proposedPrice") ?? 0d),
 			ProposedCategoryIdsText = string.Join(',', FirestoreClient.AsStringList(f.GetValueOrDefault("proposedCategoryIds")))

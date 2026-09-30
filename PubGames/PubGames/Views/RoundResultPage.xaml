@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.RoundResultPage"
+             x:DataType="vm:RoundResultViewModel"
+             Title="{Binding Title}">
+
+	<Grid RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="10">
+
+		<Label Text="{Binding Instruction}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+
+		<ScrollView Grid.Row="1">
+			<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="vm:ResultRow">
+						<!-- Winner/loser mode: tap the card. A marked card turns solid dark with a badge in words. -->
+						<Border Padding="12,8" Stroke="{StaticResource Border}" StrokeThickness="1">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="10" />
+							</Border.StrokeShape>
+							<Border.GestureRecognizers>
+								<TapGestureRecognizer Tapped="OnRowTapped" CommandParameter="{Binding .}" />
+							</Border.GestureRecognizers>
+							<Border.Triggers>
+								<DataTrigger TargetType="Border" Binding="{Binding IsMarked}" Value="True">
+									<Setter Property="BackgroundColor" Value="{StaticResource ScoreLimit}" />
+									<Setter Property="Stroke" Value="{StaticResource ScoreLimit}" />
+									<Setter Property="StrokeThickness" Value="3" />
+								</DataTrigger>
+							</Border.Triggers>
+							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+								<VerticalStackLayout VerticalOptions="Center" Spacing="2">
+									<Label Text="{Binding Player.Name}" FontSize="17" FontAttributes="Bold" LineBreakMode="TailTruncation">
+										<Label.Triggers>
+											<DataTrigger TargetType="Label" Binding="{Binding IsMarked}" Value="True">
+												<Setter Property="TextColor" Value="White" />
+											</DataTrigger>
+										</Label.Triggers>
+									</Label>
+									<Label Text="{Binding ScoreText}" FontSize="12" TextColor="{StaticResource TextSecondary}">
+										<Label.Triggers>
+											<DataTrigger TargetType="Label" Binding="{Binding IsMarked}" Value="True">
+												<Setter Property="TextColor" Value="White" />
+											</DataTrigger>
+										</Label.Triggers>
+									</Label>
+								</VerticalStackLayout>
+
+								<!-- Winner/loser mode: the badge while marked. -->
+								<Border Grid.Column="1" IsVisible="{Binding IsMarked}" BackgroundColor="White"
+								        StrokeThickness="0" Padding="10,4" VerticalOptions="Center">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="6" />
+									</Border.StrokeShape>
+									<Label Text="{Binding MarkText}" FontAttributes="Bold" TextColor="{StaticResource ScoreLimit}" />
+								</Border>
+
+								<!-- Ranking mode: − place + -->
+								<HorizontalStackLayout Grid.Column="1" IsVisible="{Binding IsRanking}" Spacing="6" VerticalOptions="Center">
+									<Button Text="−" Clicked="OnBetterPlaceClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="18"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									<Label Text="{Binding PlaceLabel}" FontSize="20" FontAttributes="Bold" WidthRequest="56"
+									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
+									<Button Text="+" Clicked="OnWorsePlaceClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="18"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+								</HorizontalStackLayout>
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<Label Grid.Row="2" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+
+		<Button Grid.Row="3" Text="{Binding ConfirmText}" Clicked="OnConfirmClicked" />
+
+	</Grid>
+
+</ContentPage>

@@ -20,6 +20,12 @@
 			<Color x:Key="TextSecondary">#5F5E5A</Color>
 			<Color x:Key="Border">#D3D1C7</Color>
 
+			<!-- Scoreboard highlights, from the Okabe-Ito colour-blind safe palette. They also differ
+			     in lightness, border style and badge text, so they never rely on colour alone. -->
+			<Color x:Key="ScoreWarning">#E69F00</Color>
+			<Color x:Key="ScoreWarningTint">#FFF1CC</Color>
+			<Color x:Key="ScoreLimit">#0072B2</Color>
+
 			<Style TargetType="Label">
 				<Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
 			</Style>

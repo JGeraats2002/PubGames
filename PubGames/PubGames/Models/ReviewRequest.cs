@@ -91,6 +91,7 @@ public class ReviewRequest
 	public string ProposedRulesText { get; set; } = string.Empty;
 	public string? ProposedCoverImageUrl { get; set; }
 	public ScoringType ProposedScoringType { get; set; } = ScoringType.PointTally;
+	public string? ProposedScoringSettingsText { get; set; }
 	public bool ProposedIsPaid { get; set; }
 	public decimal ProposedPrice { get; set; }
 	public string ProposedCategoryIdsText { get; set; } = string.Empty;
@@ -144,6 +145,7 @@ public class ReviewRequest
 		ProposedRulesText = game.RulesText;
 		ProposedCoverImageUrl = game.CoverImageUrl;
 		ProposedScoringType = game.ScoringType;
+		ProposedScoringSettingsText = game.ScoringSettingsText;
 		ProposedIsPaid = game.IsPaid;
 		ProposedPrice = game.Price;
 		ProposedCategoryIdsText = game.CategoryIdsText;
@@ -157,6 +159,7 @@ public class ReviewRequest
 		game.RulesText = ProposedRulesText;
 		game.CoverImageUrl = ProposedCoverImageUrl;
 		game.ScoringType = ProposedScoringType;
+		game.ScoringSettingsText = ProposedScoringSettingsText;
 		game.IsPaid = ProposedIsPaid;
 		game.Price = ProposedIsPaid ? ProposedPrice : 0m;
 		game.CategoryIdsText = ProposedCategoryIdsText;

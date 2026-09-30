@@ -12,7 +12,7 @@
 		<ScrollView>
 			<VerticalStackLayout Spacing="14">
 
-				<Label Text="Changes here never affect anyone's score. Seat order is the order on the scoreboard."
+				<Label Text="Seat order is the order on the scoreboard. Replace: the new player takes over the seat with its score and all results so far."
 				       FontSize="12" TextColor="{StaticResource TextSecondary}" />
 
 				<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />

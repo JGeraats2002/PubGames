@@ -10,6 +10,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 {
 	private readonly ILocalDatabaseService _local;
 	private readonly IAuthService _auth;
+	private readonly GameNight _gameNight;
 
 	private string CurrentAccountId => _auth.AccountId;
 
@@ -19,10 +20,11 @@ public partial class PlayerEntryViewModel : ObservableObject
 	[ObservableProperty]
 	private string newPlayerName = string.Empty;
 
-	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth)
+	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight)
 	{
 		_local = local;
 		_auth = auth;
+		_gameNight = gameNight;
 	}
 
 	public async Task LoadAsync()
@@ -32,6 +34,15 @@ public partial class PlayerEntryViewModel : ObservableObject
 		SavedPlayers.Clear();
 		foreach (var p in saved)
 			SavedPlayers.Add(p);
+
+		// Back from a finished game: the players who were playing at the end, in seat order.
+		if (_gameNight.NextLineup is { } lineup)
+		{
+			_gameNight.NextLineup = null;
+			SelectedPlayers.Clear();
+			foreach (var p in lineup)
+				SelectedPlayers.Add(p);
+		}
 	}
 
 	[RelayCommand]

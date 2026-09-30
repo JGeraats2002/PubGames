@@ -8,15 +8,38 @@
 
 	<Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
 
-		<Label x:Name="Explanation" Text="{Binding Rules.Explanation}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+		<VerticalStackLayout x:Name="Header" Spacing="2">
+			<!-- − / + change how many subgames the game has, e.g. when the winner isn't clear after 1 game. -->
+			<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+				<Label Text="{Binding SubgameLabel}" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+				<Button Grid.Column="1" Text="− subgame" Clicked="OnFewerSubgamesClicked" IsVisible="{Binding CanHaveFewerSubgames}"
+				        HeightRequest="34" Padding="10,0" FontSize="12"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+				<Button Grid.Column="2" Text="+ subgame" Clicked="OnMoreSubgamesClicked"
+				        IsVisible="{Binding IsFinished, Converter={StaticResource InvertedBoolConverter}}"
+				        HeightRequest="34" Padding="10,0" FontSize="12"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			</Grid>
+			<Label Text="{Binding Rules.Explanation}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+		</VerticalStackLayout>
 
 		<!-- One card per player, all on screen at once: filled in by ScoreboardPage.xaml.cs,
 		     which gives every card an exact height so they fit the screen (two columns above 8 players). -->
 		<Grid Grid.Row="1" x:Name="Board" RowSpacing="8" ColumnSpacing="8" VerticalOptions="Start" />
 
-		<Button Grid.Row="2" x:Name="ChangePlayersButton" Text="Change players" Clicked="OnChangePlayersClicked"
-		        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-		        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+		<!-- Next subgame / Finish game share the bottom row; UpdateFooter gives the visible one(s) the width. -->
+		<Grid Grid.Row="2" x:Name="Footer" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+			<Button Text="Change players" Clicked="OnChangePlayersClicked"
+			        IsVisible="{Binding IsFinished, Converter={StaticResource InvertedBoolConverter}}"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			<Button Grid.Column="1" x:Name="StatsButton" Text="Stats" Clicked="OnStatsClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			<Button Grid.Row="1" x:Name="NextButton" Text="Next subgame ▶" Clicked="OnNextClicked" IsVisible="{Binding CanGoNext}" />
+			<Button Grid.Row="1" Grid.Column="1" x:Name="FinishButton" Text="Finish game" Clicked="OnFinishClicked"
+			        IsVisible="{Binding CanFinish}" BackgroundColor="{StaticResource PrimaryDark}" />
+		</Grid>
 
 	</Grid>
 

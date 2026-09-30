@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PubGames.Models;
@@ -87,7 +88,88 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	private decimal price = 0.50m;
 
 	[ObservableProperty]
-	private ScoringType scoringType = ScoringType.PointTally;
+	[NotifyPropertyChangedFor(nameof(IsPlusMinus), nameof(SelectedScoringOption))]
+	private ScoringType scoringType = ScoringType.PlusMinus;
+
+	/// <summary>Plus / minus has settings to fill in; the form shows them only then.</summary>
+	public bool IsPlusMinus => ScoringType == ScoringType.PlusMinus;
+
+	// Plus / minus settings. Text rather than numbers, so a half-typed "-" or an empty box doesn't break the binding;
+	// they're checked on save (see ReadScoringSettings).
+	[ObservableProperty]
+	private string scoreStep = "1";
+
+	[ObservableProperty]
+	private string startScore = "0";
+
+	[ObservableProperty]
+	private bool hasMaxScore;
+
+	[ObservableProperty]
+	private string maxScore = string.Empty;
+
+	[ObservableProperty]
+	private bool hasMinScore;
+
+	[ObservableProperty]
+	private string minScore = string.Empty;
+
+	[ObservableProperty]
+	private bool hasWarningScore;
+
+	[ObservableProperty]
+	private string warningScore = string.Empty;
+
+	// Subgames and results, for every scoring type.
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(SelectedResultModeOption), nameof(ScoreDirectionTitle))]
+	private ResultMode resultMode = ResultMode.Winner;
+
+	/// <summary>The direction choices follow the result type ("Highest score loses" for loser mode, ...).</summary>
+	partial void OnResultModeChanged(ResultMode value)
+	{
+		OnPropertyChanged(nameof(BestScoreOptions));
+		// The Picker clears its selection when its items change; show the choice again.
+		OnPropertyChanged(nameof(BestScoreIndex));
+	}
+
+	public string ScoreDirectionTitle => ResultMode switch
+	{
+		ResultMode.Loser => "Who loses a subgame",
+		ResultMode.Ranking => "Who is 1st in a subgame",
+		_ => "Who wins a subgame"
+	};
+
+	public List<ResultModeOption> ResultModeOptions { get; } = ResultModeOption.All;
+
+	public List<string> BestScoreOptions => ScoringSettings.ScoreDirectionOptions(ResultMode);
+
+	private bool _lowestWins;
+
+	/// <summary>
+	/// The Picker's index: 1 means ScoringSettings.LowestWins. The -1 the Picker
+	/// writes while its items change is ignored, so the choice isn't lost.
+	/// </summary>
+	public int BestScoreIndex
+	{
+		get => _lowestWins ? 1 : 0;
+		set
+		{
+			if (value < 0 || (value == 1) == _lowestWins) return;
+			_lowestWins = value == 1;
+			OnPropertyChanged();
+		}
+	}
+
+	public ResultModeOption? SelectedResultModeOption
+	{
+		get => ResultModeOptions.FirstOrDefault(o => o.Mode == ResultMode);
+		set
+		{
+			if (value is not null)
+				ResultMode = value.Mode;
+		}
+	}
 
 	[ObservableProperty]
 	private List<string> selectedCategories = new();
@@ -111,7 +193,17 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	public bool CanDelete => _editing is not null;
 
 	/// <summary>Bound to the scoring type Picker.</summary>
-	public List<ScoringType> ScoringTypeOptions { get; } = Enum.GetValues<ScoringType>().ToList();
+	public List<ScoringTypeOption> ScoringTypeOptions { get; } = ScoringTypeOption.All;
+
+	public ScoringTypeOption? SelectedScoringOption
+	{
+		get => ScoringTypeOptions.FirstOrDefault(o => o.Type == ScoringType);
+		set
+		{
+			if (value is not null)
+				ScoringType = value.Type;
+		}
+	}
 
 	/// <summary>Every category, with a tick for the ones this game is in. At least one is required.</summary>
 	public ObservableCollection<CategoryChoice> CategoryChoices { get; } = new();
@@ -168,7 +260,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		CoverImageUrl = _editing.CoverImageUrl;
 		IsPaid = _editing.IsPaid;
 		Price = _editing.IsPaid ? _editing.Price : 0.50m;
-		ScoringType = _editing.ScoringType;
+		ShowScoring(_editing.ScoringType, _editing.ScoringSettings);
 		SelectCategories(_editing.CategoryIds);
 	}
 
@@ -200,7 +292,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		CoverImageUrl = request.ProposedCoverImageUrl;
 		IsPaid = request.ProposedIsPaid;
 		Price = request.ProposedIsPaid ? request.ProposedPrice : 0.50m;
-		ScoringType = request.ProposedScoringType;
+		ShowScoring(request.ProposedScoringType, ScoringSettings.FromJson(request.ProposedScoringSettingsText));
 		SelectCategories(request.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries));
 	}
 
@@ -233,6 +325,73 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	private List<string> SelectedCategoryIds() => CategoryChoices.Count > 0
 		? CategoryChoices.Where(c => c.IsSelected).Select(c => c.Category.Id).ToList()
 		: _selectedCategoryIds.ToList();
+
+	/// <summary>
+	/// A game with a scoring type that can't be picked any more shows as Plus /
+	/// minus with the default settings, and switches to it when saved.
+	/// </summary>
+	private void ShowScoring(ScoringType type, ScoringSettings settings)
+	{
+		if (!ScoringTypeOption.IsOffered(type))
+		{
+			type = ScoringType.PlusMinus;
+			settings = ScoringSettings.Default with { ResultMode = settings.ResultMode, LowestWins = settings.LowestWins };
+		}
+		ScoringType = type;
+		ShowScoringSettings(settings);
+	}
+
+	private void ShowScoringSettings(ScoringSettings settings)
+	{
+		ScoreStep = settings.Step.ToString(CultureInfo.CurrentCulture);
+		StartScore = settings.StartScore.ToString(CultureInfo.CurrentCulture);
+		HasMaxScore = settings.MaxScore is not null;
+		MaxScore = settings.MaxScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		HasMinScore = settings.MinScore is not null;
+		MinScore = settings.MinScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		HasWarningScore = settings.WarningScore is not null;
+		WarningScore = settings.WarningScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		ResultMode = settings.ResultMode;
+		_lowestWins = settings.LowestWins;
+		OnPropertyChanged(nameof(BestScoreIndex));
+	}
+
+	/// <summary>
+	/// The scoring settings from the form, or null with StatusMessage saying
+	/// what to fix. The result mode applies to every scoring type; the rest
+	/// only to Plus / minus.
+	/// </summary>
+	private ScoringSettings? ReadScoringSettings()
+	{
+		int? Read(string text, string what)
+		{
+			// Some keyboards type a real minus sign (−) instead of a hyphen.
+			if (int.TryParse(text.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var value))
+				return value;
+			StatusMessage = $"Enter a whole number for the {what}.";
+			return null;
+		}
+
+		var settings = new ScoringSettings { ResultMode = ResultMode, LowestWins = _lowestWins };
+
+		if (IsPlusMinus)
+		{
+			if (Read(ScoreStep, "step") is not { } step) return null;
+			if (Read(StartScore, "starting score") is not { } start) return null;
+			int? max = null, min = null, warning = null;
+			if (HasMaxScore && (max = Read(MaxScore, "maximum score")) is null) return null;
+			if (HasMinScore && (min = Read(MinScore, "minimum score")) is null) return null;
+			if (HasWarningScore && (warning = Read(WarningScore, "warning")) is null) return null;
+			settings = settings with { Step = step, StartScore = start, MaxScore = max, MinScore = min, WarningScore = warning };
+		}
+
+		if (settings.Problem() is { } problem)
+		{
+			StatusMessage = problem;
+			return null;
+		}
+		return settings;
+	}
 
 	private void ShowRules(string rulesText)
 	{
@@ -315,6 +474,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			return;
 		}
 
+		if (ReadScoringSettings() is null)
+			return;
+
 		var me = _team.Me;
 		if (me is null)
 		{
@@ -346,6 +508,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		game.RulesText = EditableRulesBlock.ToRulesText(RulesBlocks);
 		game.CoverImageUrl = CoverImageUrl;
 		game.ScoringType = ScoringType;
+		// Checked by SaveAsync before saving; deleting keeps the saved settings if the form's are unfinished.
+		game.ScoringSettings = ReadScoringSettings() ?? basedOn?.ScoringSettings ?? ScoringSettings.Default;
 		game.IsPaid = IsPaid;
 		game.Price = IsPaid ? Price : 0m;
 		game.CategoryIds = SelectedCategoryIds();
@@ -486,7 +650,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	private static bool SameContent(PubGame a, PubGame b) =>
 		a.Name == b.Name && a.RulesText == b.RulesText && a.CoverImageUrl == b.CoverImageUrl
-		&& a.ScoringType == b.ScoringType && a.IsPaid == b.IsPaid && a.Price == b.Price
+		&& a.ScoringType == b.ScoringType && a.ScoringSettings == b.ScoringSettings && a.IsPaid == b.IsPaid && a.Price == b.Price
 		&& a.CategoryIds.ToHashSet().SetEquals(b.CategoryIds);
 
 	private async Task<bool> TrySaveToCloudAsync(PubGame game)

@@ -152,6 +152,9 @@ public class FirestoreClient
 		if (obj.TryGetPropertyValue("arrayValue", out var a))
 			// An empty array comes back without "values".
 			return a?["values"]?.AsArray().Select(v => FromValue(v!)).ToList() ?? new List<object?>();
+		if (obj.TryGetPropertyValue("mapValue", out var m))
+			// An empty map comes back without "fields".
+			return m?["fields"]?.AsObject().ToDictionary(field => field.Key, field => FromValue(field.Value!)) ?? new Dictionary<string, object?>();
 		return null;
 	}
 }

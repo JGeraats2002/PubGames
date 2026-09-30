@@ -182,8 +182,8 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 				: "Cover image: replaced");
 		if (before.IsPaid != after.IsPaid || before.Price != after.Price)
 			changes.Add($"Price: {before.PriceLabel} → {after.PriceLabel}");
-		if (before.ScoringType != after.ScoringType)
-			changes.Add($"Scoring type: {before.ScoringType} → {after.ScoringType}");
+		if (before.ScoringType != after.ScoringType || before.ScoringSettings != after.ScoringSettings)
+			changes.Add($"Scoring: {before.ScoringLabel} → {after.ScoringLabel}");
 		if (!before.CategoryIds.ToHashSet().SetEquals(after.CategoryIds))
 		{
 			var old = _categories.LabelFor(before.CategoryIds, _allCategories);

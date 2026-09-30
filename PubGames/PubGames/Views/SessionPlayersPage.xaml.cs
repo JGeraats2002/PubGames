@@ -56,10 +56,7 @@ public partial class SessionPlayersPage : ContentPage
 			replacement = _vm.AvailablePlayers.FirstOrDefault(p => p.Name == choice);
 		if (replacement is null) return;
 
-		var takeOver = row.Score != 0 && await DisplayAlertAsync("Score",
-			$"Does {replacement.Name} continue with {row.Player.Name}'s score ({row.Score})?",
-			$"Yes, continue at {row.Score}", "No, start at 0");
-		await _vm.ReplaceAsync(row, replacement, takeOver);
+		await _vm.ReplaceAsync(row, replacement);
 	}
 
 	private async void OnSavedPlayerTapped(object? sender, TappedEventArgs e)

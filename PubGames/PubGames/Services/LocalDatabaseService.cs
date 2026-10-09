@@ -26,10 +26,16 @@ public interface ILocalDatabaseService
 	Task<List<GameCategory>> GetCategoriesAsync();
 	Task SaveCategoryAsync(GameCategory category);
 	Task DeleteCategoryAsync(string categoryId);
+	/// <summary>All main categories, oldest first.</summary>
+	Task<List<CategoryGroup>> GetCategoryGroupsAsync();
+	Task SaveCategoryGroupAsync(CategoryGroup group);
+	Task DeleteCategoryGroupAsync(string groupId);
 
 	// Sessions
 	Task<GameSession?> GetSessionAsync(string sessionId);
 	Task SaveSessionAsync(GameSession session);
+	/// <summary>Finished games whose results haven't been published to the players' stats yet.</summary>
+	Task<List<GameSession>> GetUnpublishedFinishedSessionsAsync(string accountId);
 	Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId);
 	Task SaveParticipantAsync(SessionParticipant participant);
 	/// <summary>Every subgame result of a session, in subgame order.</summary>
@@ -86,6 +92,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await _db.CreateTableAsync<Player>();
 		await _db.CreateTableAsync<PubGame>();
 		await _db.CreateTableAsync<GameCategory>();
+		await _db.CreateTableAsync<CategoryGroup>();
 		await _db.CreateTableAsync<InboxMessage>();
 		await _db.CreateTableAsync<GameSession>();
 		await _db.CreateTableAsync<SessionParticipant>();
@@ -164,6 +171,24 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await db.DeleteAsync<GameCategory>(categoryId);
 	}
 
+	public async Task<List<CategoryGroup>> GetCategoryGroupsAsync()
+	{
+		var db = await DbAsync();
+		return await db.Table<CategoryGroup>().OrderBy(g => g.CreatedAt).ToListAsync();
+	}
+
+	public async Task SaveCategoryGroupAsync(CategoryGroup group)
+	{
+		var db = await DbAsync();
+		await db.InsertOrReplaceAsync(group);
+	}
+
+	public async Task DeleteCategoryGroupAsync(string groupId)
+	{
+		var db = await DbAsync();
+		await db.DeleteAsync<CategoryGroup>(groupId);
+	}
+
 	public async Task<List<InboxMessage>> GetMessagesToAsync(IEnumerable<string> recipients)
 	{
 		var to = recipients.ToList();
@@ -196,6 +221,14 @@ public class LocalDatabaseService : ILocalDatabaseService
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(session);
+	}
+
+	public async Task<List<GameSession>> GetUnpublishedFinishedSessionsAsync(string accountId)
+	{
+		var db = await DbAsync();
+		return await db.Table<GameSession>()
+			.Where(s => s.AccountId == accountId && s.EndedAt != null && !s.IsSynced)
+			.ToListAsync();
 	}
 
 	public async Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId)

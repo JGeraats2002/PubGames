@@ -20,7 +20,9 @@
 				        HeightRequest="34" Padding="10,0" FontSize="12"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 			</Grid>
-			<Label Text="{Binding Rules.Explanation}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<!-- Manual plus / minus: why an amount wasn't accepted. A fixed height, so the cards don't jump. -->
+			<Label x:Name="ScoreMessage" IsVisible="False" HeightRequest="38" FontSize="13" FontAttributes="Bold"
+			       TextColor="{StaticResource Danger}" LineBreakMode="WordWrap" MaxLines="2" />
 		</VerticalStackLayout>
 
 		<!-- One card per player, all on screen at once: filled in by ScoreboardPage.xaml.cs,

@@ -7,6 +7,19 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
+/// <summary>Where a game's picture comes from.</summary>
+public enum PictureSource
+{
+	/// <summary>Picked from the phone's photos.</summary>
+	Library,
+
+	/// <summary>Taken with the camera now.</summary>
+	Camera,
+
+	/// <summary>Made in the app's image editor.</summary>
+	Drawing
+}
+
 /// <summary>
 /// Create a new game, or edit/delete an existing one when opened with a
 /// "gameId" navigation parameter from the admin library.
@@ -66,7 +79,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[ObservableProperty]
 	private string name = string.Empty;
 
-	/// <summary>The rules as text boxes with the pictures shown in between; saved as RulesText.</summary>
+	/// <summary>The rules as pieces of text with the pictures in between (see EditableRulesBlock); saved as RulesText.</summary>
 	public ObservableCollection<EditableRulesBlock> RulesBlocks { get; private set; } = EditableRulesBlock.FromRulesText(string.Empty);
 
 	/// <summary>Image reference from IImageStore (not necessarily a URL, despite the model's field name).</summary>
@@ -75,7 +88,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	private string? coverImageUrl;
 
 	[ObservableProperty]
-	[NotifyCanExecuteChangedFor(nameof(UploadCoverCommand), nameof(SaveCommand))]
+	[NotifyCanExecuteChangedFor(nameof(SaveCommand))]
 	private bool isUploading;
 
 	public bool HasCover => !string.IsNullOrEmpty(CoverImageUrl);
@@ -88,11 +101,59 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	private decimal price = 0.50m;
 
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(IsPlusMinus), nameof(SelectedScoringOption))]
+	[NotifyPropertyChangedFor(nameof(IsPlusMinus), nameof(IsManual), nameof(HasScoreSettings), nameof(SelectedScoringOption))]
 	private ScoringType scoringType = ScoringType.PlusMinus;
 
-	/// <summary>Plus / minus has settings to fill in; the form shows them only then.</summary>
-	public bool IsPlusMinus => ScoringType == ScoringType.PlusMinus;
+	// A new game starts with nothing chosen in the dropdowns ("Choose ..."); an existing game shows its choices.
+	private bool _scoringChosen;
+	private bool _resultModeChosen;
+
+	/// <summary>Plus / minus: a fixed step per tap.</summary>
+	public bool IsPlusMinus => _scoringChosen && ScoringType == ScoringType.PlusMinus;
+
+	/// <summary>Manual plus / minus: an amount typed in per tap, within the amount rules.</summary>
+	public bool IsManual => _scoringChosen && ScoringType == ScoringType.ManualPlusMinus;
+
+	/// <summary>Both plus / minus types share the start score, limits and warning.</summary>
+	public bool HasScoreSettings => IsPlusMinus || IsManual;
+
+	/// <summary>Manual plus / minus: the rules for typed amounts, linked with AND / OR.</summary>
+	public ObservableCollection<EditableScoreRule> AmountRules { get; } = new();
+
+	public void AddAmountRule() => AmountRules.Add(new EditableScoreRule());
+
+	public void RemoveAmountRule(EditableScoreRule rule) => AmountRules.Remove(rule);
+
+	public void ToggleJoiner(EditableScoreRule rule) => rule.ToggleJoiner();
+
+	/// <summary>The rules as one sentence with brackets, so it's clear how AND and OR combine.</summary>
+	public string AmountRulesPreview
+	{
+		get
+		{
+			if (AmountRules.Count == 0) return "No rules: any amount can be entered.";
+			if (AmountRules.Any(r => r.Kind is null))
+				return "Choose what each rule checks to see what's allowed.";
+			var rules = AmountRules.Select(r => r.ToRule()!).ToList();
+			if (rules.Any(r => r.NeedsValue && r.Value is null || r.NeedsSecondValue && r.Value2 is null))
+				return "Fill in the numbers to see what's allowed.";
+			return $"Allowed: amounts that are {AmountRuleSet.Describe(rules)}.";
+		}
+	}
+
+	private void OnAmountRulesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+	{
+		foreach (EditableScoreRule rule in e.NewItems ?? Array.Empty<EditableScoreRule>())
+			rule.PropertyChanged += OnAmountRuleChanged;
+		foreach (EditableScoreRule rule in e.OldItems ?? Array.Empty<EditableScoreRule>())
+			rule.PropertyChanged -= OnAmountRuleChanged;
+		for (var i = 0; i < AmountRules.Count; i++)
+			AmountRules[i].IsFirst = i == 0;
+		OnPropertyChanged(nameof(AmountRulesPreview));
+	}
+
+	private void OnAmountRuleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+		OnPropertyChanged(nameof(AmountRulesPreview));
 
 	// Plus / minus settings. Text rather than numbers, so a half-typed "-" or an empty box doesn't break the binding;
 	// they're checked on save (see ReadScoringSettings).
@@ -122,7 +183,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	// Subgames and results, for every scoring type.
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(SelectedResultModeOption), nameof(ScoreDirectionTitle))]
+	[NotifyPropertyChangedFor(nameof(SelectedResultModeOption), nameof(ScoreDirectionTitle), nameof(ScoreDirectionPrompt))]
 	private ResultMode resultMode = ResultMode.Winner;
 
 	/// <summary>The direction choices follow the result type ("Highest score loses" for loser mode, ...).</summary>
@@ -140,19 +201,29 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_ => "Who wins a subgame"
 	};
 
+	/// <summary>The dropdown's text while nothing is chosen.</summary>
+	public string ScoreDirectionPrompt => ResultMode switch
+	{
+		ResultMode.Loser => "Choose who loses",
+		ResultMode.Ranking => "Choose who is 1st",
+		_ => "Choose who wins"
+	};
+
 	public List<ResultModeOption> ResultModeOptions { get; } = ResultModeOption.All;
 
 	public List<string> BestScoreOptions => ScoringSettings.ScoreDirectionOptions(ResultMode);
 
-	private bool _lowestWins;
+	/// <summary>Null until chosen.</summary>
+	private bool? _lowestWins;
 
 	/// <summary>
-	/// The Picker's index: 1 means ScoringSettings.LowestWins. The -1 the Picker
-	/// writes while its items change is ignored, so the choice isn't lost.
+	/// The Picker's index: 1 means ScoringSettings.LowestWins, -1 nothing chosen
+	/// yet. The -1 the Picker writes while its items change is ignored, so the
+	/// choice isn't lost.
 	/// </summary>
 	public int BestScoreIndex
 	{
-		get => _lowestWins ? 1 : 0;
+		get => _lowestWins switch { null => -1, true => 1, false => 0 };
 		set
 		{
 			if (value < 0 || (value == 1) == _lowestWins) return;
@@ -163,16 +234,68 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	public ResultModeOption? SelectedResultModeOption
 	{
-		get => ResultModeOptions.FirstOrDefault(o => o.Mode == ResultMode);
+		get => _resultModeChosen ? ResultModeOptions.FirstOrDefault(o => o.Mode == ResultMode) : null;
 		set
 		{
-			if (value is not null)
-				ResultMode = value.Mode;
+			if (value is null) return;
+			_resultModeChosen = true;
+			ResultMode = value.Mode;
+			OnPropertyChanged();
 		}
 	}
 
 	[ObservableProperty]
 	private List<string> selectedCategories = new();
+
+	// Number of players. Each limit has its own switch; both off means any number.
+	// Text rather than numbers, like the score settings; checked on save (see ReadPlayers).
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
+	private bool hasMinPlayers;
+
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
+	private string minPlayers = string.Empty;
+
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
+	private bool hasMaxPlayers;
+
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
+	private string maxPlayers = string.Empty;
+
+	/// <summary>What players will see, e.g. "Players: 2-6", or what still needs filling in.</summary>
+	public string PlayersPreview => ReadPlayers(out var min, out var max) is { } problem
+		? problem
+		: $"Players: {PubGame.PlayersLabelFor(min, max)}";
+
+	private void ShowPlayers(int? min, int? max)
+	{
+		HasMinPlayers = min is not null;
+		MinPlayers = min?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		HasMaxPlayers = max is not null;
+		MaxPlayers = max?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+	}
+
+	/// <summary>The minimum and maximum from the form (null where its switch is off). Returns what's wrong, or null when it's fine.</summary>
+	private string? ReadPlayers(out int? min, out int? max)
+	{
+		min = max = null;
+		if (HasMinPlayers)
+		{
+			if (!int.TryParse(MinPlayers.Trim(), NumberStyles.None, CultureInfo.CurrentCulture, out var least) || least < 1)
+				return "Enter a whole number (1 or more) for the minimum number of players, or switch it off.";
+			min = least;
+		}
+		if (HasMaxPlayers)
+		{
+			if (!int.TryParse(MaxPlayers.Trim(), NumberStyles.None, CultureInfo.CurrentCulture, out var most) || most < 1)
+				return "Enter a whole number (1 or more) for the maximum number of players, or switch it off.";
+			max = most;
+		}
+		return min > max ? "The minimum number of players can't be higher than the maximum." : null;
+	}
 
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
@@ -197,16 +320,27 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	public ScoringTypeOption? SelectedScoringOption
 	{
-		get => ScoringTypeOptions.FirstOrDefault(o => o.Type == ScoringType);
+		get => _scoringChosen ? ScoringTypeOptions.FirstOrDefault(o => o.Type == ScoringType) : null;
 		set
 		{
-			if (value is not null)
-				ScoringType = value.Type;
+			if (value is null) return;
+			_scoringChosen = true;
+			ScoringType = value.Type;
+			OnPropertyChanged();
+			OnPropertyChanged(nameof(IsPlusMinus));
+			OnPropertyChanged(nameof(IsManual));
+			OnPropertyChanged(nameof(HasScoreSettings));
 		}
 	}
 
-	/// <summary>Every category, with a tick for the ones this game is in. At least one is required.</summary>
+	/// <summary>Every category, with a tick for the ones this game is in.</summary>
 	public ObservableCollection<CategoryChoice> CategoryChoices { get; } = new();
+
+	/// <summary>
+	/// The same choices under their main categories, as shown on the page. At
+	/// least one is required from every main category.
+	/// </summary>
+	public ObservableCollection<CategoryChoiceGroup> CategoryChoiceGroups { get; } = new();
 
 	/// <summary>What the game/proposal was in, until the category list has loaded.</summary>
 	private HashSet<string> _selectedCategoryIds = new();
@@ -222,13 +356,27 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_cloud = cloud;
 		_permissions = permissions;
 
+		AmountRules.CollectionChanged += OnAmountRulesChanged;
+
 		IsModerator = _team.Me is { } me && !_permissions.CanChangeGamesDirectly(me);
-		if (IsModerator)
-			ReviewInfo = "You're a moderator: when you submit, an admin reviews your game before players see it.";
 	}
 
+	/// <summary>Images uploaded while this form was open; the ones the saved game doesn't show are deleted again.</summary>
+	private readonly List<string> _uploadedHere = new();
+
+	/// <summary>The game or request was loaded into the form already.</summary>
+	private bool _loaded;
+
+	/// <summary>
+	/// Shell calls this when the page opens, and again every time another page
+	/// closes on top of it - the image editor, for one. Loading again then
+	/// would throw away everything typed since, so it only loads once.
+	/// </summary>
 	public async void ApplyQueryAttributes(IDictionary<string, object> query)
 	{
+		if (_loaded) return;
+		_loaded = true;
+
 		if (query.TryGetValue("requestId", out var rid) && rid is string requestId)
 			await LoadRequestAsync(requestId);
 		else if (query.TryGetValue("gameId", out var gid) && gid is string gameId)
@@ -249,10 +397,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			{
 				ShowProposal(_request);
 				CanWithdraw = true;
-				ReviewInfo = "Your changes to this game are waiting for review. Submitting again replaces them.";
+				ReviewInfo = "Your changes to this game are waiting for review. Submitting again will replace them.";
 				return;
 			}
-			ReviewInfo = "You're a moderator: your changes go to an admin for review. Players keep seeing the current version until an admin approves them.";
 		}
 
 		Name = _editing.Name;
@@ -261,6 +408,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		IsPaid = _editing.IsPaid;
 		Price = _editing.IsPaid ? _editing.Price : 0.50m;
 		ShowScoring(_editing.ScoringType, _editing.ScoringSettings);
+		ShowPlayers(_editing.MinPlayers, _editing.MaxPlayers);
 		SelectCategories(_editing.CategoryIds);
 	}
 
@@ -277,11 +425,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		CanWithdraw = _request.IsWaitingForReview;
 		ReviewInfo = _request.Status switch
 		{
-			ReviewStatus.WaitingForReview => "This request is waiting for review. Submitting again replaces it.",
+			ReviewStatus.WaitingForReview => "This request is waiting for review. Submitting again will replace it.",
 			ReviewStatus.Rejected when !string.IsNullOrWhiteSpace(_request.ReviewNote) =>
 				$"An admin rejected this request: \"{_request.ReviewNote}\". Change what's needed and submit it again.",
 			ReviewStatus.Rejected => "An admin rejected this request. Change what's needed and submit it again.",
-			_ => "This request was approved. Submitting again sends a new request."
+			_ => "This request was approved. Submitting again will send a new request."
 		};
 	}
 
@@ -293,6 +441,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		IsPaid = request.ProposedIsPaid;
 		Price = request.ProposedIsPaid ? request.ProposedPrice : 0.50m;
 		ShowScoring(request.ProposedScoringType, ScoringSettings.FromJson(request.ProposedScoringSettingsText));
+		ShowPlayers(request.ProposedMinPlayers, request.ProposedMaxPlayers);
 		SelectCategories(request.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries));
 	}
 
@@ -302,17 +451,40 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (CategoryChoices.Count > 0) return;
 
 		var categories = await _categories.GetCachedAsync();
+		var groups = await _categories.GetCachedGroupsAsync();
 		try
 		{
 			categories = await _categories.PullAsync();
+			groups = await _categories.PullGroupsAsync();
 		}
 		catch (Exception)
 		{
 			// Offline: this phone's copy.
 		}
 
-		foreach (var category in categories)
-			CategoryChoices.Add(new CategoryChoice { Category = category, IsSelected = _selectedCategoryIds.Contains(category.Id) });
+		foreach (var (group, inGroup) in CategoryGroup.Arrange(groups, categories))
+		{
+			// Categories without a main category are on their way out (an admin's app removes them).
+			if (group is null && groups.Count > 0) continue;
+
+			var choices = inGroup
+				.Select(c => new CategoryChoice { Category = c, IsSelected = _selectedCategoryIds.Contains(c.Id) })
+				.ToList();
+			foreach (var choice in choices)
+				CategoryChoices.Add(choice);
+			// A main category without categories has nothing to choose from.
+			if (choices.Count > 0)
+				CategoryChoiceGroups.Add(new CategoryChoiceGroup { Group = group, Choices = choices });
+		}
+	}
+
+	/// <summary>Null when every main category has a category chosen; otherwise what's still missing.</summary>
+	private string? MissingCategories()
+	{
+		var missing = CategoryChoiceGroups.Where(g => g.IsRequired && !g.HasSelection).Select(g => g.Name).ToList();
+		if (missing.Count > 0)
+			return $"Pick at least one category for: {string.Join(", ", missing)}.";
+		return SelectedCategoryIds().Count == 0 ? "Pick at least one category, so players can find the game." : null;
 	}
 
 	private void SelectCategories(IEnumerable<string> ids)
@@ -337,7 +509,12 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			type = ScoringType.PlusMinus;
 			settings = ScoringSettings.Default with { ResultMode = settings.ResultMode, LowestWins = settings.LowestWins };
 		}
+		_scoringChosen = true;
 		ScoringType = type;
+		OnPropertyChanged(nameof(SelectedScoringOption));
+		OnPropertyChanged(nameof(IsPlusMinus));
+		OnPropertyChanged(nameof(IsManual));
+		OnPropertyChanged(nameof(HasScoreSettings));
 		ShowScoringSettings(settings);
 	}
 
@@ -351,15 +528,23 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		MinScore = settings.MinScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
 		HasWarningScore = settings.WarningScore is not null;
 		WarningScore = settings.WarningScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		while (AmountRules.Count > 0)
+			AmountRules.RemoveAt(0); // not Clear(): that doesn't say which rules left
+		foreach (var rule in settings.AmountRules)
+			AmountRules.Add(EditableScoreRule.From(rule));
+		_resultModeChosen = true;
 		ResultMode = settings.ResultMode;
+		OnPropertyChanged(nameof(SelectedResultModeOption));
 		_lowestWins = settings.LowestWins;
 		OnPropertyChanged(nameof(BestScoreIndex));
 	}
 
 	/// <summary>
 	/// The scoring settings from the form, or null with StatusMessage saying
-	/// what to fix. The result mode applies to every scoring type; the rest
-	/// only to Plus / minus.
+	/// what to fix: numbers that aren't numbers, and settings that can't work
+	/// together (ScoringSettings.Problem), e.g. a minimum above the starting
+	/// score or amount rules that allow nothing. The result mode applies to
+	/// every scoring type; the rest only to the plus / minus types.
 	/// </summary>
 	private ScoringSettings? ReadScoringSettings()
 	{
@@ -372,20 +557,51 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			return null;
 		}
 
-		var settings = new ScoringSettings { ResultMode = ResultMode, LowestWins = _lowestWins };
-
-		if (IsPlusMinus)
+		// Every dropdown needs a choice.
+		if (!_scoringChosen)
 		{
-			if (Read(ScoreStep, "step") is not { } step) return null;
+			StatusMessage = "Choose a scoring type.";
+			return null;
+		}
+		if (!_resultModeChosen)
+		{
+			StatusMessage = "Choose how the result of each subgame is noted.";
+			return null;
+		}
+		if (_lowestWins is not { } lowestWins)
+		{
+			StatusMessage = $"{ScoreDirectionPrompt}: the highest or the lowest score.";
+			return null;
+		}
+		if (IsManual && AmountRules.Select((r, i) => (r, i)).FirstOrDefault(x => x.r.Kind is null) is { r: not null } missing)
+		{
+			StatusMessage = $"Rule {missing.i + 1}: choose what it checks.";
+			return null;
+		}
+
+		var settings = new ScoringSettings { ResultMode = ResultMode, LowestWins = lowestWins };
+
+		if (HasScoreSettings)
+		{
+			var step = 1;
+			if (IsPlusMinus)
+			{
+				if (Read(ScoreStep, "step") is not { } typedStep) return null;
+				step = typedStep;
+			}
 			if (Read(StartScore, "starting score") is not { } start) return null;
 			int? max = null, min = null, warning = null;
 			if (HasMaxScore && (max = Read(MaxScore, "maximum score")) is null) return null;
 			if (HasMinScore && (min = Read(MinScore, "minimum score")) is null) return null;
 			if (HasWarningScore && (warning = Read(WarningScore, "warning")) is null) return null;
-			settings = settings with { Step = step, StartScore = start, MaxScore = max, MinScore = min, WarningScore = warning };
+			settings = settings with
+			{
+				Step = step, StartScore = start, MaxScore = max, MinScore = min, WarningScore = warning,
+				AmountRules = IsManual ? AmountRules.Select(r => r.ToRule()!).ToList() : []
+			};
 		}
 
-		if (settings.Problem() is { } problem)
+		if (settings.Problem(ScoringType) is { } problem)
 		{
 			StatusMessage = problem;
 			return null;
@@ -393,39 +609,35 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return settings;
 	}
 
-	private void ShowRules(string rulesText)
+	private void ShowRules(string rules)
 	{
-		RulesBlocks = EditableRulesBlock.FromRulesText(rulesText);
+		RulesBlocks = EditableRulesBlock.FromRulesText(rules);
 		OnPropertyChanged(nameof(RulesBlocks));
 	}
 
 	private bool CanUpload() => !IsUploading;
 
-	[RelayCommand(CanExecute = nameof(CanUpload))]
-	private async Task UploadCoverAsync()
+	/// <summary>Sets the cover to a picture from the given source.</summary>
+	public async Task SetCoverAsync(PictureSource source, EditedImage? drawing = null)
 	{
-		var reference = await UploadImageAsync();
+		var reference = await UploadPictureAsync(source, drawing);
 		if (reference is not null)
 			CoverImageUrl = reference;
 	}
 
+	/// <summary>The drawing a picture was made from in the image editor, or null if it can't be edited.</summary>
+	public Task<string?> GetDrawingAsync(string? reference) =>
+		string.IsNullOrEmpty(reference) ? Task.FromResult<string?>(null) : _images.GetDrawingAsync(reference);
+
 	[RelayCommand]
 	private void RemoveCover() => CoverImageUrl = null;
 
-	/// <summary>Uploads a picture and shows it in the rules where the cursor was (at the end when no text box was tapped).</summary>
-	public async Task InsertRulesImageAsync(EditableRulesBlock? at, int cursor)
-	{
-		var reference = await UploadImageAsync();
-		if (reference is not null)
-			EditableRulesBlock.InsertImage(RulesBlocks, at, cursor, reference);
-	}
-
-	[RelayCommand]
-	private void RemoveRulesImage(EditableRulesBlock image) =>
-		EditableRulesBlock.RemoveImage(RulesBlocks, image);
-
-	/// <summary>Picks and uploads one image. Returns its reference, or null if cancelled or failed (StatusMessage says why).</summary>
-	private async Task<string?> UploadImageAsync()
+	/// <summary>
+	/// Uploads one image: picked from the phone, taken with the camera, or made
+	/// in the image editor (then given as drawing). Returns its reference, or
+	/// null if cancelled or failed (StatusMessage says why).
+	/// </summary>
+	public async Task<string?> UploadPictureAsync(PictureSource source, EditedImage? drawing = null)
 	{
 		if (IsUploading) return null;
 
@@ -433,8 +645,15 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		StatusMessage = "Uploading image...";
 		try
 		{
-			var reference = await _images.PickAndUploadAsync();
+			var reference = source switch
+			{
+				PictureSource.Camera => await _images.TakePhotoAndUploadAsync(),
+				PictureSource.Drawing when drawing is not null => await _images.UploadAsync(drawing.Image, drawing.Drawing),
+				_ => await _images.PickAndUploadAsync()
+			};
 			StatusMessage = string.Empty;
+			if (reference is not null)
+				_uploadedHere.Add(reference);
 			return reference;
 		}
 		catch (HttpRequestException)
@@ -468,9 +687,15 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			return;
 		}
 
-		if (SelectedCategoryIds().Count == 0)
+		if (ReadPlayers(out _, out _) is { } playersProblem)
 		{
-			StatusMessage = "Pick at least one category, so players can find the game.";
+			StatusMessage = playersProblem;
+			return;
+		}
+
+		if (MissingCategories() is { } missing)
+		{
+			StatusMessage = missing;
 			return;
 		}
 
@@ -513,6 +738,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		game.IsPaid = IsPaid;
 		game.Price = IsPaid ? Price : 0m;
 		game.CategoryIds = SelectedCategoryIds();
+		// Checked by SaveAsync before saving; deleting keeps the saved numbers if the form's are unfinished.
+		(game.MinPlayers, game.MaxPlayers) = ReadPlayers(out var min, out var max) is null
+			? (min, max)
+			: (basedOn?.MinPlayers, basedOn?.MaxPlayers);
 		return game;
 	}
 
@@ -527,12 +756,45 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (!await TrySaveToCloudAsync(game)) return;
 
 		await _local.SaveGameAsync(game);
+
+		// What the game showed before and what was tried out here, as far as it's not shown any more.
+		await ImageCleanup.AfterSaveAsync(_local, _images, game,
+			RulesImages.Refs(_editing?.CoverImageUrl, _editing?.RulesText).Concat(_uploadedHere));
+
 		StatusMessage = string.Empty;
 		Finished?.Invoke(this, null);
 	}
 
+	/// <summary>
+	/// Whether another moderator got in first with changes to (or the deletion
+	/// of) this game since the library was opened; if so StatusMessage says so.
+	/// </summary>
+	private async Task<bool> IsTakenByAnotherModeratorAsync()
+	{
+		if (_editing is null) return false;
+
+		List<ReviewRequest> waiting;
+		try
+		{
+			waiting = await _cloud.PullRequestsWaitingForReviewAsync(CurrentTeamId);
+		}
+		catch (Exception)
+		{
+			// Can't be checked right now; submitting itself will say if there's no connection.
+			return false;
+		}
+
+		var email = TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
+		if (!ReviewRequest.GamesTakenByOthers(waiting, email).TryGetValue(_editing.Id, out var taken)) return false;
+
+		StatusMessage = $"{taken.SubmitterLabel} has already submitted a request for this game, which is waiting for review. You can change the game again once an admin has decided on it, or it's withdrawn.";
+		return true;
+	}
+
 	private async Task SubmitForReviewAsync()
 	{
+		if (await IsTakenByAnotherModeratorAsync()) return;
+
 		var proposal = FormAsGame(_editing);
 		if (_editing is not null && SameContent(proposal, _editing))
 		{
@@ -565,8 +827,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 		StatusMessage = string.Empty;
 		Finished?.Invoke(this, request.Type == ReviewRequestType.NewGame
-			? $"\"{request.SubjectName}\" is submitted for review. An admin decides whether it's published - you get the decision in your Inbox."
-			: $"Your changes to \"{request.SubjectName}\" are submitted for review. Players keep seeing the current version until an admin approves - you get the decision in your Inbox.");
+			? $"\"{request.SubjectName}\" has been submitted for review. An admin will decide whether it's published; you'll get the decision in your Inbox."
+			: $"Your changes to \"{request.SubjectName}\" have been submitted for review. Players will keep seeing the current version until an admin approves them; you'll get the decision in your Inbox.");
 	}
 
 	/// <summary>Admins: soft delete, the game drops out of every player's library on their next refresh. Moderators: request deletion.</summary>
@@ -597,6 +859,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	private async Task RequestDeletionAsync()
 	{
+		if (await IsTakenByAnotherModeratorAsync()) return;
+
 		if (await FindMyWaitingRequestAsync(_editing!.Id, ReviewRequestType.Deletion) is not null)
 		{
 			StatusMessage = "You already requested deletion of this game - it's waiting for review.";
@@ -618,7 +882,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (!await TrySaveRequestAsync(request)) return;
 
 		StatusMessage = string.Empty;
-		Finished?.Invoke(this, $"Deletion of \"{_editing.Name}\" is requested. The game stays playable until an admin approves - you get the decision in your Inbox.");
+		Finished?.Invoke(this, $"You've requested the deletion of \"{_editing.Name}\". The game stays playable until an admin approves it; you'll get the decision in your Inbox.");
 	}
 
 	/// <summary>Takes back the moderator's request while it's still waiting for review.</summary>
@@ -649,8 +913,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	}
 
 	private static bool SameContent(PubGame a, PubGame b) =>
-		a.Name == b.Name && a.RulesText == b.RulesText && a.CoverImageUrl == b.CoverImageUrl
+		// Older games have their pictures without the empty lines around them; that's no change.
+		a.Name == b.Name && RulesImages.Normalize(a.RulesText) == RulesImages.Normalize(b.RulesText) && a.CoverImageUrl == b.CoverImageUrl
 		&& a.ScoringType == b.ScoringType && a.ScoringSettings == b.ScoringSettings && a.IsPaid == b.IsPaid && a.Price == b.Price
+		&& a.MinPlayers == b.MinPlayers && a.MaxPlayers == b.MaxPlayers
 		&& a.CategoryIds.ToHashSet().SetEquals(b.CategoryIds);
 
 	private async Task<bool> TrySaveToCloudAsync(PubGame game)

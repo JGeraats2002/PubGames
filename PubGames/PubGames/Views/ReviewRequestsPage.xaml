@@ -7,14 +7,11 @@
              x:DataType="vm:ReviewRequestsViewModel"
              Title="Requests">
 
-	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">
+	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
 
-		<Label Grid.Row="0" Text="Moderators' new games, changes, deletions and new categories - nothing changes for players until you approve. New categories also land here, to add games to."
-		       FontSize="12" TextColor="{StaticResource TextSecondary}" />
+		<Label Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
-		<Label Grid.Row="1" Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
-
-		<CollectionView Grid.Row="2" ItemsSource="{Binding Requests}">
+		<CollectionView Grid.Row="1" ItemsSource="{Binding Requests}">
 			<CollectionView.EmptyView>
 				<Label Text="No requests waiting for review." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>

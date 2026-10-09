@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -10,11 +11,15 @@ public partial class AccountPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.Account(_vm.Me));
 	}
 
-	protected override void OnAppearing()
+	private async void OnStatsTapped(object? sender, TappedEventArgs e) =>
+		await Shell.Current.GoToAsync(nameof(MyStatsPage));
+
+	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
-		_vm.Load();
+		await _vm.LoadAsync();
 	}
 }

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- The category dropdown, the same everywhere in the app: closed it's one line saying what's selected; tap it to open
+     the category clouds - tap to select, tap again to unselect. -->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.CategoryClouds">
+
+	<VerticalStackLayout Spacing="8">
+
+		<Border x:Name="Header" Padding="12,9" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
+			<Border.StrokeShape>
+				<RoundRectangle CornerRadius="8" />
+			</Border.StrokeShape>
+			<Border.GestureRecognizers>
+				<TapGestureRecognizer Tapped="OnHeaderTapped" />
+			</Border.GestureRecognizers>
+			<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+				<Label x:Name="Summary" FontSize="14" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+				<Label x:Name="Arrow" Grid.Column="1" Text="▾" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+			</Grid>
+		</Border>
+
+		<FlexLayout x:Name="Clouds" Wrap="Wrap" IsVisible="False">
+			<BindableLayout.ItemTemplate>
+				<DataTemplate x:DataType="models:CategoryChoice">
+					<Border Margin="0,0,8,8" Padding="12,6" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="16" />
+						</Border.StrokeShape>
+						<Border.Triggers>
+							<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="Stroke" Value="{StaticResource Primary}" />
+							</DataTrigger>
+						</Border.Triggers>
+						<Border.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnCloudTapped" CommandParameter="{Binding .}" />
+						</Border.GestureRecognizers>
+						<Label Text="{Binding Category.Name}" FontSize="13">
+							<Label.Triggers>
+								<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+									<Setter Property="TextColor" Value="White" />
+								</DataTrigger>
+							</Label.Triggers>
+						</Label>
+					</Border>
+				</DataTemplate>
+			</BindableLayout.ItemTemplate>
+		</FlexLayout>
+
+	</VerticalStackLayout>
+
+</ContentView>

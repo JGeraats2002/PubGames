@@ -32,6 +32,20 @@ public class FirestoreClient
 		await SendAsync(request);
 	}
 
+	/// <summary>
+	/// Changes only these fields of an existing document, leaving the rest as
+	/// it is (fails if the document doesn't exist).
+	/// </summary>
+	public async Task UpdateFieldsAsync(string collection, string id, IDictionary<string, object?> fields)
+	{
+		var mask = string.Join("&", fields.Keys.Select(k => $"updateMask.fieldPaths={Uri.EscapeDataString(k)}"));
+		var body = new JsonObject { ["fields"] = ToFields(fields) };
+		using var request = await CreateRequestAsync(HttpMethod.Patch,
+			$"{BaseUrl}/{collection}/{Uri.EscapeDataString(id)}?{mask}&currentDocument.exists=true");
+		request.Content = JsonContent.Create(body);
+		await SendAsync(request);
+	}
+
 	/// <summary>Deletes collection/id. Deleting a document that doesn't exist is not an error.</summary>
 	public async Task DeleteAsync(string collection, string id)
 	{
@@ -60,6 +74,18 @@ public class FirestoreClient
 			{
 				["field"] = new JsonObject { ["fieldPath"] = field },
 				["op"] = "EQUAL",
+				["value"] = ToValue(value)
+			}
+		});
+
+	/// <summary>All documents in a collection whose array field contains value.</summary>
+	public Task<List<Dictionary<string, object?>>> WhereArrayContainsAsync(string collection, string field, object value) =>
+		QueryAsync(collection, new JsonObject
+		{
+			["fieldFilter"] = new JsonObject
+			{
+				["field"] = new JsonObject { ["fieldPath"] = field },
+				["op"] = "ARRAY_CONTAINS",
 				["value"] = ToValue(value)
 			}
 		});

@@ -13,7 +13,8 @@ public enum ScoringType
 	WinLoseRounds,    // best-of-N round wins
 	Ranking,          // 1st / 2nd / 3rd placement per round
 	Custom,           // admin-defined notation (free text rules, manual score entry)
-	PlusMinus         // + and − by a set step, optional min/max and warning (see ScoringSettings)
+	PlusMinus,        // + and − by a set step, optional min/max and warning (see ScoringSettings)
+	ManualPlusMinus   // + and − by an amount typed in each time, within the game's amount rules
 }
 
 /// <summary>A scoring type as the dropdown shows it.</summary>
@@ -28,13 +29,14 @@ public sealed record ScoringTypeOption(ScoringType Type)
 	/// What admins can pick. Only Plus / minus for now; the other types still
 	/// work for games that already use them, but can't be chosen any more.
 	/// </summary>
-	public static List<ScoringTypeOption> All { get; } = [new(ScoringType.PlusMinus)];
+	public static List<ScoringTypeOption> All { get; } = [new(ScoringType.PlusMinus), new(ScoringType.ManualPlusMinus)];
 
 	public static bool IsOffered(ScoringType type) => All.Any(o => o.Type == type);
 
 	public static string LabelFor(ScoringType type) => type switch
 	{
 		ScoringType.PlusMinus => "Plus / minus",
+		ScoringType.ManualPlusMinus => "Manual plus / minus",
 		ScoringType.PointTally => "Point tally",
 		ScoringType.SipCounter => "Sip counter",
 		ScoringType.WinLoseRounds => "Win/lose rounds",

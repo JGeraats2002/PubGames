@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -10,6 +11,7 @@ public partial class ReviewRequestPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.ReviewRequest);
 		_vm.Finished += async (_, message) =>
 		{
 			if (!string.IsNullOrEmpty(message))
@@ -18,10 +20,25 @@ public partial class ReviewRequestPage : ContentPage
 		};
 	}
 
+	private void OnShowOriginalClicked(object? sender, EventArgs e) => _vm.ShowVersion(original: true);
+
+	private void OnShowChangedClicked(object? sender, EventArgs e) => _vm.ShowVersion(original: false);
+
+	/// <summary>A moderator who can't change this game for now gets in touch with the one who submitted the request.</summary>
+	private async void OnMessageClicked(object? sender, EventArgs e)
+	{
+		var text = await DisplayPromptAsync($"Message to {_vm.SubmitterLabel}",
+			$"Keep it short ({InboxMessage.MaxLength} characters at most):",
+			"Send", "Cancel", maxLength: InboxMessage.MaxLength, keyboard: Keyboard.Chat,
+			initialValue: $"About \"{_vm.SubjectName}\": ");
+		if (!string.IsNullOrWhiteSpace(text) && await _vm.SendMessageAsync(text))
+			await DisplayAlertAsync("Sent", $"Your message is in {_vm.SubmitterLabel}'s Inbox.", "OK");
+	}
+
 	private async void OnApproveClicked(object? sender, EventArgs e)
 	{
 		var confirmed = await DisplayAlertAsync($"{_vm.ApproveButtonText}?",
-			"This changes what every player sees. The moderator gets a message in their Inbox.", _vm.ApproveButtonText, "Cancel");
+			"This will change what every player sees. The moderator will get a message in their Inbox.", _vm.ApproveButtonText, "Cancel");
 		if (confirmed)
 			await _vm.ApproveAsync();
 	}
@@ -32,7 +49,7 @@ public partial class ReviewRequestPage : ContentPage
 		while (true)
 		{
 			var reason = await DisplayPromptAsync("Reject request",
-				$"Tell {_vm.SubmitterLabel} why, so they know what to change. It's sent to their Inbox:",
+				$"Tell {_vm.SubmitterLabel} why, so they know what to change. It will be sent to their Inbox:",
 				"Reject", "Cancel", maxLength: 300, keyboard: Keyboard.Text);
 			if (reason is null) return;
 

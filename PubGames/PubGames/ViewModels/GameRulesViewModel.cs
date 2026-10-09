@@ -36,6 +36,10 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	[ObservableProperty]
 	private string playersSummary = string.Empty;
 
+	/// <summary>How many players the game is for, e.g. "Players: 2-6" or "Players: Any".</summary>
+	[ObservableProperty]
+	private string playerCountLabel = string.Empty;
+
 	/// <summary>How many subgames make up the game: 1 unless the players change it (also during the game).</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(SubgameCountText))]
@@ -62,6 +66,7 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 			_game = game;
 			GameName = game.Name;
 			CoverImageRef = game.CoverImageUrl;
+			PlayerCountLabel = $"Players: {game.PlayersLabel}";
 			RulesBlocks = string.IsNullOrWhiteSpace(game.RulesText)
 				? [new RulesBlock("No rules written for this game yet.", null)]
 				: RulesBlock.Parse(game.RulesText);

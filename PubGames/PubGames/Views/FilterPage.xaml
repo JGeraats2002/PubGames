@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:PubGames.Models"
+             xmlns:views="clr-namespace:PubGames.Views"
+             x:Class="PubGames.Views.FilterPage"
+             x:DataType="models:CategoryFilterSet"
+             Title="Filter">
+
+	<Grid RowDefinitions="*,Auto" Padding="20" RowSpacing="12">
+
+		<ScrollView>
+			<VerticalStackLayout Spacing="18">
+
+				<VerticalStackLayout Spacing="4">
+					<Label Text="Filter games" FontSize="20" FontAttributes="Bold" />
+					<Label Text="Choose what you're looking for. Nothing here is required." FontSize="13"
+					       TextColor="{StaticResource TextSecondary}" />
+				</VerticalStackLayout>
+
+				<!-- A game fits when this number is within its minimum and maximum. All the way left: any number. -->
+				<VerticalStackLayout Spacing="4">
+					<Label Text="Number of players" FontAttributes="Bold" />
+					<Label Text="{Binding PlayersText}" />
+					<Slider x:Name="PlayersSlider" Minimum="0" ValueChanged="OnPlayersChanged" />
+					<Label Text="Slide all the way to the left for any number of players." FontSize="12"
+					       TextColor="{StaticResource TextSecondary}" />
+				</VerticalStackLayout>
+
+				<!-- The categories under their main categories; tap to choose, tap again to take it off. -->
+				<VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Groups}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="models:CategoryChoiceGroup">
+							<VerticalStackLayout Spacing="6">
+								<Label Text="{Binding Name}" FontAttributes="Bold" />
+								<views:CategoryClouds ItemsSource="{Binding Choices}" AlwaysOpen="True" CategoryTapped="OnCategoryTapped" />
+							</VerticalStackLayout>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
+			<Button Text="Clear filters" Clicked="OnClearClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button Grid.Column="1" Text="Show games" Clicked="OnDoneClicked" />
+		</Grid>
+
+	</Grid>
+
+</ContentPage>

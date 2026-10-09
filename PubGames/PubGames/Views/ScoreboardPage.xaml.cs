@@ -1,3 +1,4 @@
+using PubGames.Models;
 using Microsoft.Maui.Controls.Shapes;
 using PubGames.Services;
 using PubGames.ViewModels;
@@ -14,6 +15,12 @@ public partial class ScoreboardPage : ContentPage
 {
 	private const int MaxPerColumn = 8;
 
+	/// <summary>Manual plus / minus: each player's amount box, read when their + or − is tapped.</summary>
+	private readonly Dictionary<ParticipantRow, Entry> _amountBoxes = new();
+
+	/// <summary>The amount boxes' placeholder: an amount the game's rules allow, or nothing without rules.</summary>
+	private string _amountPlaceholder = string.Empty;
+
 	private readonly ScoreboardViewModel _vm;
 	private readonly GameNight _gameNight;
 
@@ -24,10 +31,14 @@ public partial class ScoreboardPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.AttachWithRules(this, () => Help.Scoreboard(_vm.Game?.ScoringType ?? ScoringType.PlusMinus), () => _vm.Game is { } game ? Help.GameRules(game) : null);
 		_gameNight = gameNight;
 		_vm.RowsReloaded += (_, _) =>
 		{
 			_loaded = true;
+			ScoreMessage.IsVisible = _vm.Rules.ManualAmounts is not null;
+			_amountPlaceholder = _vm.Rules.ManualAmounts?.ExampleAmount()?.ToString() ?? string.Empty;
+			ScoreMessage.Text = string.Empty;
 			_builtForCount = -1; // other players may sit in the same number of seats
 			UpdateFooter();
 			BuildBoard();
@@ -112,7 +123,7 @@ public partial class ScoreboardPage : ContentPage
 	{
 		if (_vm.Session is null) return;
 		var confirmed = await DisplayAlertAsync("Finish the game?",
-			"This ends the whole game. You note the result of this last subgame, then see who won" +
+			"This will end the whole game. You'll note the result of this last subgame and then see who won" +
 			(_vm.Settings.ResultMode == Models.ResultMode.Loser ? " and who lost." : "."),
 			"Finish game", "Keep playing");
 		if (!confirmed) return;
@@ -146,6 +157,7 @@ public partial class ScoreboardPage : ContentPage
 		var rows = _vm.Rows;
 		var available = AvailableBoardHeight();
 		if (available <= 0) return;
+		if (_amountBoxes.Values.Any(b => b.IsFocused)) return;
 
 		// Size events fire often; only rebuild when something that matters changed.
 		if (Math.Abs(available - _builtForHeight) < 1 && rows.Count == _builtForCount && Board.Children.Count > 0)
@@ -154,6 +166,7 @@ public partial class ScoreboardPage : ContentPage
 		_builtForCount = rows.Count;
 
 		Board.Children.Clear();
+		_amountBoxes.Clear();
 		Board.RowDefinitions.Clear();
 		Board.ColumnDefinitions.Clear();
 		Board.HeightRequest = available;
@@ -260,28 +273,36 @@ public partial class ScoreboardPage : ContentPage
 		foreach (var label in new[] { seat, name, score })
 			label.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Colors.White)));
 
-		var grid = new Grid
+		var spacing = compact ? 4 : 8;
+		View content;
+		if (rules.ManualAmounts is not null)
+			content = ManualCardContent(row, rules, seat, nameAndStatus, score, height, compact, nameSize, spacing);
+		else
 		{
-			ColumnDefinitions =
+			var grid = new Grid
 			{
-				new ColumnDefinition(GridLength.Auto),
-				new ColumnDefinition(GridLength.Star),
-				new ColumnDefinition(GridLength.Auto),
-				new ColumnDefinition(GridLength.Auto),
-				new ColumnDefinition(GridLength.Auto)
-			},
-			ColumnSpacing = compact ? 4 : 8
-		};
-		grid.Add(seat, 0);
-		grid.Add(nameAndStatus, 1);
-		grid.Add(score, 2);
-		if (rules.MinusStep is { } minus)
-			grid.Add(StepButton(rules.MinusLabel, minus, row, buttonSize, filled: false), 3);
-		grid.Add(StepButton(rules.PlusLabel, rules.PlusStep, row, buttonSize, filled: true), 4);
+				ColumnDefinitions =
+				{
+					new ColumnDefinition(GridLength.Auto),
+					new ColumnDefinition(GridLength.Star),
+					new ColumnDefinition(GridLength.Auto),
+					new ColumnDefinition(GridLength.Auto),
+					new ColumnDefinition(GridLength.Auto)
+				},
+				ColumnSpacing = spacing
+			};
+			grid.Add(seat, 0);
+			grid.Add(nameAndStatus, 1);
+			grid.Add(score, 2);
+			if (rules.MinusStep is { } minus)
+				grid.Add(StepButton(rules.MinusLabel, minus, row, buttonSize, filled: false), 3);
+			grid.Add(StepButton(rules.PlusLabel, rules.PlusStep, row, buttonSize, filled: true), 4);
+			content = grid;
+		}
 
 		var card = new Border
 		{
-			Content = grid,
+			Content = content,
 			Padding = new Thickness(compact ? 8 : 12, 4),
 			StrokeThickness = 1,
 			Stroke = Color("Border"),
@@ -340,8 +361,125 @@ public partial class ScoreboardPage : ContentPage
 		else
 			button.Triggers.Add(When<Button>(nameof(ParticipantRow.IsAtLimit),
 				(Button.BorderColorProperty, Colors.White), (Button.BorderWidthProperty, 2.0)));
-		button.Clicked += async (_, _) => await _vm.AdjustScoreAsync(row, delta);
+		button.Clicked += async (_, _) =>
+		{
+			if (_vm.Rules.ManualAmounts is { } manual)
+				await ApplyTypedAmountAsync(row, manual, subtract: delta < 0);
+			else
+				await _vm.AdjustScoreAsync(row, delta);
+		};
 		return button;
+	}
+
+	/// <summary>
+	/// Manual plus / minus has an amount box and two buttons, which would leave
+	/// hardly any room for the name on one line. So when the card is tall
+	/// enough: seat, name and score on top, amount box with − and + below.
+	/// With many players (low cards): one line, with a smaller box and buttons.
+	/// </summary>
+	private View ManualCardContent(ParticipantRow row, ScoringRules rules, Label seat, View nameAndStatus, Label score,
+		double height, bool compact, double nameSize, double spacing)
+	{
+		const double twoLinesFrom = 84;
+		if (height >= twoLinesFrom)
+		{
+			var lineHeight = (height - 8 - spacing / 2) / 2;
+			var buttonSize = Math.Clamp(lineHeight - 2, 30, 48);
+			score.FontSize = Math.Clamp(lineHeight * 0.75, 16, 36);
+
+			var top = new Grid
+			{
+				ColumnDefinitions = { new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto) },
+				ColumnSpacing = spacing
+			};
+			top.Add(seat, 0);
+			top.Add(nameAndStatus, 1);
+			top.Add(score, 2);
+
+			var box = AmountBox(row, compact, Math.Min(nameSize, 18));
+			box.WidthRequest = -1; // fills the line
+			var bottom = new Grid
+			{
+				ColumnDefinitions = { new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto) },
+				ColumnSpacing = spacing
+			};
+			bottom.Add(box, 0);
+			bottom.Add(StepButton(rules.MinusLabel, -1, row, buttonSize, filled: false), 1);
+			bottom.Add(StepButton(rules.PlusLabel, 1, row, buttonSize, filled: true), 2);
+
+			return new VerticalStackLayout { Spacing = spacing / 2, VerticalOptions = LayoutOptions.Center, Children = { top, bottom } };
+		}
+
+		// Low cards: one line, kept small so the name keeps most of the width.
+		var small = Math.Clamp(height - 10, 28, 36);
+		var line = new Grid
+		{
+			ColumnDefinitions = { new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Auto) },
+			ColumnSpacing = 4
+		};
+		var smallBox = AmountBox(row, compact: true, Math.Min(nameSize, 14));
+		smallBox.WidthRequest = 48;
+		line.Add(seat, 0);
+		line.Add(nameAndStatus, 1);
+		line.Add(score, 2);
+		line.Add(smallBox, 3);
+		line.Add(StepButton(rules.MinusLabel, -1, row, small, filled: false), 4);
+		line.Add(StepButton(rules.PlusLabel, 1, row, small, filled: true), 5);
+		return line;
+	}
+
+	/// <summary>The box a player's amount is typed in (Manual plus / minus).</summary>
+	private Entry AmountBox(ParticipantRow row, bool compact, double fontSize)
+	{
+		var box = new Entry
+		{
+			Placeholder = _amountPlaceholder,
+			Keyboard = Keyboard.Telephone, // has a minus sign, for negative amounts
+			WidthRequest = compact ? 56 : 72,
+			FontSize = fontSize,
+			HorizontalTextAlignment = TextAlignment.End,
+			VerticalOptions = LayoutOptions.Center,
+			MaxLength = 7
+		};
+		// Stays readable on the dark card of a player at a limit.
+		box.Triggers.Add(When<Entry>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Colors.White)));
+		_amountBoxes[row] = box;
+		return box;
+	}
+
+	/// <summary>
+	/// Manual plus / minus: adds or subtracts the amount typed behind the
+	/// player's name, if the game's rules allow it. Otherwise the message line
+	/// at the top says why and what can be entered; the amount stays so it can
+	/// be corrected.
+	/// </summary>
+	private async Task ApplyTypedAmountAsync(ParticipantRow row, Models.ScoringSettings manual, bool subtract)
+	{
+		if (!_amountBoxes.TryGetValue(row, out var box)) return;
+		var text = box.Text?.Trim() ?? string.Empty;
+
+		if (text.Length == 0)
+		{
+			ScoreMessage.Text = $"{row.Player.Name}: type an amount first, then tap + or −.";
+			return;
+		}
+		// Some keyboards type a real minus sign (−) instead of a hyphen.
+		if (!int.TryParse(text.Replace('−', '-'), System.Globalization.NumberStyles.AllowLeadingSign,
+			System.Globalization.CultureInfo.CurrentCulture, out var amount))
+		{
+			ScoreMessage.Text = $"{row.Player.Name}: \"{text}\" isn't a whole number.";
+			return;
+		}
+		if (!manual.AllowsAmount(amount))
+		{
+			ScoreMessage.Text = $"{row.Player.Name}: {amount} isn't allowed. {manual.AllowedAmountsHint()}";
+			return;
+		}
+
+		ScoreMessage.Text = string.Empty;
+		box.Text = string.Empty;
+		box.Unfocus();
+		await _vm.AdjustScoreAsync(row, subtract ? -amount : amount);
 	}
 
 	/// <summary>Add any amount at once, e.g. 25 points; a minus sign subtracts.</summary>

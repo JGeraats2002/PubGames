@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -17,4 +18,6 @@ public partial class LoginPage : ContentPage
 		base.OnAppearing();
 		await _vm.LoadAsync();
 	}
+
+	private async void OnInfoClicked(object? sender, EventArgs e) => await InfoButton.ShowAsync(this, Help.Login);
 }

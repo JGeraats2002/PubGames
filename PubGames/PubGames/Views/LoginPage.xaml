@@ -7,24 +7,25 @@
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Primary}">
 
-	<Grid RowDefinitions="*,Auto" Padding="28,0,28,40">
+	<Grid RowDefinitions="Auto,*,Auto" Padding="28,0,28,40">
 
-		<VerticalStackLayout Grid.Row="0" VerticalOptions="Center" Spacing="10">
+		<!-- No title bar here, so the ⓘ sits in the corner. -->
+		<Button Text="ⓘ" Clicked="OnInfoClicked" HorizontalOptions="End" Margin="0,16,-12,0"
+		        WidthRequest="44" HeightRequest="44" Padding="0" FontSize="22"
+		        BackgroundColor="Transparent" TextColor="White" />
+
+		<VerticalStackLayout Grid.Row="1" VerticalOptions="Center" Spacing="10">
 			<Label Text="Pub Games" FontSize="36" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
 			<Label Text="Scores, rules and games for your night out" FontSize="14"
 			       TextColor="#CECBF6" HorizontalOptions="Center" HorizontalTextAlignment="Center" />
 		</VerticalStackLayout>
 
-		<VerticalStackLayout Grid.Row="1" Spacing="14">
+		<VerticalStackLayout Grid.Row="2" Spacing="14">
 			<ActivityIndicator IsRunning="True" Color="White"
 			                   IsVisible="{Binding ShowSignIn, Converter={StaticResource InvertedBoolConverter}}" />
 
 			<Button Text="Sign in with Google" Command="{Binding SignInCommand}" IsVisible="{Binding ShowSignIn}"
 			        BackgroundColor="White" TextColor="{StaticResource PrimaryDark}" FontAttributes="Bold" />
-
-			<Label Text="Your players, scores and unlocked games are saved to your account."
-			       IsVisible="{Binding ShowSignIn}"
-			       FontSize="12" TextColor="#CECBF6" HorizontalTextAlignment="Center" />
 
 			<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="#F7C1C1" HorizontalTextAlignment="Center" />
 		</VerticalStackLayout>

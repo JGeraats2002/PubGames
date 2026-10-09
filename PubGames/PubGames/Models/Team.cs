@@ -52,6 +52,19 @@ public class TeamMember
 
 	public bool IsAdmin => Role == TeamRole.Admin;
 
+	// What the person looking at the Team page may do with this member (set by AdminTeamViewModel).
+	[Ignore]
+	public bool CanPromote { get; set; }
+
+	[Ignore]
+	public bool CanDemote { get; set; }
+
+	[Ignore]
+	public bool CanRemove { get; set; }
+
+	[Ignore]
+	public bool HasActions => CanPromote || CanDemote || CanRemove;
+
 	[Ignore]
 	public string RoleName => Role == TeamRole.Admin ? "Admin" : "Moderator";
 

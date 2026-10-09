@@ -11,6 +11,7 @@ public partial class GameLibraryPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.GameLibrary);
 	}
 
 	protected override async void OnAppearing()
@@ -19,11 +20,7 @@ public partial class GameLibraryPage : ContentPage
 		await _vm.LoadAsync();
 	}
 
-	private void OnCategoryFilterTapped(object? sender, TappedEventArgs e)
-	{
-		if (e.Parameter is CategoryChoice filter)
-			_vm.SelectCategoryCommand.Execute(filter);
-	}
+	private async void OnFilterClicked(object? sender, EventArgs e) => await FilterPage.ShowAsync(Navigation, _vm.Filters);
 
 	private async void OnGameTapped(object? sender, TappedEventArgs e)
 	{

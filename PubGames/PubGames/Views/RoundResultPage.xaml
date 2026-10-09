@@ -6,11 +6,9 @@
              x:DataType="vm:RoundResultViewModel"
              Title="{Binding Title}">
 
-	<Grid RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="10">
+	<Grid RowDefinitions="*,Auto,Auto" Padding="16" RowSpacing="10">
 
-		<Label Text="{Binding Instruction}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
-
-		<ScrollView Grid.Row="1">
+		<ScrollView>
 			<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="vm:ResultRow">
@@ -72,9 +70,9 @@
 			</VerticalStackLayout>
 		</ScrollView>
 
-		<Label Grid.Row="2" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+		<Label Grid.Row="1" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
 
-		<Button Grid.Row="3" Text="{Binding ConfirmText}" Clicked="OnConfirmClicked" />
+		<Button Grid.Row="2" Text="{Binding ConfirmText}" Clicked="OnConfirmClicked" />
 
 	</Grid>
 

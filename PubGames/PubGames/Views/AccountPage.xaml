@@ -7,20 +7,99 @@
              Title="Account">
 
 	<ScrollView>
-		<VerticalStackLayout Padding="20" Spacing="8">
+		<VerticalStackLayout Padding="20" Spacing="12">
 
-			<Label Text="{Binding DisplayName}" FontSize="20" />
-			<Label Text="{Binding Email}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+			<!-- Profile: what other players see when they add you by your code. -->
+			<Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+				<Border WidthRequest="88" HeightRequest="88" StrokeThickness="0" BackgroundColor="{StaticResource SurfaceMuted}">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="44" />
+					</Border.StrokeShape>
+					<Border.GestureRecognizers>
+						<TapGestureRecognizer Command="{Binding ChangePhotoCommand}" />
+					</Border.GestureRecognizers>
+					<Grid>
+						<Label Text="{Binding Initials}" FontSize="28" IsVisible="{Binding HasNoPhoto}"
+						       HorizontalOptions="Center" VerticalOptions="Center" />
+						<Image Source="{Binding PhotoRef, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill"
+						       IsVisible="{Binding HasPhoto}" />
+					</Grid>
+				</Border>
+				<VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="4">
+					<Label Text="{Binding Email}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+					<Border IsVisible="{Binding IsTeamMember}" BackgroundColor="{StaticResource Accent}"
+					        StrokeThickness="0" Padding="10,4" HorizontalOptions="Start">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="6" />
+						</Border.StrokeShape>
+						<Label Text="{Binding RoleName}" TextColor="White" FontSize="12" />
+					</Border>
+					<Button Text="Change picture" Command="{Binding ChangePhotoCommand}" HorizontalOptions="Start"
+					        HeightRequest="36" Padding="12,0" FontSize="13"
+					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+					        BorderColor="{StaticResource Border}" BorderWidth="1" />
+				</VerticalStackLayout>
+			</Grid>
 
-			<Border IsVisible="{Binding IsTeamMember}" BackgroundColor="{StaticResource Accent}"
-			        StrokeThickness="0" Padding="10,4" HorizontalOptions="Start" Margin="0,4,0,0">
+			<Label Text="Name" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Text="{Binding ProfileName}" Placeholder="Your name" MaxLength="40" />
+			<Label Text="Nickname" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Text="{Binding Nickname}" Placeholder="What players call you" MaxLength="30" />
+			<Button Text="Save profile" Command="{Binding SaveProfileCommand}" />
+
+			<!-- The personal code: others add you with it, so the games count in your stats. -->
+			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" Margin="0,6,0,0">
 				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="6" />
+					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
-				<Label Text="{Binding RoleName}" TextColor="White" FontSize="12" />
+				<Grid ColumnDefinitions="*,Auto">
+					<VerticalStackLayout VerticalOptions="Center">
+						<Label Text="Your player code" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding Code}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
+					</VerticalStackLayout>
+					<Button Grid.Column="1" Text="Copy" Command="{Binding CopyCodeCommand}" VerticalOptions="Center"
+					        HeightRequest="36" Padding="14,0" FontSize="13" />
+				</Grid>
 			</Border>
-			<Label IsVisible="{Binding IsTeamMember}" FontSize="12" TextColor="{StaticResource TextSecondary}"
-			       Text="{Binding RoleDescription}" />
+
+			<Label Text="{Binding ProfileMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" />
+
+			<!-- Stats over every finished game you played in. -->
+			<!-- All games together; tap for the stats per game. -->
+			<Border Stroke="{StaticResource Border}" Padding="12" Margin="0,10,0,0">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="10" />
+				</Border.StrokeShape>
+				<Border.GestureRecognizers>
+					<TapGestureRecognizer Tapped="OnStatsTapped" />
+				</Border.GestureRecognizers>
+				<VerticalStackLayout Spacing="10">
+					<Grid ColumnDefinitions="*,Auto">
+						<Label Text="My stats" FontSize="20" FontAttributes="Bold" />
+						<Label Grid.Column="1" Text="Per game ›" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					</Grid>
+					<Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+						<VerticalStackLayout>
+							<Label Text="{Binding Totals.Played}" FontSize="24" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+							<Label Text="Played" FontSize="13" HorizontalTextAlignment="Center" />
+						</VerticalStackLayout>
+						<VerticalStackLayout Grid.Column="1">
+							<Label Text="{Binding Totals.WonText}" FontSize="17" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+							<Label Text="Won" FontSize="13" HorizontalTextAlignment="Center" />
+						</VerticalStackLayout>
+						<VerticalStackLayout Grid.Column="2">
+							<Label Text="{Binding Totals.LostText}" FontSize="17" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+							<Label Text="Lost" FontSize="13" HorizontalTextAlignment="Center" />
+						</VerticalStackLayout>
+						<VerticalStackLayout Grid.Column="3">
+							<Label Text="{Binding Totals.TiedText}" FontSize="17" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+							<Label Text="Tied" FontSize="13" HorizontalTextAlignment="Center" />
+						</VerticalStackLayout>
+					</Grid>
+				</VerticalStackLayout>
+			</Border>
+			<Label Text="{Binding StatsMessage}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 
 			<Button Text="Sign out" Command="{Binding SignOutCommand}" Margin="0,16,0,0"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"

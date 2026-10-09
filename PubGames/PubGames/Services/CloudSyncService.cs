@@ -60,8 +60,8 @@ public interface ICloudSyncService
 /// </summary>
 public class CloudSyncService : ICloudSyncService
 {
-	private const string GamesCollection = "games";
-	private const string ReviewRequestsCollection = "reviewRequests";
+	internal const string GamesCollection = "games";
+	internal const string ReviewRequestsCollection = "reviewRequests";
 
 	private readonly ILocalDatabaseService _local;
 	private readonly FirestoreClient _firestore;
@@ -85,6 +85,8 @@ public class CloudSyncService : ICloudSyncService
 			["isPaid"] = game.IsPaid,
 			["price"] = game.Price,
 			["categoryIds"] = game.CategoryIds,
+			["minPlayers"] = game.MinPlayers,
+			["maxPlayers"] = game.MaxPlayers,
 			["teamId"] = game.TeamId,
 			["createdByUserId"] = game.CreatedByUserId,
 			["status"] = game.Status.ToString(),
@@ -140,6 +142,8 @@ public class CloudSyncService : ICloudSyncService
 			IsPaid = f.GetValueOrDefault("isPaid") as bool? ?? false,
 			Price = Convert.ToDecimal(f.GetValueOrDefault("price") ?? 0d),
 			CategoryIds = FirestoreClient.AsStringList(f.GetValueOrDefault("categoryIds")),
+			MinPlayers = f.GetValueOrDefault("minPlayers") is long least ? (int)least : null,
+			MaxPlayers = f.GetValueOrDefault("maxPlayers") is long most ? (int)most : null,
 			// Games saved before the host -> admin rename have "hostOrgId" instead.
 			TeamId = f.GetValueOrDefault("teamId") as string ?? f.GetValueOrDefault("hostOrgId") as string ?? string.Empty,
 			CreatedByUserId = f.GetValueOrDefault("createdByUserId") as string ?? string.Empty,
@@ -192,13 +196,16 @@ public class CloudSyncService : ICloudSyncService
 			["reviewedAt"] = r.ReviewedAt,
 			["reviewNote"] = r.ReviewNote,
 			["proposedName"] = r.ProposedName,
+			["proposedGroupId"] = r.ProposedGroupId ?? string.Empty,
 			["proposedRulesText"] = r.ProposedRulesText,
 			["proposedCoverImageUrl"] = r.ProposedCoverImageUrl,
 			["proposedScoringType"] = r.ProposedScoringType.ToString(),
 			["proposedScoringSettings"] = ScoringSettings.FromJson(r.ProposedScoringSettingsText).ToMap(),
 			["proposedIsPaid"] = r.ProposedIsPaid,
 			["proposedPrice"] = r.ProposedPrice,
-			["proposedCategoryIds"] = r.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries)
+			["proposedCategoryIds"] = r.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries),
+			["proposedMinPlayers"] = r.ProposedMinPlayers,
+			["proposedMaxPlayers"] = r.ProposedMaxPlayers
 		});
 		await _local.SaveReviewRequestAsync(r);
 	}
@@ -268,13 +275,16 @@ public class CloudSyncService : ICloudSyncService
 			ReviewedAt = f.GetValueOrDefault("reviewedAt") as DateTime?,
 			ReviewNote = f.GetValueOrDefault("reviewNote") as string ?? string.Empty,
 			ProposedName = f.GetValueOrDefault("proposedName") as string ?? string.Empty,
+			ProposedGroupId = f.GetValueOrDefault("proposedGroupId") as string ?? string.Empty,
 			ProposedRulesText = f.GetValueOrDefault("proposedRulesText") as string ?? string.Empty,
 			ProposedCoverImageUrl = f.GetValueOrDefault("proposedCoverImageUrl") as string,
 			ProposedScoringType = Enum.TryParse<ScoringType>(f.GetValueOrDefault("proposedScoringType") as string, out var st) ? st : ScoringType.Custom,
 			ProposedScoringSettingsText = ScoringSettings.FromMap(f.GetValueOrDefault("proposedScoringSettings")).ToJson(),
 			ProposedIsPaid = f.GetValueOrDefault("proposedIsPaid") as bool? ?? false,
 			ProposedPrice = Convert.ToDecimal(f.GetValueOrDefault("proposedPrice") ?? 0d),
-			ProposedCategoryIdsText = string.Join(',', FirestoreClient.AsStringList(f.GetValueOrDefault("proposedCategoryIds")))
+			ProposedCategoryIdsText = string.Join(',', FirestoreClient.AsStringList(f.GetValueOrDefault("proposedCategoryIds"))),
+			ProposedMinPlayers = f.GetValueOrDefault("proposedMinPlayers") is long least ? (int)least : null,
+			ProposedMaxPlayers = f.GetValueOrDefault("proposedMaxPlayers") is long most ? (int)most : null
 		};
 	}
 }

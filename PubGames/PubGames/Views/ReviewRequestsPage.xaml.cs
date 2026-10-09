@@ -11,6 +11,7 @@ public partial class ReviewRequestsPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.ReviewRequests);
 	}
 
 	/// <summary>Also runs when coming back from a review, so decided requests drop off the list.</summary>

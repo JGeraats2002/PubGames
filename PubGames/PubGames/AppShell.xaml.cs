@@ -26,6 +26,8 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(SessionPlayersPage), typeof(SessionPlayersPage));
 		Routing.RegisterRoute(nameof(RoundResultPage), typeof(RoundResultPage));
 		Routing.RegisterRoute(nameof(StandingsPage), typeof(StandingsPage));
+		Routing.RegisterRoute(nameof(MyStatsPage), typeof(MyStatsPage));
+		Routing.RegisterRoute(nameof(GameStatsPage), typeof(GameStatsPage));
 	}
 
 	/// <param name="me">

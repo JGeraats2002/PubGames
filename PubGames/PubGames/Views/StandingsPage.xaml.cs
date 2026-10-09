@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.Services;
 using PubGames.ViewModels;
 
@@ -12,6 +13,7 @@ public partial class StandingsPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.Standings(_vm.IsFinal));
 		_gameNight = gameNight;
 	}
 

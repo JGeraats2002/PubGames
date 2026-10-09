@@ -18,13 +18,14 @@ Roles and terms used throughout the app and code:
   admin's reason). Admins decide on the **Requests** page (*Approve* /
   *Reject*), which shows what changes plus a preview. Players keep seeing
   the current version until a request is approved. Moderators can also
-  propose a **New category**.
+  propose a **New category** or a **New main category**.
 - **Inbox** — short messages (max 500 characters) between admins and
   moderators, plus **review decisions** sent automatically when an admin
   approves or rejects. The recipient keeps or deletes each message; a
   rejected game/change offers *Edit and submit again*.
-- **Categories** — every game is in at least one (defaults: Family, Friends,
-  Pub, Home, Cards, Dice, Analog, Digital); players filter by category.
+- **Categories** — filed under **main categories** (defaults: Play style,
+  Duration, Alcohol, Difficulty). A game needs at least
+  one category from each main category; players filter by category.
   Adding a category creates an **Add games to category** request for admins.
 
 ## 1. Open it

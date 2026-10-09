@@ -13,15 +13,20 @@ public interface IPermissionService
 	/// <summary>Approve or reject review requests.</summary>
 	bool CanReviewRequests(TeamMember member);
 
-	/// <summary>Add and remove moderators, make someone admin.</summary>
+	/// <summary>Add and remove moderators.</summary>
 	bool CanManageTeam(TeamMember member);
+
+	/// <summary>Make someone admin, turn an admin back into a moderator, remove an admin. Only the owner.</summary>
+	bool CanManageAdmins(TeamMember member);
 }
 
 /// <summary>
 /// Single source of truth for permission checks in the app, so the same rule
 /// is used wherever a button is shown or an action is attempted. Mirrors
 /// isAdmin()/isTeamMember() in firestore.rules, which enforce it in the cloud.
-/// Admins can do everything; moderators only submit review requests.
+/// Admins can do everything except manage other admins, which only the owner
+/// (a built-in admin, AuthConfig.AdminEmails) can; moderators only submit
+/// review requests.
 /// </summary>
 public class PermissionService : IPermissionService
 {
@@ -32,4 +37,6 @@ public class PermissionService : IPermissionService
 	public bool CanReviewRequests(TeamMember member) => member.IsAdmin;
 
 	public bool CanManageTeam(TeamMember member) => member.IsAdmin;
+
+	public bool CanManageAdmins(TeamMember member) => member.IsBuiltInAdmin;
 }

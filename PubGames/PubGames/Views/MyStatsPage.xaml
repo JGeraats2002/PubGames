@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:views="clr-namespace:PubGames.Views"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.MyStatsPage"
+             x:DataType="vm:MyStatsViewModel"
+             Title="My stats per game">
+
+	<Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="12">
+
+		<!-- Search by name; the Filter button opens the filters (number of players, categories) and says how many are set. -->
+		<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+			<SearchBar Placeholder="Search games" Text="{Binding SearchText}" />
+			<Button Grid.Column="1" Text="{Binding Filters.ButtonText}" Clicked="OnFilterClicked"
+			        HeightRequest="40" Padding="14,0" FontSize="13" VerticalOptions="Center"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+		</Grid>
+
+
+		<Label Grid.Row="2" Text="{Binding Message}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+
+		<CollectionView Grid.Row="3" ItemsSource="{Binding VisibleGames}">
+			<CollectionView.EmptyView>
+				<Label Text="No games match." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+			</CollectionView.EmptyView>
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="vm:StatsGameRow">
+					<!-- The same as in the game library; tap for the game's stats. -->
+					<Grid Padding="10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+						<Grid.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
+						</Grid.GestureRecognizers>
+						<Border WidthRequest="44" HeightRequest="44" StrokeThickness="0"
+						        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="8" />
+							</Border.StrokeShape>
+							<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+						</Border>
+						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+							<Label Text="{Binding Name}" />
+						</VerticalStackLayout>
+						<Label Grid.Column="2" Text="{Binding Stats.Played, StringFormat='{0} played ›'}" VerticalOptions="Center"
+						       TextColor="{StaticResource Primary}" />
+					</Grid>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+
+	</Grid>
+
+</ContentPage>

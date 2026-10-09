@@ -44,12 +44,16 @@ public partial class ResultRow : ObservableObject
 public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 {
 	private readonly ILocalDatabaseService _local;
+	private readonly IStatsService _stats;
 
 	private GameSession? _session;
 	private ScoringRules _rules = ScoringRules.For(ScoringType.PlusMinus);
 	private List<SessionParticipant> _participants = new();
 	private bool _saving;
 	private bool _lowestWins;
+
+	/// <summary>Whether the lowest score wins this game (for the ⓘ explanation).</summary>
+	public bool LowestWins => _lowestWins;
 
 	/// <summary>
 	/// Asked when finishing ends in a tie for the win (or for loser), with who's
@@ -73,9 +77,6 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 	private string title = "Result";
 
 	[ObservableProperty]
-	private string instruction = string.Empty;
-
-	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
 	public string ConfirmText => IsFinishing ? "Finish game & show result" : "Start next subgame";
@@ -83,9 +84,10 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 	/// <summary>Raised after saving; true when the whole game is finished.</summary>
 	public event EventHandler<bool>? Saved;
 
-	public RoundResultViewModel(ILocalDatabaseService local)
+	public RoundResultViewModel(ILocalDatabaseService local, IStatsService stats)
 	{
 		_local = local;
+		_stats = stats;
 	}
 
 	public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -108,13 +110,6 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		var round = Math.Max(1, _session.CurrentRound);
 		Title = _session.SubgameCount is { } count ? $"Result of subgame {round} of {count}" : $"Result of subgame {round}";
 		_lowestWins = settings.LowestWins;
-		var best = _lowestWins ? "lowest" : "highest";
-		Instruction = Mode switch
-		{
-			ResultMode.Ranking => $"Places are filled in from the scores ({best} score first). Change them with − and + if needed; players can share a place.",
-			ResultMode.Loser => $"The loser is picked from the scores (the {(_lowestWins ? "highest" : "lowest")} score). Tap to change: more players can lose together.",
-			_ => $"The winner is picked from the scores (the {best} score). Tap to change: more players can share the win."
-		};
 
 		_participants = await _local.GetParticipantsAsync(sessionId);
 		var active = _participants.Where(p => p.IsActive).OrderBy(p => p.Position).ToList();
@@ -175,6 +170,19 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		return Mode == ResultMode.Loser ? $"{who} are tied as loser." : $"{who} are tied for the win.";
 	}
 
+	/// <summary>The result goes to the linked players' stats; offline it goes out later (see StatsService).</summary>
+	private async Task PublishStatsAsync()
+	{
+		try
+		{
+			await _stats.PublishFinishedGamesAsync();
+		}
+		catch (Exception)
+		{
+			// Offline: sent the next time the stats are published.
+		}
+	}
+
 	public async Task ConfirmAsync()
 	{
 		if (_session is null || _saving) return;
@@ -226,6 +234,8 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 				_session.CurrentRound = round + 1;
 			}
 			await _local.SaveSessionAsync(_session);
+			if (finish)
+				_ = PublishStatsAsync();
 			Saved?.Invoke(this, finish);
 		}
 		finally

@@ -7,7 +7,11 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
-/// <summary>Admins: add and remove moderators by email, and make someone admin.</summary>
+/// <summary>
+/// Admins: add and remove moderators by email. Only the owner makes someone
+/// admin, turns an admin back into a moderator or removes an admin; other
+/// admins can send the owner a message for that.
+/// </summary>
 public partial class AdminTeamViewModel : ObservableObject
 {
 	private readonly IPermissionService _permissions;
@@ -58,11 +62,19 @@ public partial class AdminTeamViewModel : ObservableObject
 		}
 	}
 
+	private bool IAmOwner => _team.Me is { } me && _permissions.CanManageAdmins(me);
+
 	private void ShowMembers(IEnumerable<TeamMember> members)
 	{
+		var owner = IAmOwner;
 		Members.Clear();
 		foreach (var m in members)
+		{
+			m.CanPromote = owner && !m.IsAdmin;
+			m.CanDemote = owner && m.IsAdmin && !m.IsBuiltInAdmin;
+			m.CanRemove = !m.IsBuiltInAdmin && (owner || !m.IsAdmin);
 			Members.Add(m);
+		}
 	}
 
 	private bool CanAddModerator() => !IsBusy && !string.IsNullOrWhiteSpace(NewModeratorEmail);
@@ -115,6 +127,7 @@ public partial class AdminTeamViewModel : ObservableObject
 	public async Task RemoveMemberAsync(TeamMember member, string reason)
 	{
 		if (!IsAllowedToManageTeam() || member.IsBuiltInAdmin) return;
+		if (member.IsAdmin && !IsAllowedToManageAdmins()) return;
 
 		StatusMessage = $"Removing {member.Email}...";
 		try
@@ -147,20 +160,28 @@ public partial class AdminTeamViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>Promotion adds a peer admin - it does not replace/remove the promoter.</summary>
+	/// <summary>Owner only. Promotion adds a peer admin - it does not replace/remove the promoter.</summary>
 	[RelayCommand]
-	private async Task MakeAdminAsync(TeamMember member)
-	{
-		if (!IsAllowedToManageTeam() || member.IsBuiltInAdmin) return;
+	private Task MakeAdminAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Admin, $"{member.Label} is now an admin.");
 
-		member.Role = TeamRole.Admin;
+	/// <summary>Owner only: an admin goes back to being a moderator.</summary>
+	[RelayCommand]
+	private Task MakeModeratorAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Moderator, $"{member.Label} is now a moderator.");
+
+	private async Task ChangeRoleAsync(TeamMember member, TeamRole role, string done)
+	{
+		if (!IsAllowedToManageAdmins() || member.IsBuiltInAdmin) return;
+
+		var previous = member.Role;
+		member.Role = role;
 		try
 		{
 			await _team.SaveMemberAsync(member);
-			StatusMessage = $"{member.Label} is now an admin.";
+			StatusMessage = done;
 		}
 		catch (Exception ex)
 		{
+			member.Role = previous;
 			StatusMessage = ex is HttpRequestException ? "No connection - the change wasn't saved." : ex.Message;
 		}
 		// Re-read so the page shows what's actually stored.
@@ -172,6 +193,14 @@ public partial class AdminTeamViewModel : ObservableObject
 		if (_team.Me is { } me && _permissions.CanManageTeam(me)) return true;
 
 		StatusMessage = "Only admins can manage the team.";
+		return false;
+	}
+
+	private bool IsAllowedToManageAdmins()
+	{
+		if (IAmOwner) return true;
+
+		StatusMessage = "Only the owner of the app can make someone admin, turn an admin back into a moderator or remove an admin. If you'd like a change, send the owner a message from your Inbox.";
 		return false;
 	}
 

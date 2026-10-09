@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.GameStatsPage"
+             x:DataType="vm:GameStatsViewModel"
+             Title="{Binding Title}">
+
+	<ScrollView>
+		<VerticalStackLayout Padding="20" Spacing="14">
+
+			<!-- Square and as wide as the page, like the cover everywhere else. -->
+			<Border StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}"
+			        BackgroundColor="{StaticResource SurfaceMuted}">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="10" />
+				</Border.StrokeShape>
+				<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+			</Border>
+			<Label Text="{Binding Title}" FontSize="22" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+
+			<Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+				<VerticalStackLayout>
+					<Label Text="{Binding Stats.Played}" FontSize="24" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+					<Label Text="Played" FontSize="13" HorizontalTextAlignment="Center" />
+				</VerticalStackLayout>
+				<VerticalStackLayout Grid.Column="1">
+					<Label Text="{Binding Stats.WonText}" FontSize="17" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+					<Label Text="Won" FontSize="13" HorizontalTextAlignment="Center" />
+				</VerticalStackLayout>
+				<VerticalStackLayout Grid.Column="2">
+					<Label Text="{Binding Stats.LostText}" FontSize="17" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+					<Label Text="Lost" FontSize="13" HorizontalTextAlignment="Center" />
+				</VerticalStackLayout>
+				<VerticalStackLayout Grid.Column="3">
+					<Label Text="{Binding Stats.TiedText}" FontSize="17" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+					<Label Text="Tied" FontSize="13" HorizontalTextAlignment="Center" />
+				</VerticalStackLayout>
+			</Grid>
+
+			<Label Text="Every time you played it" FontSize="16" FontAttributes="Bold" Margin="0,10,0,0" />
+			<VerticalStackLayout Spacing="4" BindableLayout.ItemsSource="{Binding History}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="vm:PlayedGameLine">
+						<Grid ColumnDefinitions="*,Auto" Padding="0,4">
+							<Label Text="{Binding When}" />
+							<Label Grid.Column="1" Text="{Binding Outcome}" FontAttributes="Bold" />
+						</Grid>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+
+		</VerticalStackLayout>
+	</ScrollView>
+
+</ContentPage>

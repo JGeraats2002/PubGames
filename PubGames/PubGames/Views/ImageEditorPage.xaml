@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PubGames.Views.ImageEditorPage"
+             Title="Create image">
+
+	<Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12" RowSpacing="10">
+
+		<!-- Undo takes back the last change; the ⓘ explains the editor. -->
+		<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+			<Label x:Name="Heading" Text="Create image" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
+			<Button Grid.Column="1" Text="↶ Undo" Clicked="OnUndoClicked" HeightRequest="38" Padding="14,0" FontSize="13"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button Grid.Column="2" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="38" WidthRequest="44" Padding="0" FontSize="16"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+		</Grid>
+
+		<!-- What can be added to the drawing. -->
+		<ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+			<HorizontalStackLayout x:Name="AddButtons" Spacing="6" />
+		</ScrollView>
+
+		<!-- The drawing: tap to select, drag to move, two fingers to resize and turn. -->
+		<Border Grid.Row="2" Stroke="{StaticResource Border}" StrokeThickness="1" Padding="0" HorizontalOptions="Center">
+			<GraphicsView x:Name="Canvas"
+			              StartInteraction="OnCanvasTouchStarted"
+			              DragInteraction="OnCanvasTouchMoved"
+			              EndInteraction="OnCanvasTouchEnded" />
+		</Border>
+
+		<!-- The choices for the selected item; filled in by the page. -->
+		<ScrollView Grid.Row="3">
+			<VerticalStackLayout x:Name="Options" Spacing="10" />
+		</ScrollView>
+
+		<Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
+			<Button Text="Cancel" Clicked="OnCancelClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button Grid.Column="1" Text="Use this image" Clicked="OnUseClicked" />
+		</Grid>
+
+	</Grid>
+
+</ContentPage>

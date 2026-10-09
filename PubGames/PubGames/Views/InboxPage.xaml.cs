@@ -11,6 +11,7 @@ public partial class InboxPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.Inbox);
 	}
 
 	protected override async void OnAppearing()
@@ -22,14 +23,8 @@ public partial class InboxPage : ContentPage
 	private async void OnNewMessageClicked(object? sender, EventArgs e)
 	{
 		var recipients = await _vm.GetRecipientsAsync();
-		MessageRecipient? to = recipients[0];
-		if (recipients.Count > 1)
-		{
-			var choice = await DisplayActionSheetAsync("Send a message to", "Cancel", null, recipients.Select(r => r.Label).ToArray());
-			to = recipients.FirstOrDefault(r => r.Label == choice);
-			if (to is null) return;
-		}
-		await WriteAndSendAsync(to.Email, to.Label);
+		if (await ChooseRecipientPage.ChooseAsync(this, recipients) is { } to)
+			await WriteAndSendAsync(to.Email, to.Label);
 	}
 
 	private async void OnReplyClicked(object? sender, EventArgs e)
@@ -53,7 +48,7 @@ public partial class InboxPage : ContentPage
 		if (sender is not Button { BindingContext: InboxMessage message }) return;
 
 		var confirmed = await DisplayAlertAsync("Delete message?",
-			"It's removed from your Inbox. This can't be undone.", "Delete", "Keep");
+			"It will be removed from your Inbox. This can't be undone.", "Delete", "Keep");
 		if (confirmed)
 			await _vm.DeleteAsync(message);
 	}

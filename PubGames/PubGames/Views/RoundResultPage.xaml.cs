@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -10,6 +11,7 @@ public partial class RoundResultPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.RoundResult(_vm.Mode, _vm.LowestWins));
 		_vm.AskExtraSubgame = tie => DisplayAlertAsync("It's a tie",
 			$"{tie} Play an extra subgame to decide?", "Play extra subgame", "End in a tie");
 		_vm.Saved += async (_, finished) =>

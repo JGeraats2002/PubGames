@@ -12,6 +12,7 @@ public partial class AdminTeamPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.Team);
 	}
 
 	protected override async void OnAppearing()
@@ -25,10 +26,21 @@ public partial class AdminTeamPage : ContentPage
 		if (sender is not Button { BindingContext: TeamMember member }) return;
 
 		var confirmed = await DisplayAlertAsync("Make admin?",
-			$"{member.Label} gets full rights: publishing, editing and deleting games directly, reviewing requests and managing the team.",
+			$"{member.Label} will get full rights: publishing, editing and deleting games directly, reviewing requests and managing moderators.",
 			"Make admin", "Cancel");
 		if (confirmed)
 			_vm.MakeAdminCommand.Execute(member);
+	}
+
+	private async void OnMakeModeratorClicked(object? sender, EventArgs e)
+	{
+		if (sender is not Button { BindingContext: TeamMember member }) return;
+
+		var confirmed = await DisplayAlertAsync("Make moderator?",
+			$"{member.Label} will go back to proposing games, changes and deletions for an admin to review.",
+			"Make moderator", "Cancel");
+		if (confirmed)
+			_vm.MakeModeratorCommand.Execute(member);
 	}
 
 	/// <summary>An admin must pick a reason; it's included in the email the person receives.</summary>

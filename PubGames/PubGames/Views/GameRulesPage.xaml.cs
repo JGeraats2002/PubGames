@@ -1,3 +1,4 @@
+using PubGames.Models;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -10,6 +11,7 @@ public partial class GameRulesPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.GameStart);
 
 		// "../" replaces the rules page with the scoreboard, so Back from the
 		// scoreboard returns to the game list to pick the next game.

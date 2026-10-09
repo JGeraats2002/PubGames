@@ -32,13 +32,35 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 	/// <summary>Raised after saving so the page can navigate back.</summary>
 	public event EventHandler<string>? Finished;
 
-	public ObservableCollection<GameChoice> Games { get; } = new();
+	/// <summary>Every published game, alphabetical; saving goes over all of them.</summary>
+	public List<GameChoice> Games { get; } = new();
+
+	/// <summary>The games matching the search.</summary>
+	public ObservableCollection<GameChoice> VisibleGames { get; } = new();
+
+	[ObservableProperty]
+	private string searchText = string.Empty;
+
+	/// <summary>Category clouds to find games, the same as everywhere: several can be selected.</summary>
+	public CategoryFilterSet Filters { get; } = new();
+
+	partial void OnSearchTextChanged(string value) => ApplySearch();
+
+	private void ApplySearch()
+	{
+		var text = SearchText.Trim();
+		VisibleGames.Clear();
+		foreach (var choice in Games.Where(c =>
+			(text.Length == 0 || c.Game.Name.Contains(text, StringComparison.CurrentCultureIgnoreCase))
+			&& Filters.Matches(c.Game)))
+			VisibleGames.Add(choice);
+	}
+
+	public void Toggle(GameChoice choice) => choice.IsSelected = !choice.IsSelected;
 
 	[ObservableProperty]
 	private string title = "Games in category";
 
-	[ObservableProperty]
-	private string explanation = string.Empty;
 
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(CanSave))]
@@ -55,6 +77,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		_cloud = cloud;
 		_categories = categories;
 		_auth = auth;
+		Filters.Changed += (_, _) => ApplySearch();
 	}
 
 	public async void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -77,7 +100,6 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		}
 
 		Title = $"Games in \"{_category.Name}\"";
-		Explanation = $"Tick every game that belongs in \"{_category.Name}\". Players can then find these games by choosing this category.";
 
 		try
 		{
@@ -88,9 +110,17 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 			// Offline: this phone's copy of the games.
 		}
 
+		var categories = await _categories.GetCachedAsync();
 		Games.Clear();
-		foreach (var game in (await _local.GetManageableGamesAsync()).Where(g => g.Status == GameStatus.Published))
+		foreach (var game in (await _local.GetManageableGamesAsync())
+			.Where(g => g.Status == GameStatus.Published)
+			.OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase))
 			Games.Add(new GameChoice { Game = game, IsSelected = game.CategoryIds.Contains(_category.Id) });
+
+		// The clouds filter by the games' saved categories; only categories that have games.
+		var used = Games.SelectMany(g => g.Game.CategoryIds).ToHashSet();
+		Filters.Show(await _categories.GetCachedGroupsAsync(), categories.Where(c => used.Contains(c.Id)));
+		ApplySearch();
 	}
 
 	/// <summary>Saves every game whose tick changed; completes the review request, if opened from one.</summary>

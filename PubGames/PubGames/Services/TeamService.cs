@@ -30,6 +30,13 @@ public interface ITeamService
 
 	/// <summary>Removes the member from the cloud, then locally. Their access ends next time their app refreshes.</summary>
 	Task RemoveMemberAsync(TeamMember member);
+
+	/// <summary>
+	/// Puts the signed-in team member's profile name on the team list, so
+	/// admins and the owner see their name instead of only their email.
+	/// Does nothing for players, built-in admins, or when it's already up to date.
+	/// </summary>
+	Task UpdateMyNameAsync(string name);
 }
 
 public class TeamService : ITeamService
@@ -113,6 +120,17 @@ public class TeamService : ITeamService
 			["addedAt"] = member.AddedAt
 		});
 		await _local.SaveTeamMemberAsync(member);
+	}
+
+	public async Task UpdateMyNameAsync(string name)
+	{
+		name = name.Trim();
+		if (Me is not { IsBuiltInAdmin: false } me || name.Length == 0 || me.DisplayName == name) return;
+
+		// Only this field: the rules let members change nothing else about themselves.
+		await _firestore.UpdateFieldsAsync(Collection, me.Email, new Dictionary<string, object?> { ["displayName"] = name });
+		me.DisplayName = name;
+		await _local.SaveTeamMemberAsync(me);
 	}
 
 	public async Task RemoveMemberAsync(TeamMember member)

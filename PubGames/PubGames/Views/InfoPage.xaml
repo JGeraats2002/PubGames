@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:PubGames.Models"
+             xmlns:views="clr-namespace:PubGames.Views"
+             x:Class="PubGames.Views.InfoPage"
+             x:DataType="models:PageHelp"
+             Title="{Binding Title}">
+
+	<Grid RowDefinitions="*,Auto" Padding="20" RowSpacing="12">
+
+		<ScrollView>
+			<VerticalStackLayout Spacing="16">
+
+				<VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Sections}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="models:HelpSection">
+							<VerticalStackLayout Spacing="4">
+								<Label Text="{Binding Heading}" FontSize="17" FontAttributes="Bold" />
+								<Label Text="{Binding Text}" FontSize="15" LineHeight="1.3" />
+							</VerticalStackLayout>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+
+				<!-- Game rules only: the game's own "How to play", with its pictures. -->
+				<Label Text="How to play" FontSize="17" FontAttributes="Bold" IsVisible="{Binding HasRules}" />
+				<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding RulesBlocks}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="models:RulesBlock">
+							<Grid>
+								<Label Text="{Binding Text}" IsVisible="{Binding IsText}" FontSize="15" LineHeight="1.3" />
+								<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" />
+							</Grid>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<Button Grid.Row="1" Text="Got it" Clicked="OnCloseClicked" />
+
+	</Grid>
+
+</ContentPage>

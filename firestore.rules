@@ -70,15 +70,30 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Main categories (Play style, Duration, ...) that categories are filed under
+    // (categories/{id}.groupId). Same rights as categories.
+    match /categoryGroups/{groupId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.id == groupId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 30;
+      allow delete: if isAdmin();
+    }
+
     // Things for an admin to review: moderators' proposals (new game, changes to a game,
-    // deletion, new category) and the automatic "add games to category" requests.
+    // deletion, new category, new main category) and the automatic "add games to category" requests.
     match /reviewRequests/{requestId} {
       function isMine(data) {
         return isOnTeam() && data.submittedByEmail == myEmail();
       }
 
-      // Admins see all; moderators see their own, including the admin's decision.
-      allow read: if isAdmin() || isMine(resource.data);
+      // Admins see all; moderators see their own, including the admin's decision. Moderators
+      // also see what's still waiting from the others, so two of them don't change the same
+      // game at once (the app shows who has changes waiting and keeps the others out until then).
+      allow read: if isAdmin() || isMine(resource.data)
+        || (isOnTeam() && resource.data.status == 'WaitingForReview');
 
       // Submitted in your own name, always as waiting for review. Only admins
       // create "add games to category" requests (the app does, when a category is added).
@@ -137,10 +152,71 @@ service cloud.firestore {
     }
 
     // Team members, one document per lower-case email. Everyone can read their own
-    // (that's how the app knows you're a moderator); only admins manage the team.
+    // (that's how the app knows you're a moderator); the team reads all of them, to pick
+    // who to message. Admins add and remove moderators; only the owner (a built-in admin)
+    // makes someone admin, turns an admin back into a moderator or removes an admin.
     match /team/{email} {
-      allow read: if isAdmin() || (isSignedIn() && email == myEmail());
-      allow write: if isAdmin();
+      allow read: if isOnTeam() || (isSignedIn() && email == myEmail());
+      allow create: if isBuiltInAdmin()
+        || (isAdmin() && request.resource.data.role == 'Moderator');
+      // Members may change their own name on the list (from their profile), and nothing else.
+      allow update: if isBuiltInAdmin()
+        || (isAdmin() && resource.data.role == 'Moderator' && request.resource.data.role == 'Moderator')
+        || (isSignedIn() && email == myEmail()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+            && request.resource.data.displayName is string
+            && request.resource.data.displayName.size() <= 40);
+      allow delete: if isBuiltInAdmin()
+        || (isAdmin() && resource.data.role == 'Moderator');
+    }
+
+    // Player profiles: what others see when they add you by your personal code.
+    // Everyone signed in can read them; you only write your own, with the code you claimed.
+    match /profiles/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.nickname is string && request.resource.data.nickname.size() <= 30
+        && get(/databases/$(database)/documents/codes/$(request.resource.data.code)).data.uid == uid;
+    }
+
+    // Personal codes, claimed once: a code that exists can't be taken again, which keeps them unique.
+    match /codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.code == code
+        && code.size() == 8;
+    }
+
+    // Profile pictures; only the person themselves adds or removes theirs.
+    match /profilePhotos/{photoId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.id == photoId
+        && photoId.matches(request.auth.uid + '_[A-Za-z0-9]+')
+        && request.resource.data.data is bytes
+        && request.resource.data.data.size() <= 200 * 1024;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // One document per finished game with each linked player's outcome: their stats.
+    // Written by the phone the game was played on; read by the players who were in it.
+    match /gameResults/{resultId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow create: if isSignedIn()
+        && request.resource.data.id == resultId
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.participantUids is list
+        && request.resource.data.participantUids.size() <= 40;
+      allow update: if isSignedIn()
+        && resource.data.hostUid == request.auth.uid
+        && request.resource.data.hostUid == request.auth.uid
+        && request.resource.data.participantUids is list
+        && request.resource.data.participantUids.size() <= 40;
     }
 
     // Outgoing emails for Firebase's Trigger Email extension (only used once

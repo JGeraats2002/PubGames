@@ -139,6 +139,38 @@ public static class Standings
 		return sorted;
 	}
 
+	/// <summary>
+	/// How the game ended for each player (by player id), for their stats.
+	/// Winner and ranking games: the only one in 1st place won, players sharing
+	/// 1st tied, everyone else lost. Loser games: the only player with the most
+	/// losses lost, players sharing the most losses tied, everyone else won.
+	/// When everyone ends equal, everyone tied.
+	/// </summary>
+	public static Dictionary<string, GameOutcome> Outcomes(ResultMode mode, List<PlayerStanding> sorted)
+	{
+		var outcomes = new Dictionary<string, GameOutcome>();
+		if (sorted.Count == 0) return outcomes;
+
+		if (mode == ResultMode.Loser)
+		{
+			var most = sorted.Max(s => s.Losses);
+			var losers = sorted.Where(s => s.Losses == most).ToList();
+			foreach (var s in sorted)
+				outcomes[s.PlayerId] = most == 0 || losers.Count == sorted.Count ? GameOutcome.Tied
+					: s.Losses != most ? GameOutcome.Won
+					: losers.Count == 1 ? GameOutcome.Lost
+					: GameOutcome.Tied;
+			return outcomes;
+		}
+
+		var first = sorted.Count(s => s.Place == 1);
+		foreach (var s in sorted)
+			outcomes[s.PlayerId] = s.Place != 1 ? GameOutcome.Lost
+				: first == 1 ? GameOutcome.Won
+				: GameOutcome.Tied;
+		return outcomes;
+	}
+
 	/// <summary>"🏆 Winner: Jan", "🏆 Winners: Jan &amp; Sanne" or "Loser: Piet" for the final result.</summary>
 	public static string Headline(ResultMode mode, List<PlayerStanding> sorted)
 	{

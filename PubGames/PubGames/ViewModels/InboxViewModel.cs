@@ -5,8 +5,8 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
-/// <summary>Someone a message can be sent to.</summary>
-public record MessageRecipient(string Email, string Label);
+/// <summary>Someone a message can be sent to. Detail: their role and email, also searched.</summary>
+public record MessageRecipient(string Email, string Label, string Detail = "");
 
 /// <summary>
 /// Admin tab > Inbox: short messages between admins and moderators, and the
@@ -71,14 +71,28 @@ public partial class InboxViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>Admins: every team member except themselves, plus all admins. Moderators: all admins.</summary>
+	/// <summary>
+	/// Everyone on the team except yourself - the owner, admins and moderators -
+	/// plus "All admins". Refreshed from the cloud when online.
+	/// </summary>
 	public async Task<List<MessageRecipient>> GetRecipientsAsync()
 	{
-		var recipients = new List<MessageRecipient> { new(InboxMessage.AllAdmins, "All admins") };
-		if (_team.Me?.IsAdmin == true)
-			recipients.AddRange((await _team.GetCachedMembersAsync())
-				.Where(m => m.Email != MyEmail)
-				.Select(m => new MessageRecipient(m.Email, $"{m.Label} ({m.RoleName.ToLowerInvariant()})")));
+		List<TeamMember> members;
+		try
+		{
+			members = await _team.PullMembersAsync();
+		}
+		catch (Exception)
+		{
+			members = await _team.GetCachedMembersAsync();
+		}
+
+		var recipients = new List<MessageRecipient> { new(InboxMessage.AllAdmins, "All admins", "Everyone with admin rights") };
+		recipients.AddRange(members
+			.Where(m => m.Email != MyEmail)
+			.Select(m => new MessageRecipient(m.Email,
+				string.IsNullOrWhiteSpace(m.DisplayName) ? m.Email : m.DisplayName,
+				$"{(m.IsBuiltInAdmin ? "Owner" : m.RoleName)} · {m.Email}")));
 		return recipients;
 	}
 

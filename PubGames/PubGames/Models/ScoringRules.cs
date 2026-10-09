@@ -14,6 +14,7 @@ namespace PubGames.Models;
 /// <param name="MinScore">Scores never go below this (null: no minimum).</param>
 /// <param name="MaxScore">Scores never go above this (null: no maximum).</param>
 /// <param name="WarningScore">A player's card is highlighted once their score reaches this (null: no warning).</param>
+/// <param name="ManualAmounts">Manual plus / minus: + and − ask for an amount, checked against these settings' rules.</param>
 public record ScoringRules(
 	string Unit,
 	string Explanation,
@@ -24,7 +25,8 @@ public record ScoringRules(
 	int StartScore = 0,
 	int? MinScore = null,
 	int? MaxScore = null,
-	int? WarningScore = null)
+	int? WarningScore = null,
+	ScoringSettings? ManualAmounts = null)
 {
 	/// <summary>The rules for a game; its scoring settings fill in Plus / minus.</summary>
 	public static ScoringRules For(PubGame? game) => game is null
@@ -34,6 +36,7 @@ public record ScoringRules(
 	public static ScoringRules For(ScoringType type, ScoringSettings? settings = null) => type switch
 	{
 		ScoringType.PlusMinus => PlusMinus(settings ?? ScoringSettings.Default),
+		ScoringType.ManualPlusMinus => ManualPlusMinus(settings ?? ScoringSettings.Default),
 
 		ScoringType.PointTally => new("points",
 			"Add or subtract points each round. Tap a score to add any amount. Highest total wins.",
@@ -74,8 +77,29 @@ public record ScoringRules(
 			StartScore: s.StartScore, MinScore: s.MinScore, MaxScore: s.MaxScore, WarningScore: s.WarningScore);
 	}
 
-	public string MinusLabel => MinusStep is { } m ? m.ToString("+0;−0") : string.Empty;
-	public string PlusLabel => PlusStep.ToString("+0;−0");
+	/// <summary>+ and − ask for an amount each time, within the game's amount rules.</summary>
+	private static ScoringRules ManualPlusMinus(ScoringSettings s)
+	{
+		var explanation = "Tap + or − and type the amount." +
+			(s.AmountRules.Count > 0 ? $" Amounts must be {s.AmountRulesText}." : string.Empty) +
+			$" Everyone starts at {s.StartScore}.";
+		if (s.MinScore is { } min && s.MaxScore is { } max)
+			explanation += $" Scores stay between {min} and {max}.";
+		else if (s.MaxScore is { } maxOnly)
+			explanation += $" Maximum is {maxOnly}.";
+		else if (s.MinScore is { } minOnly)
+			explanation += $" Minimum is {minOnly}.";
+		if (s.WarningScore is { } warning)
+			explanation += $" Warning at {warning}.";
+
+		return new("points", explanation,
+			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: false, HighestWins: null,
+			StartScore: s.StartScore, MinScore: s.MinScore, MaxScore: s.MaxScore, WarningScore: s.WarningScore,
+			ManualAmounts: s);
+	}
+
+	public string MinusLabel => ManualAmounts is not null ? "−" : MinusStep is { } m ? m.ToString("+0;−0") : string.Empty;
+	public string PlusLabel => ManualAmounts is not null ? "+" : PlusStep.ToString("+0;−0");
 
 	/// <summary>A score kept within the min and max.</summary>
 	public int Clamp(int score)

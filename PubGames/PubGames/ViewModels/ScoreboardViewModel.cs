@@ -67,6 +67,9 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 	[ObservableProperty]
 	private string gameName = "Score";
 
+	/// <summary>The game being played, for its rules behind the ⓘ.</summary>
+	public PubGame? Game { get; private set; }
+
 	[ObservableProperty]
 	private ScoringRules rules = ScoringRules.For(ScoringType.PointTally);
 
@@ -143,7 +146,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		Session = await _local.GetSessionAsync(sessionId);
 		if (Session is null) return;
 
-		var game = await _local.GetGameAsync(Session.GameId);
+		var game = Game = await _local.GetGameAsync(Session.GameId);
 		GameName = game?.Name ?? "Score";
 		Rules = ScoringRules.For(game);
 		Settings = game?.ScoringSettings ?? ScoringSettings.Default;

@@ -86,8 +86,8 @@ public partial class StandingsViewModel : ObservableObject, IQueryAttributable
 		else
 		{
 			Subtitle = played == 0
-				? "No subgames finished yet - totals appear after the first one."
-				: $"After {played} {(played == 1 ? "subgame" : "subgames")}. The winner is revealed when you finish the game.";
+				? "No subgames finished yet."
+				: $"After {played} {(played == 1 ? "subgame" : "subgames")}.";
 			// Seat order (players who left at the end), so the stats don't give the ranking away.
 			var seat = participants.Where(p => p.IsActive).ToDictionary(p => p.PlayerId, p => p.Position);
 			Rows = standings.OrderBy(s => seat.GetValueOrDefault(s.PlayerId, int.MaxValue)).ThenBy(s => s.Name).ToList();

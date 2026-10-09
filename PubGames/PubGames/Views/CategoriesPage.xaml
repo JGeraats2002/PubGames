@@ -8,25 +8,51 @@
 
 	<Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="12">
 
-		<Button Text="{Binding AddButtonText}" Clicked="OnAddClicked" />
+		<!-- Main category first: a category is always added to one. -->
+		<Button Text="{Binding AddGroupButtonText}" Clicked="OnAddGroupClicked" />
 
-		<Label Grid.Row="1" Text="{Binding Explanation}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+		<Button Grid.Row="1" Text="{Binding AddButtonText}" Clicked="OnAddClicked"
+		        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+		        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
 		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
-		<CollectionView Grid.Row="3" ItemsSource="{Binding Categories}">
+		<!-- Categories under their main category. -->
+		<CollectionView Grid.Row="3" ItemsSource="{Binding Sections}" IsGrouped="True">
 			<CollectionView.EmptyView>
 				<Label Text="No categories yet." TextColor="{StaticResource TextSecondary}" />
 			</CollectionView.EmptyView>
+			<CollectionView.GroupHeaderTemplate>
+				<DataTemplate x:DataType="vm:CategorySection">
+					<Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Padding="0,14,0,4" RowSpacing="2">
+						<Grid.GestureRecognizers>
+							<TapGestureRecognizer Tapped="OnGroupTapped" CommandParameter="{Binding .}" />
+						</Grid.GestureRecognizers>
+						<Label Text="{Binding Name}" FontAttributes="Bold" VerticalOptions="Center" />
+						<!-- Tap to add a category to it, rename or delete it (moderators: to propose that). -->
+						<Label Grid.Column="1" Text="Edit" FontSize="12" TextColor="{StaticResource Primary}"
+						       VerticalOptions="Center" Padding="10,0" IsVisible="{Binding CanEdit}" />
+						<Label Grid.Row="1" Grid.ColumnSpan="2" Text="No categories yet." FontSize="12"
+						       TextColor="{StaticResource TextSecondary}" IsVisible="{Binding IsEmpty}" />
+					</Grid>
+				</DataTemplate>
+			</CollectionView.GroupHeaderTemplate>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="vm:CategoryRow">
-					<Grid ColumnDefinitions="*,Auto" Padding="10">
+					<!-- Admins: tap the row for everything else; the arrows move it up and down within its main category. -->
+					<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6" Padding="10,6">
 						<Grid.GestureRecognizers>
 							<TapGestureRecognizer Tapped="OnCategoryTapped" CommandParameter="{Binding .}" />
 						</Grid.GestureRecognizers>
 						<Label Text="{Binding Name}" VerticalOptions="Center" />
 						<Label Grid.Column="1" Text="{Binding CountLabel}" FontSize="12"
-						       TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+						       TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" Padding="0,0,6,0" />
+						<Button Grid.Column="2" Text="▲" Clicked="OnCategoryUpClicked" IsVisible="{Binding CanReorder}"
+						        WidthRequest="38" HeightRequest="34" Padding="0" FontSize="12"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						<Button Grid.Column="3" Text="▼" Clicked="OnCategoryDownClicked" IsVisible="{Binding CanReorder}"
+						        WidthRequest="38" HeightRequest="34" Padding="0" FontSize="12"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 					</Grid>
 				</DataTemplate>
 			</CollectionView.ItemTemplate>

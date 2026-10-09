@@ -30,38 +30,33 @@ public partial class AdminLibraryViewModel : ObservableObject
 	/// <summary>Every manageable game, before searching.</summary>
 	private List<PubGame> _allGames = new();
 
-	/// <summary>Matches game names and category names.</summary>
+	/// <summary>Matches game names.</summary>
 	[ObservableProperty]
 	private string searchText = string.Empty;
 
-	/// <summary>"All categories" first, then every category.</summary>
-	public ObservableCollection<CategoryFilter> CategoryFilters { get; } = new();
+	/// <summary>Category clouds: "All" plus every category; several can be selected.</summary>
+	public CategoryFilterSet Filters { get; } = new();
 
 	[ObservableProperty]
-	private CategoryFilter? selectedCategoryFilter;
-
-	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasResultsText))]
 	private string resultsText = string.Empty;
 
-	partial void OnSearchTextChanged(string value) => ApplyFilter();
+	public bool HasResultsText => ResultsText.Length > 0;
 
-	partial void OnSelectedCategoryFilterChanged(CategoryFilter? value) => ApplyFilter();
+	partial void OnSearchTextChanged(string value) => ApplyFilter();
 
 	private void ApplyFilter()
 	{
 		var text = SearchText.Trim();
-		var categoryId = SelectedCategoryFilter?.CategoryId;
 		var matches = _allGames.Where(g =>
-			(categoryId is null || g.CategoryIds.Contains(categoryId))
-			&& (text.Length == 0
-				|| g.Name.Contains(text, StringComparison.CurrentCultureIgnoreCase)
-				|| g.CategoryLabel.Contains(text, StringComparison.CurrentCultureIgnoreCase))).ToList();
+			Filters.Matches(g)
+			&& (text.Length == 0 || g.Name.Contains(text, StringComparison.CurrentCultureIgnoreCase))).ToList();
 
 		Games.Clear();
 		foreach (var game in matches)
 			Games.Add(game);
 
-		var filtered = text.Length > 0 || categoryId is not null;
+		var filtered = text.Length > 0 || Filters.IsFiltering;
 		ResultsText = !filtered ? string.Empty
 			: matches.Count == 0 ? "No games match your search."
 			: $"{matches.Count} of {_allGames.Count} games";
@@ -119,6 +114,7 @@ public partial class AdminLibraryViewModel : ObservableObject
 		_auth = auth;
 		_categories = categories;
 		_messages = messages;
+		Filters.Changed += (_, _) => ApplyFilter();
 	}
 
 	private string MyEmail => TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
@@ -143,10 +139,25 @@ public partial class AdminLibraryViewModel : ObservableObject
 				// The first admin to open the app after categories were introduced creates the defaults.
 				await _categories.EnsureDefaultsAsync();
 			else
+			{
 				await _categories.PullAsync();
+				await _categories.PullGroupsAsync();
+			}
 
 			if (IsModerator)
+			{
+				// What's waiting from the other moderators, to show which games they're changing.
+				// Before the others' own requests: that pull also drops the ones decided since.
+				try
+				{
+					await _cloud.PullRequestsWaitingForReviewAsync(CurrentTeamId);
+				}
+				catch (CloudException)
+				{
+					// The cloud rules that allow this aren't published yet: then nothing is hidden.
+				}
 				await _cloud.PullRequestsSubmittedByAsync(MyEmail);
+			}
 			if (canReview)
 				await _cloud.PullRequestsWaitingForReviewAsync(CurrentTeamId);
 			if (me is not null)
@@ -168,20 +179,46 @@ public partial class AdminLibraryViewModel : ObservableObject
 	private async Task ShowLocalAsync(bool canReview)
 	{
 		var categories = await _categories.GetCachedAsync();
-		_allGames = await _local.GetManageableGamesAsync();
-		foreach (var game in _allGames)
+		_allGames = (await _local.GetManageableGamesAsync()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+		// A game another moderator has changes (or its deletion) waiting for stays in the list, but says who,
+		// and can't be changed by the others until an admin decides or it's withdrawn: two sets of changes
+		// to one game would clash.
+		if (IsModerator)
 		{
-			var label = _categories.LabelFor(game.CategoryIds, categories);
-			game.CategoryLabel = label.Length == 0 ? "No category yet" : label;
+			var takenElsewhere = ReviewRequest.GamesTakenByOthers(await _local.GetRequestsWaitingForReviewAsync(CurrentTeamId), MyEmail);
+			foreach (var game in _allGames)
+				game.TakenBy = takenElsewhere.GetValueOrDefault(game.Id);
 		}
 
-		// Keep the chosen category when the list refreshes.
-		var selectedId = SelectedCategoryFilter?.CategoryId;
-		CategoryFilters.Clear();
-		CategoryFilters.Add(new CategoryFilter(null, "All categories"));
-		foreach (var category in categories)
-			CategoryFilters.Add(new CategoryFilter(category.Id, category.Name));
-		SelectedCategoryFilter = CategoryFilters.FirstOrDefault(f => f.CategoryId == selectedId) ?? CategoryFilters[0];
+		// Keeps the selected categories when the list refreshes (unless they were deleted).
+		var groups = await _categories.GetCachedGroupsAsync();
+		Filters.Show(groups, categories);
+
+		// What each game's card says: its categories, and the main categories it has none of yet.
+		var required = CategoryGroup.Arrange(groups, categories).Where(g => g.Group is not null && g.Categories.Count > 0).ToList();
+		// Changes that are waiting for review: a moderator's own, or (for admins) everyone's.
+		var waitingChanges = (IsModerator
+				? (await _local.GetRequestsSubmittedByAsync(MyEmail)).Where(r => r.IsWaitingForReview)
+				: canReview ? await _local.GetRequestsWaitingForReviewAsync(CurrentTeamId) : [])
+			.Where(r => r.Type == ReviewRequestType.GameChanges)
+			.ToList();
+		List<string> Missing(IEnumerable<string> categoryIds)
+		{
+			var ids = categoryIds.ToHashSet();
+			return required.Where(g => !g.Categories.Any(c => ids.Contains(c.Id))).Select(g => g.Group!.Name).ToList();
+		}
+		foreach (var game in _allGames)
+		{
+			game.CategoryLabel = _categories.LabelFor(game.CategoryIds, categories);
+			var missing = Missing(game.CategoryIds);
+			// Filled in by changes that are waiting for review: nothing left to do but the review.
+			var filledIn = missing.Count > 0 && waitingChanges.Any(r => r.GameId == game.Id
+				&& Missing(r.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries)).Count == 0);
+			game.MissingLabel = missing.Count == 0 ? string.Empty
+				: filledIn ? "Waiting for review"
+				: $"Still needs: {string.Join(", ", missing)}";
+		}
 		ApplyFilter();
 
 		MyRequests.Clear();
@@ -212,9 +249,3 @@ public partial class AdminLibraryViewModel : ObservableObject
 	}
 }
 
-/// <summary>An entry in the library's category dropdown; a null id means all categories.</summary>
-public sealed record CategoryFilter(string? CategoryId, string Name)
-{
-	/// <summary>The Picker shows this.</summary>
-	public override string ToString() => Name;
-}

@@ -6,8 +6,14 @@
 	<uses-permission android:name="com.android.vending.BILLING" />
 	<!-- Photo picker on Android 12 and older; newer versions need no permission. -->
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-	<!-- Lets the app find a mail app (Gmail) for the moderator emails on Android 11+. -->
+	<!-- Taking a photo for a game's cover or rules. Not required: without a camera, pictures can still be uploaded or drawn. -->
+	<uses-permission android:name="android.permission.CAMERA" />
+	<uses-feature android:name="android.hardware.camera" android:required="false" />
+	<!-- Lets the app find a mail app (Gmail) for the moderator emails, and the camera app, on Android 11+. -->
 	<queries>
+		<intent>
+			<action android:name="android.media.action.IMAGE_CAPTURE" />
+		</intent>
 		<intent>
 			<action android:name="android.intent.action.SENDTO" />
 			<data android:scheme="mailto" />

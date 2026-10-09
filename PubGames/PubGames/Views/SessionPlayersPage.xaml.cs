@@ -13,6 +13,7 @@ public partial class SessionPlayersPage : ContentPage
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		InfoButton.Attach(this, () => Help.SessionPlayers);
 	}
 
 	private async void OnMoveUpClicked(object? sender, EventArgs e)
@@ -32,7 +33,7 @@ public partial class SessionPlayersPage : ContentPage
 		if (sender is not Button { BindingContext: ParticipantRow row }) return;
 
 		var confirmed = await DisplayAlertAsync($"Remove {row.Player.Name}?",
-			$"Their score ({row.Score}) is kept: if they join again later in this game, they continue from it.", "Remove", "Cancel");
+			$"Their score ({row.Score}) will be kept: if they join again later in this game, they'll continue from it.", "Remove", "Cancel");
 		if (confirmed)
 			await _vm.RemoveAsync(row);
 	}

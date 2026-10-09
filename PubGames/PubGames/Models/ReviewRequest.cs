@@ -22,7 +22,27 @@ public enum ReviewRequestType
 	/// Pick the games that belong in a category that was just added. Created
 	/// automatically for admins whenever a category is added.
 	/// </summary>
-	AddGamesToCategory
+	AddGamesToCategory,
+
+	/// <summary>Add a main category (from a moderator).</summary>
+	NewCategoryGroup,
+
+	// Changes to what's there, from a moderator. CategoryId is the category or main category it's about.
+
+	/// <summary>Give a category another name (ProposedName).</summary>
+	RenameCategory,
+
+	/// <summary>File a category under another main category (ProposedGroupId).</summary>
+	MoveCategory,
+
+	/// <summary>Delete a category, which also takes it off every game.</summary>
+	DeleteCategory,
+
+	/// <summary>Give a main category another name (ProposedName).</summary>
+	RenameCategoryGroup,
+
+	/// <summary>Delete a main category together with its categories.</summary>
+	DeleteCategoryGroup
 }
 
 public enum ReviewStatus
@@ -36,7 +56,7 @@ public enum ReviewStatus
 /// <summary>
 /// Something an admin has to review. Moderators never change games or
 /// categories directly: a new game, changes to a game, a deletion or a new
-/// category are all submitted as a review request, and players keep seeing
+/// (main) category are all submitted as a review request, and players keep seeing
 /// the current version until an admin approves it. For new games and changes,
 /// the full proposed version travels with the request (the Proposed* fields),
 /// so the admin sees exactly what would go live. The decision reaches the
@@ -54,7 +74,8 @@ public class ReviewRequest
 
 	/// <summary>
 	/// The category this is about: for a new category, the id it gets once
-	/// approved; for adding games to a category, that category.
+	/// approved; for adding games to a category, that category. For a new
+	/// main category, the id that one gets once approved.
 	/// </summary>
 	public string CategoryId { get; set; } = string.Empty;
 
@@ -86,8 +107,11 @@ public class ReviewRequest
 	public string ReviewNote { get; set; } = string.Empty;
 
 	// The proposed version of the game (new games and changes; empty otherwise).
-	// ProposedName is also the proposed category name for NewCategory.
+	// ProposedName is also the proposed name for NewCategory and NewCategoryGroup.
 	public string ProposedName { get; set; } = string.Empty;
+
+	/// <summary>NewCategory: the main category it should be filed under.</summary>
+	public string ProposedGroupId { get; set; } = string.Empty;
 	public string ProposedRulesText { get; set; } = string.Empty;
 	public string? ProposedCoverImageUrl { get; set; }
 	public ScoringType ProposedScoringType { get; set; } = ScoringType.PointTally;
@@ -95,6 +119,8 @@ public class ReviewRequest
 	public bool ProposedIsPaid { get; set; }
 	public decimal ProposedPrice { get; set; }
 	public string ProposedCategoryIdsText { get; set; } = string.Empty;
+	public int? ProposedMinPlayers { get; set; }
+	public int? ProposedMaxPlayers { get; set; }
 
 	[Ignore]
 	public string SubmitterLabel => string.IsNullOrEmpty(SubmittedByName) ? SubmittedByEmail : SubmittedByName;
@@ -135,8 +161,29 @@ public class ReviewRequest
 		ReviewRequestType.GameChanges => "Changes to a game",
 		ReviewRequestType.Deletion => "Deletion",
 		ReviewRequestType.NewCategory => "New category",
+		ReviewRequestType.NewCategoryGroup => "New main category",
+		ReviewRequestType.RenameCategory => "Rename category",
+		ReviewRequestType.MoveCategory => "Move category",
+		ReviewRequestType.DeleteCategory => "Delete category",
+		ReviewRequestType.RenameCategoryGroup => "Rename main category",
+		ReviewRequestType.DeleteCategoryGroup => "Delete main category",
 		_ => "Add games to category"
 	};
+
+	/// <summary>
+	/// The games someone else has changes or a deletion waiting for. Until an
+	/// admin decides, other moderators can't change those games: two sets of
+	/// changes to one game would clash.
+	/// </summary>
+	/// <param name="waiting">The requests that are waiting for review.</param>
+	/// <param name="myEmail">Whose own requests don't count.</param>
+	/// <returns>Per game, the request that's waiting for it.</returns>
+	public static Dictionary<string, ReviewRequest> GamesTakenByOthers(IEnumerable<ReviewRequest> waiting, string myEmail) =>
+		waiting.Where(r => r.IsWaitingForReview
+				&& r.Type is ReviewRequestType.GameChanges or ReviewRequestType.Deletion
+				&& r.SubmittedByEmail != myEmail)
+			.GroupBy(r => r.GameId)
+			.ToDictionary(g => g.Key, g => g.First());
 
 	/// <summary>Copies a game's content into the proposal.</summary>
 	public void SetProposal(PubGame game)
@@ -149,6 +196,8 @@ public class ReviewRequest
 		ProposedIsPaid = game.IsPaid;
 		ProposedPrice = game.Price;
 		ProposedCategoryIdsText = game.CategoryIdsText;
+		ProposedMinPlayers = game.MinPlayers;
+		ProposedMaxPlayers = game.MaxPlayers;
 		SubjectName = game.Name;
 	}
 
@@ -163,6 +212,8 @@ public class ReviewRequest
 		game.IsPaid = ProposedIsPaid;
 		game.Price = ProposedIsPaid ? ProposedPrice : 0m;
 		game.CategoryIdsText = ProposedCategoryIdsText;
+		game.MinPlayers = ProposedMinPlayers;
+		game.MaxPlayers = ProposedMaxPlayers;
 	}
 
 	/// <summary>The proposal as a game, for previews: the current game with the proposal applied, or a new one.</summary>

@@ -18,8 +18,6 @@
 					<Entry Placeholder="Their Google account email" Text="{Binding NewModeratorEmail}"
 					       Keyboard="Email" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
 					<Button Text="Add moderator" Command="{Binding AddModeratorCommand}" />
-					<Label Text="Moderators propose new games, changes and deletions; you approve or reject them on the Requests page. They get an email explaining how it works, and sign in with this Google account to get the Admin tab."
-					       FontSize="11" TextColor="{StaticResource TextSecondary}" />
 				</VerticalStackLayout>
 			</Frame>
 
@@ -40,12 +38,14 @@
 									</Label.FormattedText>
 								</Label>
 
-								<HorizontalStackLayout Spacing="8" IsVisible="{Binding IsBuiltInAdmin, Converter={StaticResource InvertedBoolConverter}}">
-									<Button Text="Make admin" Clicked="OnMakeAdminClicked"
-									        IsVisible="{Binding IsAdmin, Converter={StaticResource InvertedBoolConverter}}"
+								<HorizontalStackLayout Spacing="8" IsVisible="{Binding HasActions}">
+									<Button Text="Make admin" Clicked="OnMakeAdminClicked" IsVisible="{Binding CanPromote}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
-									<Button Text="Remove" Clicked="OnRemoveClicked"
+									<Button Text="Make moderator" Clicked="OnMakeModeratorClicked" IsVisible="{Binding CanDemote}"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+									<Button Text="Remove" Clicked="OnRemoveClicked" IsVisible="{Binding CanRemove}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
 									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
 								</HorizontalStackLayout>

@@ -32,8 +32,8 @@ public class PubGame
 	}
 
 	[Ignore]
-	public string ScoringLabel => ScoringType == ScoringType.PlusMinus
-		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.Summary})"
+	public string ScoringLabel => ScoringType is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
+		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.SummaryFor(ScoringType)})"
 		: $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.ResultSummary})";
 
 	public bool IsPaid { get; set; }
@@ -51,12 +51,68 @@ public class PubGame
 		set => CategoryIdsText = string.Join(',', value.Distinct());
 	}
 
+	/// <summary>The fewest players the game needs; null for no minimum.</summary>
+	public int? MinPlayers { get; set; }
+
+	/// <summary>The most players the game can take; null for no maximum.</summary>
+	public int? MaxPlayers { get; set; }
+
+	/// <summary>"Any", "2+" (at least 2), "1-3" (at most 3) or "2-6".</summary>
+	[Ignore]
+	public string PlayersLabel => PlayersLabelFor(MinPlayers, MaxPlayers);
+
+	public static string PlayersLabelFor(int? min, int? max) => (min, max) switch
+	{
+		(null, null) => "Any",
+		({ } least, null) => $"{least}+",
+		(null, { } most) => most <= 1 ? "1" : $"1-{most}",
+		({ } least, { } most) => least == most ? $"{least}" : $"{least}-{most}"
+	};
+
 	/// <summary>Category names for display, filled in by whoever shows the game (names live on GameCategory).</summary>
 	[Ignore]
 	public string CategoryLabel { get; set; } = string.Empty;
 
 	[Ignore]
 	public bool HasNoCategory => string.IsNullOrEmpty(CategoryIdsText);
+
+	/// <summary>One line under the game's name in a list: "2-6 players · Cards, 15-30 min" (the categories when CategoryLabel is filled in).</summary>
+	[Ignore]
+	public string InfoLine => string.Join(" · ", new[]
+	{
+		PlayersLabel switch { "Any" => "Any number of players", "1" => "1 player", var players => $"{players} players" },
+		CategoryLabel
+	}.Where(part => part.Length > 0));
+
+	/// <summary>
+	/// The admin library: which main categories the game has no category of
+	/// yet, e.g. "Still needs: Duration, Play style", or "Waiting for review"
+	/// once changes that fill them in were submitted. Empty when it's complete.
+	/// </summary>
+	[Ignore]
+	public string MissingLabel { get; set; } = string.Empty;
+
+	[Ignore]
+	public bool HasMissing => MissingLabel.Length > 0;
+
+	/// <summary>
+	/// The moderators' library: another moderator's request (changes or
+	/// deletion) that's waiting for this game. Until an admin decides or it's
+	/// withdrawn, only that moderator can change the game.
+	/// </summary>
+	[Ignore]
+	public ReviewRequest? TakenBy { get; set; }
+
+	[Ignore]
+	public bool IsTaken => TakenBy is not null;
+
+	[Ignore]
+	public string TakenLabel => TakenBy switch
+	{
+		null => string.Empty,
+		{ Type: ReviewRequestType.Deletion } request => $"🔒 {request.SubmitterLabel} asked to delete this game - waiting for review",
+		var request => $"🔒 {request.SubmitterLabel} submitted changes - waiting for review"
+	};
 
 	/// <summary>Which team owns/manages this game.</summary>
 	public string TeamId { get; set; } = string.Empty;

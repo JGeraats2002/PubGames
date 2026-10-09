@@ -27,6 +27,30 @@ public class Player
 	/// </summary>
 	public bool IsTemporary { get; set; }
 
+	/// <summary>
+	/// The account of the person this player is, when added by their personal
+	/// code (or the user themselves). Their results then count in their stats.
+	/// </summary>
+	public string? LinkedAccountId { get; set; }
+
+	/// <summary>The profile picture of a linked player.</summary>
+	public string? PhotoRef { get; set; }
+
+	/// <summary>
+	/// The user gave a linked player their own name for them (only on this
+	/// phone), so it's not replaced by the player's nickname from their profile.
+	/// </summary>
+	public bool HasCustomName { get; set; }
+
+	[Ignore]
+	public bool IsLinked => !string.IsNullOrEmpty(LinkedAccountId);
+
+	[Ignore]
+	public bool HasPhoto => !string.IsNullOrEmpty(PhotoRef);
+
+	[Ignore]
+	public bool HasNoPhoto => !HasPhoto;
+
 	/// <summary>"Jan de Vries" → "JD", "Sanne" → "SA".</summary>
 	public static string InitialsFrom(string name)
 	{

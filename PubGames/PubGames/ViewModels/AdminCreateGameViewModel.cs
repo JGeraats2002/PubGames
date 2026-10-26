@@ -100,86 +100,13 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[ObservableProperty]
 	private decimal price = 0.50m;
 
-	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(IsPlusMinus), nameof(IsManual), nameof(HasScoreSettings), nameof(SelectedScoringOption))]
-	private ScoringType scoringType = ScoringType.PlusMinus;
+	/// <summary>The game's scoring type and its numbers.</summary>
+	public ScoringEditor Scoring { get; } = new(ScoringTypeOption.All, "Choose scoring type");
+
+	public ScoringType ScoringType => Scoring.ScoringType;
 
 	// A new game starts with nothing chosen in the dropdowns ("Choose ..."); an existing game shows its choices.
-	private bool _scoringChosen;
 	private bool _resultModeChosen;
-
-	/// <summary>Plus / minus: a fixed step per tap.</summary>
-	public bool IsPlusMinus => _scoringChosen && ScoringType == ScoringType.PlusMinus;
-
-	/// <summary>Manual plus / minus: an amount typed in per tap, within the amount rules.</summary>
-	public bool IsManual => _scoringChosen && ScoringType == ScoringType.ManualPlusMinus;
-
-	/// <summary>Both plus / minus types share the start score, limits and warning.</summary>
-	public bool HasScoreSettings => IsPlusMinus || IsManual;
-
-	/// <summary>Manual plus / minus: the rules for typed amounts, linked with AND / OR.</summary>
-	public ObservableCollection<EditableScoreRule> AmountRules { get; } = new();
-
-	public void AddAmountRule() => AmountRules.Add(new EditableScoreRule());
-
-	public void RemoveAmountRule(EditableScoreRule rule) => AmountRules.Remove(rule);
-
-	public void ToggleJoiner(EditableScoreRule rule) => rule.ToggleJoiner();
-
-	/// <summary>The rules as one sentence with brackets, so it's clear how AND and OR combine.</summary>
-	public string AmountRulesPreview
-	{
-		get
-		{
-			if (AmountRules.Count == 0) return "No rules: any amount can be entered.";
-			if (AmountRules.Any(r => r.Kind is null))
-				return "Choose what each rule checks to see what's allowed.";
-			var rules = AmountRules.Select(r => r.ToRule()!).ToList();
-			if (rules.Any(r => r.NeedsValue && r.Value is null || r.NeedsSecondValue && r.Value2 is null))
-				return "Fill in the numbers to see what's allowed.";
-			return $"Allowed: amounts that are {AmountRuleSet.Describe(rules)}.";
-		}
-	}
-
-	private void OnAmountRulesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-	{
-		foreach (EditableScoreRule rule in e.NewItems ?? Array.Empty<EditableScoreRule>())
-			rule.PropertyChanged += OnAmountRuleChanged;
-		foreach (EditableScoreRule rule in e.OldItems ?? Array.Empty<EditableScoreRule>())
-			rule.PropertyChanged -= OnAmountRuleChanged;
-		for (var i = 0; i < AmountRules.Count; i++)
-			AmountRules[i].IsFirst = i == 0;
-		OnPropertyChanged(nameof(AmountRulesPreview));
-	}
-
-	private void OnAmountRuleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
-		OnPropertyChanged(nameof(AmountRulesPreview));
-
-	// Plus / minus settings. Text rather than numbers, so a half-typed "-" or an empty box doesn't break the binding;
-	// they're checked on save (see ReadScoringSettings).
-	[ObservableProperty]
-	private string scoreStep = "1";
-
-	[ObservableProperty]
-	private string startScore = "0";
-
-	[ObservableProperty]
-	private bool hasMaxScore;
-
-	[ObservableProperty]
-	private string maxScore = string.Empty;
-
-	[ObservableProperty]
-	private bool hasMinScore;
-
-	[ObservableProperty]
-	private string minScore = string.Empty;
-
-	[ObservableProperty]
-	private bool hasWarningScore;
-
-	[ObservableProperty]
-	private string warningScore = string.Empty;
 
 	// Subgames and results, for every scoring type.
 	[ObservableProperty]
@@ -192,6 +119,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		OnPropertyChanged(nameof(BestScoreOptions));
 		// The Picker clears its selection when its items change; show the choice again.
 		OnPropertyChanged(nameof(BestScoreIndex));
+		OnPropertyChanged(nameof(TieBreakScopeOptions));
+		OnPropertyChanged(nameof(SelectedTieBreakScope));
 	}
 
 	public string ScoreDirectionTitle => ResultMode switch
@@ -243,6 +172,124 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			OnPropertyChanged();
 		}
 	}
+
+	// Ties: allowed, or played off in a duel.
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasNoTies), nameof(HasDuelScoring))]
+	private bool allowTies = true;
+
+	/// <summary>Ties aren't allowed: show when and how they're played off.</summary>
+	public bool HasNoTies => !AllowTies;
+
+	public List<TieBreakMomentOption> TieBreakMomentOptions { get; } = TieBreakMomentOption.All;
+
+	private TieBreakMoment _tieBreakMoment = TieBreakMoment.SubgamesAndFinal;
+
+	public TieBreakMomentOption? SelectedTieBreakMoment
+	{
+		get => TieBreakMomentOptions.FirstOrDefault(o => o.Moment == _tieBreakMoment);
+		set
+		{
+			if (value is null) return;
+			_tieBreakMoment = value.Moment;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Worded for the result type ("Only a shared loss" in a loser game).</summary>
+	public List<TieBreakScopeOption> TieBreakScopeOptions => TieBreakScopeOption.AllFor(ResultMode);
+
+	private TieBreakScope _tieBreakScope = TieBreakScope.Decisive;
+
+	/// <summary>The null the Picker writes while its items change is ignored, so the choice isn't lost.</summary>
+	public TieBreakScopeOption? SelectedTieBreakScope
+	{
+		get => TieBreakScopeOptions.FirstOrDefault(o => o.Scope == _tieBreakScope);
+		set
+		{
+			if (value is null) return;
+			_tieBreakScope = value.Scope;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>The duel is scored like the game; unticked, the duel gets its own scoring below.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasDuelScoring))]
+	private bool duelSameScoring = true;
+
+	public bool HasDuelScoring => !AllowTies && !DuelSameScoring;
+
+	/// <summary>The duel's own scoring type and numbers, e.g. to 10 while the game goes to 100.</summary>
+	public ScoringEditor DuelScoring { get; } = new(ScoringTypeOption.DuelOptions, "Choose the duel's scoring type", "Duel scoring: ");
+
+	public List<string> DuelBestScoreOptions { get; } = ["Highest score wins the duel", "Lowest score wins the duel"];
+
+	/// <summary>Null until chosen.</summary>
+	private bool? _duelLowestWins;
+
+	/// <summary>The Picker's index: 1 means the lowest duel score wins, -1 nothing chosen yet.</summary>
+	public int DuelBestScoreIndex
+	{
+		get => _duelLowestWins switch { null => -1, true => 1, false => 0 };
+		set
+		{
+			if (value < 0 || (value == 1) == _duelLowestWins) return;
+			_duelLowestWins = value == 1;
+			OnPropertyChanged();
+		}
+	}
+
+	// Turns and the end of a subgame.
+	public List<StartRotationOption> StartRotationOptions { get; } = StartRotationOption.All;
+
+	private StartRotation _startRotation = StartRotation.None;
+
+	public StartRotationOption? SelectedStartRotation
+	{
+		get => StartRotationOptions.FirstOrDefault(o => o.Rotation == _startRotation);
+		set
+		{
+			if (value is null) return;
+			_startRotation = value.Rotation;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Scores are entered seat by seat; 0 has to be entered too.</summary>
+	[ObservableProperty]
+	private bool fixedTurnOrder;
+
+	/// <summary>A subgame ends when a player reaches the end score.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(CanHaveEqualizingTurn))]
+	private bool hasEndScore;
+
+	/// <summary>Text, like the score settings; checked on save.</summary>
+	[ObservableProperty]
+	private string endScore = string.Empty;
+
+	public List<EndModeOption> EndModeOptions { get; } = EndModeOption.All;
+
+	private EndMode _endMode = EndMode.Automatic;
+
+	public EndModeOption? SelectedEndMode
+	{
+		get => EndModeOptions.FirstOrDefault(o => o.Mode == _endMode);
+		set
+		{
+			if (value is null) return;
+			_endMode = value.Mode;
+			OnPropertyChanged();
+			OnPropertyChanged(nameof(CanHaveEqualizingTurn));
+		}
+	}
+
+	/// <summary>An equalizing turn only goes with an automatic end.</summary>
+	public bool CanHaveEqualizingTurn => HasEndScore && _endMode == EndMode.Automatic;
+
+	[ObservableProperty]
+	private bool equalizingTurn;
 
 	[ObservableProperty]
 	private List<string> selectedCategories = new();
@@ -315,24 +362,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Only an existing, published game can be deleted (or have its deletion requested).</summary>
 	public bool CanDelete => _editing is not null;
 
-	/// <summary>Bound to the scoring type Picker.</summary>
-	public List<ScoringTypeOption> ScoringTypeOptions { get; } = ScoringTypeOption.All;
-
-	public ScoringTypeOption? SelectedScoringOption
-	{
-		get => _scoringChosen ? ScoringTypeOptions.FirstOrDefault(o => o.Type == ScoringType) : null;
-		set
-		{
-			if (value is null) return;
-			_scoringChosen = true;
-			ScoringType = value.Type;
-			OnPropertyChanged();
-			OnPropertyChanged(nameof(IsPlusMinus));
-			OnPropertyChanged(nameof(IsManual));
-			OnPropertyChanged(nameof(HasScoreSettings));
-		}
-	}
-
 	/// <summary>Every category, with a tick for the ones this game is in.</summary>
 	public ObservableCollection<CategoryChoice> CategoryChoices { get; } = new();
 
@@ -355,8 +384,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_local = local;
 		_cloud = cloud;
 		_permissions = permissions;
-
-		AmountRules.CollectionChanged += OnAmountRulesChanged;
 
 		IsModerator = _team.Me is { } me && !_permissions.CanChangeGamesDirectly(me);
 	}
@@ -507,58 +534,61 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (!ScoringTypeOption.IsOffered(type))
 		{
 			type = ScoringType.PlusMinus;
-			settings = ScoringSettings.Default with { ResultMode = settings.ResultMode, LowestWins = settings.LowestWins };
+			settings = ScoringSettings.Default with
+			{
+				ResultMode = settings.ResultMode, LowestWins = settings.LowestWins,
+				AllowTies = settings.AllowTies, TieBreakMoment = settings.TieBreakMoment, TieBreakScope = settings.TieBreakScope,
+				DuelSameScoring = settings.DuelSameScoring, DuelScoringType = settings.DuelScoringType, DuelSettings = settings.DuelSettings,
+				StartRotation = settings.StartRotation, FixedTurnOrder = settings.FixedTurnOrder,
+				EndScore = settings.EndScore, EndMode = settings.EndMode, EqualizingTurn = settings.EqualizingTurn
+			};
 		}
-		_scoringChosen = true;
-		ScoringType = type;
-		OnPropertyChanged(nameof(SelectedScoringOption));
-		OnPropertyChanged(nameof(IsPlusMinus));
-		OnPropertyChanged(nameof(IsManual));
-		OnPropertyChanged(nameof(HasScoreSettings));
-		ShowScoringSettings(settings);
-	}
+		Scoring.Show(type, settings);
+		OnPropertyChanged(nameof(ScoringType));
 
-	private void ShowScoringSettings(ScoringSettings settings)
-	{
-		ScoreStep = settings.Step.ToString(CultureInfo.CurrentCulture);
-		StartScore = settings.StartScore.ToString(CultureInfo.CurrentCulture);
-		HasMaxScore = settings.MaxScore is not null;
-		MaxScore = settings.MaxScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
-		HasMinScore = settings.MinScore is not null;
-		MinScore = settings.MinScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
-		HasWarningScore = settings.WarningScore is not null;
-		WarningScore = settings.WarningScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
-		while (AmountRules.Count > 0)
-			AmountRules.RemoveAt(0); // not Clear(): that doesn't say which rules left
-		foreach (var rule in settings.AmountRules)
-			AmountRules.Add(EditableScoreRule.From(rule));
 		_resultModeChosen = true;
 		ResultMode = settings.ResultMode;
 		OnPropertyChanged(nameof(SelectedResultModeOption));
 		_lowestWins = settings.LowestWins;
 		OnPropertyChanged(nameof(BestScoreIndex));
+
+		AllowTies = settings.AllowTies;
+		_tieBreakMoment = settings.TieBreakMoment;
+		OnPropertyChanged(nameof(SelectedTieBreakMoment));
+		_tieBreakScope = settings.TieBreakScope;
+		OnPropertyChanged(nameof(SelectedTieBreakScope));
+		DuelSameScoring = settings.DuelSameScoring;
+
+		_startRotation = settings.StartRotation;
+		OnPropertyChanged(nameof(SelectedStartRotation));
+		FixedTurnOrder = settings.FixedTurnOrder;
+		HasEndScore = settings.EndScore is not null;
+		EndScore = settings.EndScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		_endMode = settings.EndMode;
+		OnPropertyChanged(nameof(SelectedEndMode));
+		OnPropertyChanged(nameof(CanHaveEqualizingTurn));
+		EqualizingTurn = settings.EqualizingTurn;
+
+		if (settings.DuelSettings is { } duel)
+		{
+			DuelScoring.Show(settings.DuelScoringType, duel);
+			_duelLowestWins = duel.LowestWins;
+			OnPropertyChanged(nameof(DuelBestScoreIndex));
+		}
 	}
 
 	/// <summary>
 	/// The scoring settings from the form, or null with StatusMessage saying
 	/// what to fix: numbers that aren't numbers, and settings that can't work
 	/// together (ScoringSettings.Problem), e.g. a minimum above the starting
-	/// score or amount rules that allow nothing. The result mode applies to
-	/// every scoring type; the rest only to the plus / minus types.
+	/// score or amount rules that allow nothing - for the duel too when it has
+	/// its own scoring. The result mode and ties apply to every scoring type;
+	/// the numbers only to the plus / minus types.
 	/// </summary>
 	private ScoringSettings? ReadScoringSettings()
 	{
-		int? Read(string text, string what)
-		{
-			// Some keyboards type a real minus sign (−) instead of a hyphen.
-			if (int.TryParse(text.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var value))
-				return value;
-			StatusMessage = $"Enter a whole number for the {what}.";
-			return null;
-		}
-
 		// Every dropdown needs a choice.
-		if (!_scoringChosen)
+		if (!Scoring.IsChosen)
 		{
 			StatusMessage = "Choose a scoring type.";
 			return null;
@@ -573,37 +603,64 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			StatusMessage = $"{ScoreDirectionPrompt}: the highest or the lowest score.";
 			return null;
 		}
-		if (IsManual && AmountRules.Select((r, i) => (r, i)).FirstOrDefault(x => x.r.Kind is null) is { r: not null } missing)
+
+		int? endScore = null;
+		if (HasEndScore)
 		{
-			StatusMessage = $"Rule {missing.i + 1}: choose what it checks.";
+			// Some keyboards type a real minus sign (−) instead of a hyphen.
+			if (!int.TryParse(EndScore.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var end))
+			{
+				StatusMessage = "Enter a whole number for the end score, or switch it off.";
+				return null;
+			}
+			endScore = end;
+		}
+
+		var basis = new ScoringSettings
+		{
+			ResultMode = ResultMode, LowestWins = lowestWins,
+			AllowTies = AllowTies, TieBreakMoment = _tieBreakMoment, TieBreakScope = _tieBreakScope,
+			DuelSameScoring = DuelSameScoring,
+			StartRotation = _startRotation, FixedTurnOrder = FixedTurnOrder,
+			EndScore = endScore, EndMode = _endMode,
+			EqualizingTurn = CanHaveEqualizingTurn && EqualizingTurn
+		};
+		if (Scoring.Read(basis, out var problem) is not { } settings)
+		{
+			StatusMessage = problem ?? string.Empty;
 			return null;
 		}
 
-		var settings = new ScoringSettings { ResultMode = ResultMode, LowestWins = lowestWins };
-
-		if (HasScoreSettings)
+		if (HasDuelScoring)
 		{
-			var step = 1;
-			if (IsPlusMinus)
+			if (!DuelScoring.IsChosen)
 			{
-				if (Read(ScoreStep, "step") is not { } typedStep) return null;
-				step = typedStep;
+				StatusMessage = "Duel scoring: choose the duel's scoring type.";
+				return null;
 			}
-			if (Read(StartScore, "starting score") is not { } start) return null;
-			int? max = null, min = null, warning = null;
-			if (HasMaxScore && (max = Read(MaxScore, "maximum score")) is null) return null;
-			if (HasMinScore && (min = Read(MinScore, "minimum score")) is null) return null;
-			if (HasWarningScore && (warning = Read(WarningScore, "warning")) is null) return null;
-			settings = settings with
+			if (_duelLowestWins is not { } duelLowestWins)
 			{
-				Step = step, StartScore = start, MaxScore = max, MinScore = min, WarningScore = warning,
-				AmountRules = IsManual ? AmountRules.Select(r => r.ToRule()!).ToList() : []
-			};
+				StatusMessage = "Duel scoring: choose whether the highest or the lowest score wins the duel.";
+				return null;
+			}
+			if (DuelScoring.Read(new ScoringSettings { LowestWins = duelLowestWins }, out var duelProblem) is not { } duel)
+			{
+				StatusMessage = duelProblem ?? string.Empty;
+				return null;
+			}
+			settings = settings with { DuelScoringType = DuelScoring.ScoringType, DuelSettings = duel };
+		}
+		else if (DuelScoring.IsChosen && _duelLowestWins is { } keptLowestWins
+			&& DuelScoring.Read(new ScoringSettings { LowestWins = keptLowestWins }, out _) is { } kept
+			&& kept.Problem(DuelScoring.ScoringType) is null)
+		{
+			// Not used now, but kept so ticking "same scoring" again later doesn't lose the duel's own scoring.
+			settings = settings with { DuelScoringType = DuelScoring.ScoringType, DuelSettings = kept };
 		}
 
-		if (settings.Problem(ScoringType) is { } problem)
+		if (settings.Problem(ScoringType) is { } settingsProblem)
 		{
-			StatusMessage = problem;
+			StatusMessage = settingsProblem;
 			return null;
 		}
 		return settings;

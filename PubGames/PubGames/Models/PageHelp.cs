@@ -35,7 +35,15 @@ public static class Help
 		new("Take a player out", "Tap a player's name in the list at the top. They go back to the saved players."),
 		new("Delete a saved player", "Hold a saved player until \"Delete player?\" appears, then choose Yes or No. Earlier games keep their name. You can't delete yourself."),
 		new("Seat order", "▲ and ▼ move a player up or down. The order at the top is the seat order on the scoreboard."),
-		new("After a game", "When you quit a game, the players who were playing at the end are filled in again, including seat changes.")
+		new("After a game", "When you quit a game, the players who were playing at the end are filled in again, including seat changes."),
+		new("Saved games", "A game is saved on this phone as soon as someone has a score. Saved games (top right) shows them: tap an unfinished game to continue where you left off.")
+	]);
+
+	public static PageHelp SavedGames { get; } = new("Saved games",
+	[
+		new("Your games", "Every game played on this phone in which someone has a score, newest first. Tap an unfinished game to continue it, or a finished one to see the scoreboard and the final result."),
+		new("Delete games", "Tap Select, then tap the games to delete - or Select all / Deselect all - and tap Delete. Cancel stops selecting."),
+		new("Keep saved games", "Choose how long games are kept: 1 week, 1 month (unless you change it), 6 months, 1 year, never delete, or don't save games at all. The time counts from the last score. Games are only kept on this phone; a finished game's result in the stats stays.")
 	]);
 
 	public static PageHelp GameLibrary { get; } = new("Choose a game",
@@ -51,7 +59,7 @@ public static class Help
 		new("Start", "Skip rules and Start game both start the game with the chosen players and number of subgames.")
 	]);
 
-	public static PageHelp Scoreboard(ScoringType type) => new("Scoreboard",
+	public static PageHelp Scoreboard(ScoringType type, ScoringSettings settings) => new("Scoreboard",
 	[
 		new("Keeping score", type switch
 		{
@@ -59,6 +67,22 @@ public static class Help
 			ScoringType.ManualPlusMinus => "Type an amount in the box next to a player, then tap + to add it or − to subtract it. Only amounts the game's rules allow are accepted; if an amount isn't, the message at the top says what you can enter. Tap ⓘ and choose the rules to see them.",
 			_ => "Tap + or − next to a player, or tap a score to type any amount."
 		}),
+		.. settings.FixedTurnOrder
+			? [new HelpSection("Whose turn", "This game has a fixed input order: seat 1 first, then seat 2, and so on. The player whose turn it is has a thick dark border and ▶ instead of their seat number; only they can enter a score. " +
+				(type == ScoringType.ManualPlusMinus
+					? "Type the amount and tap + or −, or Next above the keyboard: the turn then passes on. No points? Type 0 - it has to be entered too."
+					: "Tap + or − as often as needed, then Turn done to pass the turn on - also when the score stays the same."))]
+			: Array.Empty<HelpSection>(),
+		.. settings.EndScore is { } end
+			? [new HelpSection("End of a subgame", settings.EndMode == EndMode.Manual
+				? $"Once a player reaches {end}, the line above the cards says so. End the subgame yourselves with Next subgame or Finish game."
+				: settings.EqualizingTurn
+					? $"Once a player reaches {end}, the players after them in seat order get one last turn. When the turn is back at seat 1, the subgame ends by itself and you note its result."
+					: $"Once a player reaches {end}, the subgame ends by itself and you note its result.")]
+			: Array.Empty<HelpSection>(),
+		.. type == ScoringType.ManualPlusMinus
+			? [new HelpSection("Typing scores", "The screen moves up so the box you type in stays above the keyboard. ◀ Previous and Next ▶ above the keyboard (or the keyboard's own Next key) go to the other players' boxes; Next first adds the amount you typed - use a minus sign to subtract.")]
+			: Array.Empty<HelpSection>(),
 		new("Warning and limits", "A player at the game's warning score gets a dashed orange border and a ⚠ WARNING badge. At the maximum or minimum score the whole card turns dark blue with a ▲ MAX REACHED or ▼ MIN REACHED badge. Scores never go past the maximum or minimum."),
 		new("Subgames", "The top shows which subgame you're playing. + subgame and − subgame change how many there are. Next subgame lets you note the result of this one and then starts the next, with everyone back at the starting score. On the last subgame the button is Finish game."),
 		new("Stats", "Stats shows everyone's wins, losses or points so far. The winner stays a surprise until you finish the game."),
@@ -73,7 +97,7 @@ public static class Help
 		new("Add a player", "Tap a saved player to add them at the last seat, or type a new name and tap Add. Tick the box to also save a new player for next time.")
 	]);
 
-	public static PageHelp RoundResult(ResultMode mode, bool lowestWins) => new("Subgame result",
+	public static PageHelp RoundResult(ResultMode mode, bool lowestWins, ScoringSettings settings) => new("Subgame result",
 	[
 		new("Filled in for you", mode switch
 		{
@@ -85,8 +109,24 @@ public static class Help
 			? "Use − and + next to a player to change their place (− moves towards 1st). Several players can share a place."
 			: $"Tap a player to mark or unmark them as {(mode == ResultMode.Loser ? "loser" : "winner")}. Several players can be {(mode == ResultMode.Loser ? "losers" : "winners")}. A marked player has a dark blue card and a badge."),
 		new("Confirm", "Start next subgame saves this result and puts every score back at the starting score. After Finish game, it saves the result and shows the final result; if the winner or loser is tied, you can first play an extra subgame to decide."),
+		.. settings.AllowTies ? Array.Empty<HelpSection>() : [new HelpSection("No ties", TiesText(settings, mode))],
 		new("Changed your mind", "Go back without confirming: nothing is saved and you continue the subgame.")
 	]);
+
+	/// <summary>How a game without ties plays off a tie, for players.</summary>
+	private static string TiesText(ScoringSettings settings, ResultMode mode)
+	{
+		var when = settings.TieBreakMoment switch
+		{
+			TieBreakMoment.SubgamesOnly => "after a subgame",
+			TieBreakMoment.FinalOnly => "in the final total",
+			_ => "after a subgame and in the final total"
+		};
+		var which = settings.TieBreakScope == TieBreakScope.Every ? "Players who share a place"
+			: mode == ResultMode.Loser ? "Players who share the loss" : "Players who share 1st place";
+		var scoring = settings.DuelSameScoring ? "scored like the game" : "with its own scoring, shown on the duel screen";
+		return $"This game has no ties {when}. {which} play a duel, {scoring}. When the duel is over, tap Duel finished and check the score: only when you confirm it does the duel decide the result - one winner or loser, or places one after another so the points differ. Still tied after the duel? Then those players duel again.";
+	}
 
 	public static PageHelp Standings(bool isFinal) => isFinal
 		? new("Final result",
@@ -130,6 +170,8 @@ public static class Help
 		sections.Add(new("Warning and limits", "On the scoreboard a player at the warning gets a dashed orange border and a ⚠ WARNING badge; at the maximum or minimum the card turns dark blue with a ▲ MAX / ▼ MIN badge. Scores never go past the maximum or minimum."));
 		if (type == ScoringType.ManualPlusMinus)
 			sections.Add(new("Rules for entered amounts", "+ Add rule adds a rule; ✕ removes it. Lower than 11 allows 10; lower than or equal to 11 also allows 11; between includes both numbers. Amounts may be negative. Tap AND / OR above a rule to switch how it links to the rule above: OR goes first, so rules linked with OR form a group where one must be true, and AND joins groups that must all be true. The bold line below the rules shows exactly what's allowed. No rules: any amount."));
+		sections.Add(new("Turns and the end of a subgame", "Who starts the next subgame: the seats turn so that player sits in seat 1 - everyone keeps their neighbours. Left of a player is the next seat, right of a player the seat before. Fixed input order: scores are entered seat by seat and everyone has to enter one, also 0. A subgame ends at score: once a player reaches it the subgame ends, automatically or when the players end it. With an automatic end and a fixed input order you can add an equalizing turn: the players after the one who reached it still get their turn in that round."));
+		sections.Add(new("Ties", "Ticked \"Ties are allowed\": tied players share the win, the loss or the place, and get the same points. Unticked, a tie is played off in a duel. Choose when: after every subgame, after the final total, or both. Choose which ties: only a shared 1st place (in a loser game: a shared loss), or every shared place. Tick \"The duel uses the game's scoring\" to duel with the same scoring as the game, or untick it to give the duel its own scoring - for example to 10 while the game goes to 100 - and choose which score wins the duel. With Type in the score the players play the duel their own way and type in everyone's score. Explain the duel itself in How to play."));
 		sections.Add(new("Subgame results", "Choose how the result of each subgame is noted - the winner(s), everyone's place, or the loser(s) - and which score wins, loses or is 1st. After each subgame the app fills this in from the scores and the players can change it. The players choose how many subgames they play (1 unless they change it)."));
 		sections.Add(new("Number of players", "Switch on a minimum and/or a maximum and fill in the number. Only a maximum of 3 means 1, 2 or 3 players; only a minimum of 2 means 2 or more. Both off: any number, shown as Any. Players can filter games by how many they are."));
 		sections.Add(new("Categories", "The categories are listed under their main categories (Play style, Duration, ...). Open each main category and tap at least one category in it, so players can find the game; tap more if several fit. Tap again to unselect."));
@@ -237,8 +279,11 @@ public static class Help
 		var sections = new List<HelpSection>
 		{
 			new("Scoring", ScoringRules.For(game).Explanation),
-			new("Result of each subgame", $"{ResultModeOption.LabelFor(settings.ResultMode)}: {settings.ScoreDirectionLabel}.")
+			new("Result of each subgame", $"{ResultModeOption.LabelFor(settings.ResultMode)}: {settings.ScoreDirectionLabel}."),
+			new("Ties", settings.AllowTies ? "Ties are allowed: tied players share the result." : TiesText(settings, settings.ResultMode))
 		};
+		if (settings.TurnSummary.Length > 0)
+			sections.Add(new("Turns and the end", char.ToUpperInvariant(settings.TurnSummary[0]) + settings.TurnSummary[1..] + "."));
 		var blocks = string.IsNullOrWhiteSpace(game.RulesText)
 			? [new RulesBlock("No rules written for this game yet.", null)]
 			: RulesBlock.Parse(game.RulesText);

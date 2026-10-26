@@ -23,11 +23,21 @@
 			<!-- Manual plus / minus: why an amount wasn't accepted. A fixed height, so the cards don't jump. -->
 			<Label x:Name="ScoreMessage" IsVisible="False" HeightRequest="38" FontSize="13" FontAttributes="Bold"
 			       TextColor="{StaticResource Danger}" LineBreakMode="WordWrap" MaxLines="2" />
+			<!-- The end score: who reached it, and what happens now. -->
+			<Label Text="{Binding EndMessage}" IsVisible="{Binding HasEndMessage}" FontSize="13" FontAttributes="Bold"
+			       TextColor="{StaticResource PrimaryDark}" LineBreakMode="WordWrap" MaxLines="2" />
+			<!-- Fixed input order with + and − by a step: the player whose turn it is taps this when they're done. -->
+			<Button x:Name="TurnDoneButton" Text="Turn done ▶" Clicked="OnTurnDoneClicked" IsVisible="False"
+			        HeightRequest="38" Padding="12,0" FontSize="13" HorizontalOptions="End" />
 		</VerticalStackLayout>
 
 		<!-- One card per player, all on screen at once: filled in by ScoreboardPage.xaml.cs,
-		     which gives every card an exact height so they fit the screen (two columns above 8 players). -->
-		<Grid Grid.Row="1" x:Name="Board" RowSpacing="8" ColumnSpacing="8" VerticalOptions="Start" />
+		     which gives every card an exact height so they fit the screen (two columns above 8 players).
+		     While typing an amount the keyboard takes part of the screen: the board then scrolls,
+		     and the card being typed in is scrolled into view. -->
+		<ScrollView Grid.Row="1" x:Name="BoardScroll">
+			<Grid x:Name="Board" RowSpacing="8" ColumnSpacing="8" VerticalOptions="Start" />
+		</ScrollView>
 
 		<!-- Next subgame / Finish game share the bottom row; UpdateFooter gives the visible one(s) the width. -->
 		<Grid Grid.Row="2" x:Name="Footer" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
@@ -41,6 +51,17 @@
 			<Button Grid.Row="1" x:Name="NextButton" Text="Next subgame ▶" Clicked="OnNextClicked" IsVisible="{Binding CanGoNext}" />
 			<Button Grid.Row="1" Grid.Column="1" x:Name="FinishButton" Text="Finish game" Clicked="OnFinishClicked"
 			        IsVisible="{Binding CanFinish}" BackgroundColor="{StaticResource PrimaryDark}" />
+		</Grid>
+
+		<!-- Manual plus / minus while typing: right above the keyboard, to go to the previous or next player's box.
+		     Next (and the keyboard's own action key) first adds what's typed. -->
+		<Grid Grid.Row="2" x:Name="KeyboardBar" IsVisible="False" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+			<Button x:Name="PreviousBoxButton" Text="◀ Previous" Clicked="OnPreviousBoxClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			<Label Grid.Column="1" x:Name="KeyboardBarLabel" FontAttributes="Bold" FontSize="15"
+			       HorizontalTextAlignment="Center" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+			<Button Grid.Column="2" x:Name="NextBoxButton" Text="Next ▶" Clicked="OnNextBoxClicked" />
 		</Grid>
 
 	</Grid>

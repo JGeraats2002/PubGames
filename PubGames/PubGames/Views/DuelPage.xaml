@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- The duel popup: the tied players keep score like on the scoreboard (+ and −), or type in their final score. -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.DuelPage"
+             x:DataType="vm:DuelViewModel"
+             BackgroundColor="{StaticResource SurfaceLight}">
+
+	<Grid RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="10">
+
+		<VerticalStackLayout Spacing="6">
+			<Label Text="⚔ Duel" FontSize="24" FontAttributes="Bold" />
+			<Label Text="{Binding Reason}" FontSize="15" FontAttributes="Bold" />
+			<Label Text="{Binding Explanation}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+		</VerticalStackLayout>
+
+		<ScrollView Grid.Row="1">
+			<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="vm:DuelRow">
+						<Border Padding="12,8" Stroke="{StaticResource Border}" StrokeThickness="1">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="10" />
+							</Border.StrokeShape>
+							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+								<Label Text="{Binding Player.Name}" FontSize="17" FontAttributes="Bold"
+								       LineBreakMode="TailTruncation" VerticalOptions="Center" />
+
+								<!-- Type in the score: one box. -->
+								<Entry Grid.Column="1" Text="{Binding Typed}" Placeholder="score" Keyboard="Telephone"
+								       WidthRequest="90" HorizontalTextAlignment="End" VerticalOptions="Center"
+								       IsVisible="{Binding IsTyped, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
+
+								<!-- Plus / minus types: (amount) − score + -->
+								<HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center"
+								                       IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}">
+									<Entry Text="{Binding Typed}" Keyboard="Telephone" WidthRequest="70" HorizontalTextAlignment="End" VerticalOptions="Center"
+									       Placeholder="{Binding AmountPlaceholder, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
+									       IsVisible="{Binding IsManual, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
+									<Button Clicked="OnMinusClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="16"
+									        Text="{Binding MinusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									<Label Text="{Binding Score}" FontSize="22" FontAttributes="Bold" MinimumWidthRequest="48"
+									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
+									<Button Clicked="OnPlusClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="16"
+									        Text="{Binding PlusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+								</HorizontalStackLayout>
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<Label Grid.Row="2" Text="{Binding Message}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+
+		<Grid Grid.Row="3" ColumnDefinitions="*,2*" ColumnSpacing="8">
+			<Button Text="Cancel" Clicked="OnCancelClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button Grid.Column="1" Text="Duel finished" Clicked="OnDoneClicked" />
+		</Grid>
+
+	</Grid>
+
+</ContentPage>

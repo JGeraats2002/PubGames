@@ -36,6 +36,10 @@ public interface ILocalDatabaseService
 	Task SaveSessionAsync(GameSession session);
 	/// <summary>Finished games whose results haven't been published to the players' stats yet.</summary>
 	Task<List<GameSession>> GetUnpublishedFinishedSessionsAsync(string accountId);
+	/// <summary>Every game played on this phone with this account, finished or not.</summary>
+	Task<List<GameSession>> GetSessionsAsync(string accountId);
+	/// <summary>Deletes games with their players' scores and subgame results.</summary>
+	Task DeleteSessionsAsync(IEnumerable<string> sessionIds);
 	Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId);
 	Task SaveParticipantAsync(SessionParticipant participant);
 	/// <summary>Every subgame result of a session, in subgame order.</summary>
@@ -229,6 +233,28 @@ public class LocalDatabaseService : ILocalDatabaseService
 		return await db.Table<GameSession>()
 			.Where(s => s.AccountId == accountId && s.EndedAt != null && !s.IsSynced)
 			.ToListAsync();
+	}
+
+	public async Task<List<GameSession>> GetSessionsAsync(string accountId)
+	{
+		var db = await DbAsync();
+		return await db.Table<GameSession>().Where(s => s.AccountId == accountId).ToListAsync();
+	}
+
+	public async Task DeleteSessionsAsync(IEnumerable<string> sessionIds)
+	{
+		var ids = sessionIds.ToList();
+		if (ids.Count == 0) return;
+		var db = await DbAsync();
+		await db.RunInTransactionAsync(tx =>
+		{
+			foreach (var id in ids)
+			{
+				tx.Execute($"DELETE FROM {nameof(RoundResult)} WHERE {nameof(RoundResult.SessionId)} = ?", id);
+				tx.Execute($"DELETE FROM {nameof(SessionParticipant)} WHERE {nameof(SessionParticipant.SessionId)} = ?", id);
+				tx.Execute($"DELETE FROM {nameof(GameSession)} WHERE {nameof(GameSession.Id)} = ?", id);
+			}
+		});
 	}
 
 	public async Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId)

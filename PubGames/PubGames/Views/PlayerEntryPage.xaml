@@ -11,7 +11,13 @@
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="16">
 
-			<Label Text="Who's playing?" FontSize="22" />
+			<!-- Saved games are on their own page. -->
+			<Grid ColumnDefinitions="*,Auto">
+				<Label Text="Who's playing?" FontSize="22" VerticalOptions="Center" />
+				<Button Grid.Column="1" Text="{Binding SavedGamesButtonText}" Clicked="OnSavedGamesClicked"
+				        HeightRequest="36" Padding="14,0" FontSize="13" VerticalOptions="Center"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			</Grid>
 
 			<CollectionView ItemsSource="{Binding SelectedPlayers}">
 				<CollectionView.ItemTemplate>

@@ -14,7 +14,8 @@ public enum ScoringType
 	Ranking,          // 1st / 2nd / 3rd placement per round
 	Custom,           // admin-defined notation (free text rules, manual score entry)
 	PlusMinus,        // + and − by a set step, optional min/max and warning (see ScoringSettings)
-	ManualPlusMinus   // + and − by an amount typed in each time, within the game's amount rules
+	ManualPlusMinus,  // + and − by an amount typed in each time, within the game's amount rules
+	TypedScore        // only for a tie-break duel: everyone's final duel score is typed in at once
 }
 
 /// <summary>A scoring type as the dropdown shows it.</summary>
@@ -33,10 +34,14 @@ public sealed record ScoringTypeOption(ScoringType Type)
 
 	public static bool IsOffered(ScoringType type) => All.Any(o => o.Type == type);
 
+	/// <summary>What admins can pick for a tie-break duel: the game's types, or typing in the duel's score.</summary>
+	public static List<ScoringTypeOption> DuelOptions { get; } = [.. All, new(ScoringType.TypedScore)];
+
 	public static string LabelFor(ScoringType type) => type switch
 	{
 		ScoringType.PlusMinus => "Plus / minus",
 		ScoringType.ManualPlusMinus => "Manual plus / minus",
+		ScoringType.TypedScore => "Type in the score",
 		ScoringType.PointTally => "Point tally",
 		ScoringType.SipCounter => "Sip counter",
 		ScoringType.WinLoseRounds => "Win/lose rounds",

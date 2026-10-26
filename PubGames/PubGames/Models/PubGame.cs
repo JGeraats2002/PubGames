@@ -33,8 +33,8 @@ public class PubGame
 
 	[Ignore]
 	public string ScoringLabel => ScoringType is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
-		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.SummaryFor(ScoringType)})"
-		: $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.ResultSummary})";
+		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.SummaryFor(ScoringType)} · {ScoringSettings.TieSummaryFor(ScoringType)})"
+		: $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.ResultSummary} · {ScoringSettings.TieSummaryFor(ScoringType)})";
 
 	public bool IsPaid { get; set; }
 

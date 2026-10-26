@@ -35,11 +35,24 @@ public partial class ParticipantRow : ObservableObject
 
 	public bool HasStatus => !string.IsNullOrEmpty(Status);
 
+	/// <summary>Fixed input order: it's this player's turn to enter a score.</summary>
+	[ObservableProperty]
+	private bool isTurn;
+
+	/// <summary>The player's + / − and amount box work: always, or with a fixed input order only on their turn.</summary>
+	[ObservableProperty]
+	private bool canEnter = true;
+
+	/// <summary>The same in a few letters ("▲ MAX"), for cards too small for the full badge.</summary>
+	[ObservableProperty]
+	private string shortStatus = string.Empty;
+
 	public void UpdateStatus(ScoringRules rules)
 	{
 		IsAtLimit = rules.IsAtLimit(Score);
 		IsWarning = !IsAtLimit && rules.IsWarning(Score);
 		Status = rules.StatusFor(Score);
+		ShortStatus = rules.ShortStatusFor(Score);
 	}
 
 	/// <summary>Call after mutating Participant.Score or Position so bound UI refreshes.</summary>
@@ -87,6 +100,28 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 
 	public bool IsFinished => Session?.EndedAt is not null;
 
+	/// <summary>Scores are entered seat by seat (see ScoringSettings.FixedTurnOrder).</summary>
+	public bool FixedTurnOrder => Settings.FixedTurnOrder && !IsFinished;
+
+	/// <summary>The player whose turn it is, with a fixed input order.</summary>
+	public ParticipantRow? TurnRow => FixedTurnOrder && Rows.Count > 0 ? Rows[Math.Clamp(Session?.TurnIndex ?? 0, 0, Rows.Count - 1)] : null;
+
+	/// <summary>What happens with the end score: "Jan reached 100 ...". Empty when nobody reached it.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasEndMessage))]
+	private string endMessage = string.Empty;
+
+	public bool HasEndMessage => EndMessage.Length > 0;
+
+	/// <summary>
+	/// The end score ended this subgame by itself: the page opens its result.
+	/// Raised once per subgame; coming back without confirming leaves it to the players.
+	/// </summary>
+	public event EventHandler? SubgameEnded;
+
+	/// <summary>The subgame SubgameEnded was raised for, so it's raised only once.</summary>
+	private (string SessionId, int Round)? _endedRound;
+
 	private bool IsLastSubgame => Session?.SubgameCount is { } count && CurrentRound >= count;
 
 	/// <summary>Next subgame: until the last one of a fixed number, or always when there's no fixed number.</summary>
@@ -114,6 +149,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 
 	private void NotifySubgameChanged()
 	{
+		OnPropertyChanged(nameof(FixedTurnOrder));
 		OnPropertyChanged(nameof(CurrentRound));
 		OnPropertyChanged(nameof(SubgameLabel));
 		OnPropertyChanged(nameof(IsFinished));
@@ -174,7 +210,107 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		UpdateLeaders();
 		foreach (var row in Rows)
 			row.UpdateStatus(Rules);
+		UpdateTurn();
+		UpdateEndMessage();
 		RowsReloaded?.Invoke(this, EventArgs.Empty);
+	}
+
+	/// <summary>Marks whose turn it is; with a fixed input order only they can enter a score.</summary>
+	private void UpdateTurn()
+	{
+		var turn = TurnRow;
+		foreach (var row in Rows)
+		{
+			row.IsTurn = turn == row;
+			row.CanEnter = !IsFinished && (turn is null || turn == row);
+		}
+		OnPropertyChanged(nameof(TurnRow));
+	}
+
+	/// <summary>
+	/// Fixed input order: the player whose turn it was is done; the next seat
+	/// is up. After the last seat it's seat 1 again, and a new round - which is
+	/// when an equalizing turn ends the subgame.
+	/// </summary>
+	public async Task EndTurnAsync()
+	{
+		if (Session is null || !FixedTurnOrder || Rows.Count == 0) return;
+		Session.TurnIndex = (Math.Clamp(Session.TurnIndex, 0, Rows.Count - 1) + 1) % Rows.Count;
+		await _local.SaveSessionAsync(Session);
+		UpdateTurn();
+		await CheckEndAsync(turnEnded: true);
+	}
+
+	/// <summary>
+	/// Whether the end score ends the subgame now. Without a fixed input order
+	/// that's checked after every score change; with one, after every turn.
+	/// Automatic: the subgame ends - straight away, or with an equalizing turn
+	/// once the others in that round had theirs. Manual: the players see who
+	/// reached it and end the subgame themselves.
+	/// </summary>
+	private async Task CheckEndAsync(bool turnEnded)
+	{
+		if (Session is null || IsFinished || Settings.EndScore is null) return;
+		if (FixedTurnOrder && !turnEnded) return;
+
+		var reached = Rows.Where(r => Settings.ReachesEnd(r.Score)).ToList();
+		var key = (Session.Id, CurrentRound);
+
+		if (Settings.EndMode == EndMode.Automatic && Settings.EqualizingTurn && FixedTurnOrder)
+		{
+			if (Session.FinalRoundFrom is null && reached.Count > 0)
+			{
+				// The turn just ended was the one that reached it.
+				Session.FinalRoundFrom = (Session.TurnIndex - 1 + Rows.Count) % Rows.Count;
+				await _local.SaveSessionAsync(Session);
+			}
+			if (Session.FinalRoundFrom is not null && Session.TurnIndex == 0 && _endedRound != key)
+			{
+				_endedRound = key;
+				UpdateEndMessage();
+				SubgameEnded?.Invoke(this, EventArgs.Empty);
+				return;
+			}
+			UpdateEndMessage();
+			return;
+		}
+
+		if (Settings.EndMode == EndMode.Automatic && reached.Count > 0 && _endedRound != key)
+		{
+			_endedRound = key;
+			UpdateEndMessage();
+			SubgameEnded?.Invoke(this, EventArgs.Empty);
+			return;
+		}
+		UpdateEndMessage();
+	}
+
+	/// <summary>The line above the cards about the end score.</summary>
+	private void UpdateEndMessage()
+	{
+		if (Settings.EndScore is not { } end || IsFinished)
+		{
+			EndMessage = string.Empty;
+			return;
+		}
+		var reached = Rows.Where(r => Settings.ReachesEnd(r.Score)).Select(r => r.Player.Name).ToList();
+		var who = TieBreak.Names(reached);
+		var verb = reached.Count == 1 ? "has" : "have";
+
+		if (Session?.FinalRoundFrom is { } from && from < Rows.Count)
+		{
+			var reacher = Rows[from].Player.Name;
+			EndMessage = Session.TurnIndex == 0
+				? $"🏁 {reacher} reached {end} and everyone had their last turn: this subgame is over."
+				: $"🏁 {reacher} reached {end}. Everyone after {reacher} gets one last turn.";
+			return;
+		}
+		if (reached.Count == 0)
+			EndMessage = string.Empty;
+		else if (Settings.EndMode == EndMode.Manual || _endedRound == (Session?.Id, CurrentRound))
+			EndMessage = $"🏁 {who} {verb} reached {end}. End the subgame with {(CanGoNext ? "Next subgame" : "Finish game")}.";
+		else
+			EndMessage = string.Empty;
 	}
 
 	/// <summary>
@@ -189,9 +325,16 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		if (score == row.Participant.Score) return;
 		row.Participant.Score = score;
 		await _local.SaveParticipantAsync(row.Participant);
+		if (Session is not null)
+		{
+			// Saved games are kept counting from the last score (see SavedGames).
+			Session.LastPlayedAt = DateTime.UtcNow;
+			await _local.SaveSessionAsync(Session);
+		}
 		row.NotifyChanged();
 		row.UpdateStatus(Rules);
 		UpdateLeaders();
+		await CheckEndAsync(turnEnded: false);
 	}
 
 	/// <summary>Highlights whoever is winning right now (nobody while all scores are equal).</summary>

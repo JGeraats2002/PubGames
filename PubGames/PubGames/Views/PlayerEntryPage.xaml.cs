@@ -20,6 +20,10 @@ public partial class PlayerEntryPage : ContentPage
 		await _vm.LoadAsync();
 	}
 
+	/// <summary>Saved games: continue an unfinished game, or delete games.</summary>
+	private async void OnSavedGamesClicked(object? sender, EventArgs e) =>
+		await Shell.Current.GoToAsync(nameof(SavedGamesPage));
+
 	/// <summary>Tap a saved player: add them to the game.</summary>
 	private void OnSavedPlayerTapped(object? sender, EventArgs e)
 	{

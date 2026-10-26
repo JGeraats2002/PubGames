@@ -46,8 +46,18 @@ public partial class PlayerEntryViewModel : ObservableObject
 
 	public bool HasStatusMessage => StatusMessage.Length > 0;
 
-	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IProfileService profiles)
+	private readonly SavedGames _savedGames;
+
+	/// <summary>How many games are saved, for the button to the Saved games page.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(SavedGamesButtonText))]
+	private int savedGameCount;
+
+	public string SavedGamesButtonText => SavedGameCount == 0 ? "Saved games ›" : $"Saved games ({SavedGameCount}) ›";
+
+	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IProfileService profiles, SavedGames savedGames)
 	{
+		_savedGames = savedGames;
 		_local = local;
 		_auth = auth;
 		_gameNight = gameNight;
@@ -58,6 +68,9 @@ public partial class PlayerEntryViewModel : ObservableObject
 	{
 		await _auth.InitializeAsync();
 		_allSaved = await _local.GetPlayersAsync(CurrentAccountId);
+
+		// No game is open while this page shows, so old and empty games can be cleaned up now.
+		SavedGameCount = (await _savedGames.GetAsync()).Count;
 
 		// Back from a finished game: the players who were playing at the end, in seat order.
 		if (_gameNight.NextLineup is { } lineup)

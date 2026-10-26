@@ -41,8 +41,18 @@ public class RoundResult
 	[Indexed]
 	public string SessionId { get; set; } = string.Empty;
 
-	/// <summary>1-based subgame number.</summary>
+	/// <summary>1-based subgame number, or FinalDuelRound for a duel that broke a tie in the final total.</summary>
 	public int Round { get; set; }
+
+	/// <summary>
+	/// The Round of a duel after the final total. Its Place is the player's rank
+	/// in that duel (1 = best); it doesn't count as a subgame, it only orders
+	/// players whose totals are equal.
+	/// </summary>
+	public const int FinalDuelRound = -1;
+
+	[Ignore]
+	public bool IsSubgame => Round != FinalDuelRound;
 
 	public string PlayerId { get; set; } = string.Empty;
 
@@ -100,7 +110,8 @@ public static class Standings
 	/// </summary>
 	public static List<PlayerStanding> Calculate(ResultMode mode, IEnumerable<RoundResult> results, IReadOnlyDictionary<string, string> names)
 	{
-		var all = results.ToList();
+		var all = results.Where(r => r.IsSubgame).ToList();
+		var duelRank = results.Where(r => !r.IsSubgame && r.Place is not null).ToDictionary(r => r.PlayerId, r => r.Place!.Value);
 		var standings = new Dictionary<string, PlayerStanding>();
 		foreach (var round in all.GroupBy(r => r.Round))
 		{
@@ -122,11 +133,14 @@ public static class Standings
 			ResultMode.Loser => s => -s.Losses,
 			_ => s => s.Wins
 		};
-		var sorted = standings.Values.OrderByDescending(score).ThenBy(s => s.Name).ToList();
+		// A duel after the final total decides between equal totals; players who didn't duel come after those who did.
+		int Rank(PlayerStanding s) => duelRank.GetValueOrDefault(s.PlayerId, int.MaxValue);
+		var sorted = standings.Values.OrderByDescending(score).ThenBy(Rank).ThenBy(s => s.Name).ToList();
 		for (var i = 0; i < sorted.Count; i++)
 		{
-			// Equal totals share a place: 1, 1, 3.
-			sorted[i].Place = i > 0 && score(sorted[i]) == score(sorted[i - 1]) ? sorted[i - 1].Place : i + 1;
+			// Equal totals share a place: 1, 1, 3 - unless a duel split them.
+			var shared = i > 0 && score(sorted[i]) == score(sorted[i - 1]) && Rank(sorted[i]) == Rank(sorted[i - 1]);
+			sorted[i].Place = shared ? sorted[i - 1].Place : i + 1;
 			var s = sorted[i];
 			var total = mode switch
 			{
@@ -142,9 +156,9 @@ public static class Standings
 	/// <summary>
 	/// How the game ended for each player (by player id), for their stats.
 	/// Winner and ranking games: the only one in 1st place won, players sharing
-	/// 1st tied, everyone else lost. Loser games: the only player with the most
-	/// losses lost, players sharing the most losses tied, everyone else won.
-	/// When everyone ends equal, everyone tied.
+	/// 1st tied, everyone else lost. Loser games: the only player in last place
+	/// (the most losses, after any duel) lost, players sharing last place tied,
+	/// everyone else won. When everyone ends equal, everyone tied.
 	/// </summary>
 	public static Dictionary<string, GameOutcome> Outcomes(ResultMode mode, List<PlayerStanding> sorted)
 	{
@@ -154,10 +168,10 @@ public static class Standings
 		if (mode == ResultMode.Loser)
 		{
 			var most = sorted.Max(s => s.Losses);
-			var losers = sorted.Where(s => s.Losses == most).ToList();
+			var losers = Losers(sorted);
 			foreach (var s in sorted)
 				outcomes[s.PlayerId] = most == 0 || losers.Count == sorted.Count ? GameOutcome.Tied
-					: s.Losses != most ? GameOutcome.Won
+					: !losers.Contains(s) ? GameOutcome.Won
 					: losers.Count == 1 ? GameOutcome.Lost
 					: GameOutcome.Tied;
 			return outcomes;
@@ -178,14 +192,21 @@ public static class Standings
 
 		if (mode == ResultMode.Loser)
 		{
-			var mostLosses = sorted.Max(s => s.Losses);
-			if (mostLosses == 0) return "Nobody lost a subgame.";
-			var losers = sorted.Where(s => s.Losses == mostLosses).Select(s => s.Name).ToList();
+			if (sorted.Max(s => s.Losses) == 0) return "Nobody lost a subgame.";
+			var losers = Losers(sorted).Select(s => s.Name).ToList();
 			return $"✖ {(losers.Count == 1 ? "Loser" : "Losers")}: {Names(losers)}";
 		}
 
 		var winners = sorted.Where(s => s.Place == 1).Select(s => s.Name).ToList();
 		return $"🏆 {(winners.Count == 1 ? "Winner" : "Winners")}: {Names(winners)}";
+	}
+
+	/// <summary>Loser games: the players in last place - the most losses, unless a duel decided between them.</summary>
+	public static List<PlayerStanding> Losers(List<PlayerStanding> sorted)
+	{
+		if (sorted.Count == 0) return [];
+		var last = sorted.Max(s => s.Place);
+		return sorted.Where(s => s.Place == last).ToList();
 	}
 
 	private static string Names(List<string> names) =>

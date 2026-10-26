@@ -29,6 +29,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ITeamService, TeamService>();
 		builder.Services.AddSingleton<ICategoryService, CategoryService>();
 		builder.Services.AddSingleton<GameNight>();
+		builder.Services.AddSingleton<SavedGames>();
 		builder.Services.AddSingleton<IProfileService, ProfileService>();
 		builder.Services.AddSingleton<IStatsService, StatsService>();
 		builder.Services.AddSingleton<IMessageService, MessageService>();
@@ -39,6 +40,7 @@ public static class MauiProgram
 
 		// --- ViewModels (transient: fresh state each time you navigate to the page) ---
 		builder.Services.AddTransient<PlayerEntryViewModel>();
+		builder.Services.AddTransient<SavedGamesViewModel>();
 		builder.Services.AddTransient<GameLibraryViewModel>();
 		builder.Services.AddTransient<GameRulesViewModel>();
 		builder.Services.AddTransient<ScoreboardViewModel>();
@@ -60,6 +62,7 @@ public static class MauiProgram
 
 		// --- Pages ---
 		builder.Services.AddTransient<PlayerEntryPage>();
+		builder.Services.AddTransient<SavedGamesPage>();
 		builder.Services.AddTransient<GameLibraryPage>();
 		builder.Services.AddTransient<GameRulesPage>();
 		builder.Services.AddTransient<ScoreboardPage>();

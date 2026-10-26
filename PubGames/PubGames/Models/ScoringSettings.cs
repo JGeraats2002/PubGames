@@ -53,6 +53,94 @@ public sealed record ScoringSettings
 	[JsonIgnore]
 	public string ScoreDirectionLabel => ScoreDirectionOptions(ResultMode)[LowestWins ? 1 : 0].ToLowerInvariant();
 
+	/// <summary>
+	/// True: players can share a win, a loss or a place (they get the same
+	/// result). False: a tie is played off in a duel; see the TieBreak and Duel settings.
+	/// </summary>
+	public bool AllowTies { get; init; } = true;
+
+	/// <summary>No ties: whether a tie is played off after each subgame, after the final total, or both.</summary>
+	public TieBreakMoment TieBreakMoment { get; init; } = TieBreakMoment.SubgamesAndFinal;
+
+	/// <summary>No ties: only the ties that decide the winner (or loser), or every shared place.</summary>
+	public TieBreakScope TieBreakScope { get; init; } = TieBreakScope.Decisive;
+
+	/// <summary>No ties: the duel is scored like the game itself; false uses DuelScoringType and DuelSettings.</summary>
+	public bool DuelSameScoring { get; init; } = true;
+
+	/// <summary>The duel's own scoring: Plus / minus, Manual plus / minus or Type in the score.</summary>
+	public ScoringType DuelScoringType { get; init; } = ScoringType.PlusMinus;
+
+	/// <summary>The duel's own numbers and which duel score wins; only its scoring fields and LowestWins count.</summary>
+	public ScoringSettings? DuelSettings { get; init; }
+
+	/// <summary>Who starts the next subgame: the seats are turned so that player sits in seat 1.</summary>
+	public StartRotation StartRotation { get; init; } = StartRotation.None;
+
+	/// <summary>
+	/// Scores are entered in seat order: seat 1, then seat 2, ... Only the
+	/// player whose turn it is can enter a score, and 0 has to be entered too.
+	/// </summary>
+	public bool FixedTurnOrder { get; init; }
+
+	/// <summary>A subgame ends once a player's score reaches this (at or past it, away from the start); null: no end score.</summary>
+	public int? EndScore { get; init; }
+
+	/// <summary>Whether reaching the end score ends the subgame by itself, or the players end it.</summary>
+	public EndMode EndMode { get; init; } = EndMode.Automatic;
+
+	/// <summary>
+	/// Automatic end with a fixed turn order: the players after the one who
+	/// reached the end score still get their turn in that round, so everyone
+	/// had as many turns.
+	/// </summary>
+	public bool EqualizingTurn { get; init; }
+
+	/// <summary>The score has reached the end score, counted away from the starting score.</summary>
+	public bool ReachesEnd(int score) => EndScore is { } end && (end >= StartScore ? score >= end : score <= end);
+
+	/// <summary>"next subgame starts with: the loser · fixed input order · subgame ends automatically at 100 with an equalizing turn".</summary>
+	[JsonIgnore]
+	public string TurnSummary
+	{
+		get
+		{
+			var parts = new List<string>();
+			if (StartRotation != StartRotation.None)
+				parts.Add($"next subgame starts with: {StartRotationOption.LabelFor(StartRotation).ToLowerInvariant()}");
+			if (FixedTurnOrder) parts.Add("fixed input order");
+			if (EndScore is { } end)
+				parts.Add(EndMode == EndMode.Automatic
+					? $"subgame ends automatically at {end}{(EqualizingTurn ? " with an equalizing turn" : string.Empty)}"
+					: $"subgame can end at {end}");
+			return string.Join(" · ", parts);
+		}
+	}
+
+	/// <summary>Ties after a subgame are played off.</summary>
+	[JsonIgnore]
+	public bool DuelsAfterSubgame => !AllowTies && TieBreakMoment != TieBreakMoment.FinalOnly;
+
+	/// <summary>Ties in the final total are played off.</summary>
+	[JsonIgnore]
+	public bool DuelsAfterFinal => !AllowTies && TieBreakMoment != TieBreakMoment.SubgamesOnly;
+
+	/// <summary>How a duel is scored, given the game's own scoring type.</summary>
+	public (ScoringType Type, ScoringSettings Settings) DuelScoring(ScoringType gameType) =>
+		DuelSameScoring || DuelSettings is null ? (gameType, this) : (DuelScoringType, DuelSettings);
+
+	/// <summary>"ties allowed" or "no ties: duel after every subgame and the final total, for 1st place / the loser, same scoring as the game".</summary>
+	public string TieSummaryFor(ScoringType gameType)
+	{
+		if (AllowTies) return "ties allowed";
+		var (type, duel) = DuelScoring(gameType);
+		var scoring = DuelSameScoring ? "same scoring as the game"
+			: type is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
+				? $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {duel.SummaryFor(type, withResult: false)}, {(duel.LowestWins ? "lowest" : "highest")} score wins"
+				: $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {(duel.LowestWins ? "lowest" : "highest")} score wins";
+		return $"no ties: duel {TieBreakMomentOption.LabelFor(TieBreakMoment).ToLowerInvariant()}, {TieBreakScopeOption.LabelFor(TieBreakScope, ResultMode).ToLowerInvariant()}, {scoring}";
+	}
+
 	public static ScoringSettings Default { get; } = new();
 
 	/// <summary>"winner(s) only", "ranking (1st, 2nd, 3rd...)" or "loser(s) only".</summary>
@@ -60,7 +148,7 @@ public sealed record ScoringSettings
 	public string ResultSummary => $"{ResultModeOption.LabelFor(ResultMode).ToLowerInvariant()} · {ScoreDirectionLabel}";
 
 	/// <summary>"steps of 1 · start at 0 · max 10 · warning at 9 · ...", for admins reviewing a game.</summary>
-	public string SummaryFor(ScoringType type)
+	public string SummaryFor(ScoringType type, bool withResult = true)
 	{
 		var parts = new List<string>();
 		if (type == ScoringType.PlusMinus) parts.Add($"steps of {Step}");
@@ -70,7 +158,8 @@ public sealed record ScoringSettings
 		if (MinScore is { } min) parts.Add($"min {min}");
 		if (MaxScore is { } max) parts.Add($"max {max}");
 		if (WarningScore is { } warning) parts.Add($"warning at {warning}");
-		parts.Add(ResultSummary);
+		if (withResult) parts.Add(ResultSummary);
+		if (withResult && TurnSummary.Length > 0) parts.Add(TurnSummary);
 		return string.Join(" · ", parts);
 	}
 
@@ -158,8 +247,19 @@ public sealed record ScoringSettings
 			if (MaxScore is { } m && warning > m || MinScore is { } n && warning < n)
 				return "The warning must be between the minimum and maximum score.";
 		}
-		if (type == ScoringType.ManualPlusMinus)
-			return AmountRulesProblem();
+		if (EndScore is { } end)
+		{
+			if (end == StartScore)
+				return "The end score can't be the same as the starting score - every subgame would end at once.";
+			if (MaxScore is { } m && end > m || MinScore is { } n && end < n)
+				return "The end score must be between the minimum and maximum score.";
+		}
+		if (EqualizingTurn && (EndScore is null || EndMode != EndMode.Automatic || !FixedTurnOrder))
+			return "An equalizing turn needs an end score that ends the subgame automatically, and a fixed input order (so the app knows whose turn it is).";
+		if (type == ScoringType.ManualPlusMinus && AmountRulesProblem() is { } amountProblem)
+			return amountProblem;
+		if (!AllowTies && !DuelSameScoring && DuelSettings?.Problem(DuelScoringType) is { } duelProblem)
+			return $"Duel scoring: {duelProblem}";
 		return null;
 	}
 
@@ -215,7 +315,18 @@ public sealed record ScoringSettings
 		["resultMode"] = ResultMode.ToString(),
 		["lowestWins"] = LowestWins,
 		// As JSON text: the Firestore client doesn't write lists of maps.
-		["amountRules"] = JsonSerializer.Serialize(AmountRules)
+		["amountRules"] = JsonSerializer.Serialize(AmountRules),
+		["allowTies"] = AllowTies,
+		["tieBreakMoment"] = TieBreakMoment.ToString(),
+		["tieBreakScope"] = TieBreakScope.ToString(),
+		["duelSameScoring"] = DuelSameScoring,
+		["duelScoringType"] = DuelScoringType.ToString(),
+		["duelSettings"] = DuelSettings?.ToJson(),
+		["startRotation"] = StartRotation.ToString(),
+		["fixedTurnOrder"] = FixedTurnOrder,
+		["endScore"] = EndScore,
+		["endMode"] = EndMode.ToString(),
+		["equalizingTurn"] = EqualizingTurn
 	};
 
 	public static ScoringSettings FromMap(object? value)
@@ -232,7 +343,19 @@ public sealed record ScoringSettings
 			WarningScore = Number("warningScore"),
 			ResultMode = map.TryGetValue("resultMode", out var mode) && Enum.TryParse<ResultMode>(mode as string, out var m) ? m : ResultMode.Winner,
 			LowestWins = map.TryGetValue("lowestWins", out var lowest) && lowest is true,
-			AmountRules = map.TryGetValue("amountRules", out var rules) && rules is string json ? RulesFromJson(json) : []
+			AmountRules = map.TryGetValue("amountRules", out var rules) && rules is string json ? RulesFromJson(json) : [],
+			// Games from before ties could be switched off allow them.
+			AllowTies = !map.TryGetValue("allowTies", out var ties) || ties is not false,
+			TieBreakMoment = map.TryGetValue("tieBreakMoment", out var moment) && Enum.TryParse<TieBreakMoment>(moment as string, out var tm) ? tm : TieBreakMoment.SubgamesAndFinal,
+			TieBreakScope = map.TryGetValue("tieBreakScope", out var scope) && Enum.TryParse<TieBreakScope>(scope as string, out var ts) ? ts : TieBreakScope.Decisive,
+			DuelSameScoring = !map.TryGetValue("duelSameScoring", out var same) || same is not false,
+			DuelScoringType = map.TryGetValue("duelScoringType", out var duelType) && Enum.TryParse<ScoringType>(duelType as string, out var dt) ? dt : ScoringType.PlusMinus,
+			DuelSettings = map.TryGetValue("duelSettings", out var duel) && duel is string duelJson && duelJson.Length > 0 ? FromJson(duelJson) : null,
+			StartRotation = map.TryGetValue("startRotation", out var rotation) && Enum.TryParse<StartRotation>(rotation as string, out var sr) ? sr : StartRotation.None,
+			FixedTurnOrder = map.TryGetValue("fixedTurnOrder", out var fixedOrder) && fixedOrder is true,
+			EndScore = Number("endScore"),
+			EndMode = map.TryGetValue("endMode", out var endMode) && Enum.TryParse<EndMode>(endMode as string, out var em) ? em : EndMode.Automatic,
+			EqualizingTurn = map.TryGetValue("equalizingTurn", out var equalizing) && equalizing is true
 		};
 	}
 

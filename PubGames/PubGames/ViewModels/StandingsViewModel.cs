@@ -73,7 +73,7 @@ public partial class StandingsViewModel : ObservableObject, IQueryAttributable
 		Lineup = active.Select(p => lineupPlayers.GetValueOrDefault(p.PlayerId)).OfType<Player>().ToList();
 
 		var standings = Standings.Calculate(settings.ResultMode, results, names);
-		var played = results.Select(r => r.Round).Distinct().Count();
+		var played = results.Where(r => r.IsSubgame).Select(r => r.Round).Distinct().Count();
 
 		if (IsFinal)
 		{

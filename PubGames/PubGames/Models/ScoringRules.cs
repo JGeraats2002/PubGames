@@ -38,6 +38,10 @@ public record ScoringRules(
 		ScoringType.PlusMinus => PlusMinus(settings ?? ScoringSettings.Default),
 		ScoringType.ManualPlusMinus => ManualPlusMinus(settings ?? ScoringSettings.Default),
 
+		ScoringType.TypedScore => new("points",
+			"Play the duel, then type in everyone's score.",
+			MinusStep: null, PlusStep: 0, AllowsTypedAmount: true, HighestWins: null),
+
 		ScoringType.PointTally => new("points",
 			"Add or subtract points each round. Tap a score to add any amount. Highest total wins.",
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: true, HighestWins: true),
@@ -126,4 +130,24 @@ public record ScoringRules(
 		IsAtLimit(score) ? (MaxScore is { } max && score >= max ? "▲ MAX REACHED" : "▼ MIN REACHED")
 		: IsWarning(score) ? "⚠ WARNING"
 		: string.Empty;
+
+	/// <summary>The same badge for a small card: "▲ MAX" / "▼ MIN" / "⚠ WARN", or empty.</summary>
+	public string ShortStatusFor(int score) =>
+		IsAtLimit(score) ? (MaxScore is { } max && score >= max ? "▲ MAX" : "▼ MIN")
+		: IsWarning(score) ? "⚠ WARN"
+		: string.Empty;
+
+	/// <summary>
+	/// How many characters a score can take on the scoreboard, so its size can
+	/// be chosen to fit: the longest of the start, the limits and the warning,
+	/// and at least 4 when there's no maximum (scores into the thousands).
+	/// </summary>
+	public int ScoreLength
+	{
+		get
+		{
+			var numbers = new[] { StartScore, MaxScore ?? 9999, MinScore ?? 0, WarningScore ?? 0 };
+			return Math.Max(3, numbers.Max(n => n.ToString(System.Globalization.CultureInfo.InvariantCulture).Length));
+		}
+	}
 }

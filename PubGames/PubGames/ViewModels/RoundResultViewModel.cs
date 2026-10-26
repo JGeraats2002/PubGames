@@ -51,6 +51,8 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 	private List<SessionParticipant> _participants = new();
 	private bool _saving;
 	private bool _lowestWins;
+	private ScoringType _gameType = ScoringType.PlusMinus;
+	private ScoringSettings _settings = ScoringSettings.Default;
 
 	/// <summary>Whether the lowest score wins this game (for the ⓘ explanation).</summary>
 	public bool LowestWins => _lowestWins;
@@ -60,6 +62,15 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 	/// tied; true plays an extra subgame instead of ending. Set by the page.
 	/// </summary>
 	public Func<string, Task<bool>>? AskExtraSubgame { get; set; }
+
+	/// <summary>Plays a tie-break duel: everyone's confirmed duel score by player id, or null when stopped. Set by the page.</summary>
+	public Func<DuelSetup, Task<Dictionary<string, int>?>>? PlayDuel { get; set; }
+
+	/// <summary>Shows a title and a message, e.g. what a duel decided. Set by the page.</summary>
+	public Func<string, string, Task>? Inform { get; set; }
+
+	/// <summary>The game's scoring settings, e.g. whether ties are allowed (for the ⓘ explanation).</summary>
+	public ScoringSettings Settings => _settings;
 
 	public string? SessionId => _session?.Id;
 
@@ -103,7 +114,8 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		if (_session is null) return;
 
 		var game = await _local.GetGameAsync(_session.GameId);
-		var settings = game?.ScoringSettings ?? ScoringSettings.Default;
+		var settings = _settings = game?.ScoringSettings ?? ScoringSettings.Default;
+		_gameType = game?.ScoringType ?? ScoringType.PlusMinus;
 		_rules = ScoringRules.For(game);
 		Mode = settings.ResultMode;
 
@@ -152,9 +164,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 	/// <summary>"Jan and Sanne are tied for the win." when the totals don't decide the game; null otherwise.</summary>
 	private async Task<string?> TieAsync()
 	{
-		var results = await _local.GetRoundResultsAsync(_session!.Id);
-		var names = (await _local.GetPlayersByIdsAsync(results.Select(r => r.PlayerId).Distinct())).ToDictionary(p => p.Id, p => p.Name);
-		var standings = Standings.Calculate(Mode, results, names);
+		var standings = await SubgameStandingsAsync();
 
 		List<string> tied;
 		if (Mode == ResultMode.Loser)
@@ -168,6 +178,188 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		if (tied.Count < 2) return null;
 		var who = $"{string.Join(", ", tied.SkipLast(1))} and {tied[^1]}";
 		return Mode == ResultMode.Loser ? $"{who} are tied as loser." : $"{who} are tied for the win.";
+	}
+
+	/// <summary>Everyone's totals over the subgames, without any earlier duel after the final total.</summary>
+	private async Task<List<PlayerStanding>> SubgameStandingsAsync()
+	{
+		var results = (await _local.GetRoundResultsAsync(_session!.Id)).Where(r => r.IsSubgame).ToList();
+		var names = (await _local.GetPlayersByIdsAsync(results.Select(r => r.PlayerId).Distinct())).ToDictionary(p => p.Id, p => p.Name);
+		return Standings.Calculate(Mode, results, names);
+	}
+
+	/// <summary>
+	/// Plays duels between `tied` until what counts is decided: the whole order,
+	/// or only who's best (worstCounts: who's worst). Players still tied after
+	/// a duel play it again among themselves. Returns the players in groups from
+	/// best to worst (a group shares a result that doesn't count), or null when
+	/// the players stopped the duel.
+	/// </summary>
+	private async Task<List<List<Player>>?> DuelAsync(List<Player> tied, string reason, bool wholeOrder, bool worstCounts)
+	{
+		var (type, duelSettings) = _settings.DuelScoring(_gameType);
+		if (PlayDuel is null || await PlayDuel(new DuelSetup(reason, tied, type, duelSettings)) is not { } scores)
+			return null;
+
+		var byId = tied.ToDictionary(p => p.Id);
+		var order = TieBreak.Order(scores, duelSettings.LowestWins);
+		var again = TieBreak.StillTied(order, wholeOrder, worstCounts).ToHashSet();
+		var result = new List<List<Player>>();
+		for (var i = 0; i < order.Count; i++)
+		{
+			var group = order[i].Select(id => byId[id]).ToList();
+			if (!again.Contains(i))
+			{
+				result.Add(group);
+				continue;
+			}
+			var replay = await DuelAsync(group, $"Still tied after the duel: {TieBreak.Names(group.Select(p => p.Name).ToList())}. Play the duel again.", wholeOrder, worstCounts);
+			if (replay is null) return null;
+			result.AddRange(replay);
+		}
+		return result;
+	}
+
+	/// <summary>
+	/// No ties after a subgame: players marked together as winner or loser, or
+	/// sharing a place, duel for it. The duel's order decides the result - one
+	/// winner or loser, or places one after another, so the place points
+	/// differ. False when a duel was stopped.
+	/// </summary>
+	private async Task<bool> PlayOffSubgameTiesAsync()
+	{
+		if (!_settings.DuelsAfterSubgame) return true;
+		string NamesOf(IEnumerable<ResultRow> rows) => TieBreak.Names(rows.Select(r => r.Player.Name).ToList());
+
+		if (Mode != ResultMode.Ranking)
+		{
+			var marked = Rows.Where(r => r.IsMarked).ToList();
+			if (marked.Count < 2) return true;
+			var loser = Mode == ResultMode.Loser;
+			var reason = loser ? $"{NamesOf(marked)} are tied as loser of this subgame." : $"{NamesOf(marked)} are tied for the win of this subgame.";
+			var order = await DuelAsync(marked.Select(r => r.Player).ToList(), reason, wholeOrder: false, worstCounts: loser);
+			if (order is null) return false;
+
+			var decided = (loser ? order[^1] : order[0]).Select(p => p.Id).ToHashSet();
+			foreach (var row in marked)
+				row.IsMarked = decided.Contains(row.Player.Id);
+			var name = NamesOf(marked.Where(r => r.IsMarked));
+			if (Inform is not null)
+				await Inform("Duel decided", loser ? $"{name} lost the duel and is the loser of this subgame." : $"{name} won the duel and wins this subgame.");
+			return true;
+		}
+
+		var every = _settings.TieBreakScope == TieBreakScope.Every;
+		var shared = Rows.GroupBy(r => r.Place).Where(g => g.Count() > 1 && (every || g.Key == 1)).OrderBy(g => g.Key).ToList();
+		if (shared.Count == 0) return true;
+		var duelled = new List<ResultRow>();
+		foreach (var group in shared)
+		{
+			var rows = group.ToList();
+			var order = await DuelAsync(rows.Select(r => r.Player).ToList(), $"{NamesOf(rows)} share {Standings.Ordinal(group.Key)} place.", wholeOrder: every, worstCounts: false);
+			if (order is null) return false;
+
+			// The duel's order gives places one after another from the shared place: 1st, 2nd, ...
+			var next = group.Key;
+			foreach (var ids in order.Select(g => g.Select(p => p.Id).ToHashSet()))
+			{
+				foreach (var row in rows.Where(r => ids.Contains(r.Player.Id)))
+					row.Place = next;
+				next += ids.Count;
+			}
+			duelled.AddRange(rows);
+		}
+		if (Inform is not null)
+			await Inform("Duel decided", string.Join("\n", duelled.OrderBy(r => r.Place).Select(r =>
+			{
+				var points = Standings.PointsFor(r.Place, r.PlayerCount);
+				return $"{r.Player.Name}: {r.PlaceLabel} place ({points} {(points == 1 ? "point" : "points")})";
+			})));
+		return true;
+	}
+
+	/// <summary>
+	/// No ties in the final total: players with equal totals duel - for 1st
+	/// place (or for loser), or for every shared place. The duel's order is
+	/// saved as the final duel and decides their places in the final result.
+	/// False when a duel was stopped.
+	/// </summary>
+	private async Task<bool> PlayOffFinalTiesAsync()
+	{
+		var standings = await SubgameStandingsAsync();
+		var every = _settings.TieBreakScope == TieBreakScope.Every;
+		var loserGame = Mode == ResultMode.Loser;
+		var losers = loserGame ? Standings.Losers(standings) : [];
+		var groups = standings.GroupBy(s => s.Place)
+			.Select(g => g.ToList())
+			.Where(g => g.Count > 1 && (every || (loserGame ? g.SequenceEqual(losers) && g[0].Losses > 0 : g[0].Place == 1)))
+			.ToList();
+
+		var players = (await _local.GetPlayersByIdsAsync(groups.SelectMany(g => g).Select(s => s.PlayerId))).ToDictionary(p => p.Id);
+		var duelResults = new List<RoundResult>();
+		var summary = new List<string>();
+		foreach (var group in groups)
+		{
+			var names = TieBreak.Names(group.Select(s => s.Name).ToList());
+			var isLoss = loserGame && group.SequenceEqual(losers);
+			var reason = isLoss ? $"{names} are tied as loser of the game."
+				: group[0].Place == 1 ? $"{names} are tied for the win of the game."
+				: $"{names} share {Standings.Ordinal(group[0].Place)} place in the final total.";
+			var tied = group.Select(s => players.GetValueOrDefault(s.PlayerId) ?? new Player { Id = s.PlayerId, Name = s.Name }).ToList();
+			var order = await DuelAsync(tied, reason, wholeOrder: every, worstCounts: isLoss);
+			if (order is null) return false;
+
+			var rank = 1;
+			foreach (var g in order)
+			{
+				duelResults.AddRange(g.Select(p => new RoundResult
+				{
+					SessionId = _session!.Id,
+					Round = RoundResult.FinalDuelRound,
+					PlayerId = p.Id,
+					Place = rank
+				}));
+				rank += g.Count;
+			}
+			summary.Add(isLoss ? $"{TieBreak.Names(order[^1].Select(p => p.Name).ToList())} lost the duel."
+				: $"{TieBreak.Names(order[0].Select(p => p.Name).ToList())} won the duel.");
+		}
+
+		// Also clears a final duel from an earlier try.
+		await _local.SaveRoundResultsAsync(_session!.Id, RoundResult.FinalDuelRound, duelResults);
+		if (summary.Count > 0 && Inform is not null)
+			await Inform("Duel decided", string.Join("\n", summary));
+		return true;
+	}
+
+	/// <summary>
+	/// Who starts the next subgame (ScoringSettings.StartRotation): the seats
+	/// turn so that player sits in seat 1, and everyone keeps their neighbours.
+	/// The winner is the marked player in a winner game and 1st place
+	/// otherwise; the loser is the marked player in a loser game and the last
+	/// place otherwise. Players sitting out keep their seats after the others.
+	/// </summary>
+	private async Task RotateSeatsAsync()
+	{
+		if (_settings.StartRotation == StartRotation.None || Rows.Count < 2) return;
+
+		// Rows are in seat order.
+		var worst = Rows.Max(r => r.Place);
+		var isWinner = Rows.Select(r => Mode == ResultMode.Winner ? r.IsMarked : r.Place == 1).ToList();
+		var isLoser = Rows.Select(r => Mode == ResultMode.Loser ? r.IsMarked : r.Place == worst).ToList();
+		if (SeatRotation.NextStarter(_settings.StartRotation, Rows.Count, isWinner, isLoser) is not { } starter || starter == 0)
+			return;
+
+		var active = Rows.Select(r => _participants.First(p => p.IsActive && p.PlayerId == r.Player.Id)).ToList();
+		var seated = active.Skip(starter).Concat(active.Take(starter))
+			.Concat(_participants.Where(p => !p.IsActive).OrderBy(p => p.Position))
+			.ToList();
+		for (var i = 0; i < seated.Count; i++)
+		{
+			if (seated[i].Position == i) continue;
+			seated[i].Position = i;
+			await _local.SaveParticipantAsync(seated[i]);
+		}
 	}
 
 	/// <summary>The result goes to the linked players' stats; offline it goes out later (see StatsService).</summary>
@@ -201,6 +393,12 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		_saving = true;
 		try
 		{
+			if (!await PlayOffSubgameTiesAsync())
+			{
+				StatusMessage = "The duel was stopped, so the tie isn't decided. Nothing is saved yet.";
+				return;
+			}
+
 			var round = Math.Max(1, _session.CurrentRound);
 			await _local.SaveRoundResultsAsync(_session.Id, round, Rows.Select(r => new RoundResult
 			{
@@ -214,7 +412,15 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			}));
 
 			var finish = IsFinishing;
-			if (finish && await TieAsync() is { } tie && AskExtraSubgame is not null && await AskExtraSubgame(tie))
+			if (finish && _settings.DuelsAfterFinal)
+			{
+				if (!await PlayOffFinalTiesAsync())
+				{
+					StatusMessage = "The duel was stopped, so the tie in the final total isn't decided. Confirm again to play it.";
+					return;
+				}
+			}
+			else if (finish && await TieAsync() is { } tie && AskExtraSubgame is not null && await AskExtraSubgame(tie))
 			{
 				// Not decided yet: one more subgame, the game goes on.
 				_session.SubgameCount = round + 1;
@@ -231,7 +437,10 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 					participant.Score = _rules.StartScore;
 					await _local.SaveParticipantAsync(participant);
 				}
+				await RotateSeatsAsync();
 				_session.CurrentRound = round + 1;
+				_session.TurnIndex = 0;
+				_session.FinalRoundFrom = null;
 			}
 			await _local.SaveSessionAsync(_session);
 			if (finish)

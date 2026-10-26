@@ -33,20 +33,6 @@ public partial class AdminCreateGamePage : ContentPage
 		await _vm.LoadCategoriesAsync();
 	}
 
-	private void OnAddAmountRuleClicked(object? sender, EventArgs e) => _vm.AddAmountRule();
-
-	private void OnJoinerClicked(object? sender, EventArgs e)
-	{
-		if (sender is BindableObject { BindingContext: EditableScoreRule rule })
-			_vm.ToggleJoiner(rule);
-	}
-
-	private void OnRemoveAmountRuleClicked(object? sender, EventArgs e)
-	{
-		if (sender is BindableObject { BindingContext: EditableScoreRule rule })
-			_vm.RemoveAmountRule(rule);
-	}
-
 	private void OnCategoryTapped(object? sender, CategoryChoice choice) => choice.IsSelected = !choice.IsSelected;
 
 	/// <summary>

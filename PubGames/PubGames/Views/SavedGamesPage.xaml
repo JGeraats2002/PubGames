@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.SavedGamesPage"
+             x:DataType="vm:SavedGamesViewModel"
+             Title="Saved games">
+
+	<Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16" RowSpacing="10">
+
+		<!-- How long games are kept on this phone. -->
+		<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,8">
+			<Border.StrokeShape>
+				<RoundRectangle CornerRadius="8" />
+			</Border.StrokeShape>
+			<VerticalStackLayout Spacing="4">
+				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+					<Label Text="Keep saved games" VerticalOptions="Center" FontAttributes="Bold" />
+					<Picker Grid.Column="1" ItemsSource="{Binding RetentionOptions}" SelectedItem="{Binding SelectedRetention}" MinimumWidthRequest="150" />
+				</Grid>
+				<Label Text="{Binding RetentionInfo}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			</VerticalStackLayout>
+		</Border>
+
+		<!-- Select: choose games to delete. -->
+		<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+			<Button Text="{Binding SelectButtonText}" Clicked="OnSelectClicked" HorizontalOptions="Start"
+			        HeightRequest="36" Padding="14,0" FontSize="13"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			<Button Grid.Column="1" Text="Select all" Clicked="OnSelectAllClicked" IsVisible="{Binding IsSelecting}"
+			        HeightRequest="36" Padding="10,0" FontSize="13"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button Grid.Column="2" Text="Deselect all" Clicked="OnDeselectAllClicked" IsVisible="{Binding IsSelecting}"
+			        HeightRequest="36" Padding="10,0" FontSize="13"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+		</Grid>
+
+		<ScrollView Grid.Row="2">
+			<VerticalStackLayout Spacing="8">
+				<Label Text="No saved games. A game is saved once someone has a score." IsVisible="{Binding IsEmpty}"
+				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="vm:SavedGameRow">
+							<Border Padding="12,8" Stroke="{StaticResource Border}" StrokeThickness="1">
+								<Border.StrokeShape>
+									<RoundRectangle CornerRadius="10" />
+								</Border.StrokeShape>
+								<Border.GestureRecognizers>
+									<TapGestureRecognizer Tapped="OnRowTapped" CommandParameter="{Binding .}" />
+								</Border.GestureRecognizers>
+								<Border.Triggers>
+									<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+										<Setter Property="Stroke" Value="{StaticResource Primary}" />
+										<Setter Property="StrokeThickness" Value="3" />
+									</DataTrigger>
+								</Border.Triggers>
+								<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+									<CheckBox IsChecked="{Binding IsSelected}" VerticalOptions="Center"
+									          IsVisible="{Binding IsSelecting, Source={RelativeSource AncestorType={x:Type vm:SavedGamesViewModel}}, x:DataType=vm:SavedGamesViewModel}" />
+									<VerticalStackLayout Grid.Column="1" Spacing="2">
+										<Label Text="{Binding Game.GameName}" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+										<Label Text="{Binding Game.Players}" FontSize="12" LineBreakMode="TailTruncation" />
+										<Label Text="{Binding Game.Details}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+									</VerticalStackLayout>
+									<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center"
+									       IsVisible="{Binding IsBrowsing, Source={RelativeSource AncestorType={x:Type vm:SavedGamesViewModel}}, x:DataType=vm:SavedGamesViewModel}" />
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<Button Grid.Row="3" Text="{Binding DeleteButtonText}" Clicked="OnDeleteClicked" IsVisible="{Binding HasSelection}"
+		        BackgroundColor="{StaticResource Danger}" />
+
+	</Grid>
+
+</ContentPage>

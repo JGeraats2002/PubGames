@@ -315,8 +315,21 @@ public partial class ImageEditorPage : ContentPage
 				break;
 
 			case DrawKind.Arrow:
-				Options.Add(Chips("Shape", ["Straight", "Curved"], i => item.Curved == (i == 1), i => item.Curved = i == 1));
+				Options.Add(Chips("Shape", ["Straight", "Curved", "Bent"],
+					i => i == (item.Bent ? 2 : item.Curved ? 1 : 0),
+					i => (item.Curved, item.Bent) = (i == 1, i == 2)));
 				Options.Add(Chips("Points", ["One way", "Both ways"], i => item.BothEnds == (i == 1), i => item.BothEnds = i == 1));
+				if (item.Bent)
+				{
+					// The corner stays put; Turn below turns the whole arrow around it.
+					Options.Add(Hint("Arm 1 points right from the corner, arm 2 is the angle further round (clockwise). One way: the head is on arm 2. Both ways: two hands, like a clock."));
+					Options.Add(SliderRow("Angle", "°", 0, 359, (int)MathF.Round(item.BendAngle), value => item.BendAngle = value));
+					Options.Add(SliderRow("Arm 1", string.Empty, 30, 500, (int)MathF.Round(item.Arm1Length), value => item.Arm1Length = value));
+					Options.Add(SliderRow("Arm 2", string.Empty, 30, 500, (int)MathF.Round(item.Arm2Length), value => item.Arm2Length = value));
+				}
+				else
+					Options.Add(SliderRow("Length", string.Empty, 60, 1000, (int)MathF.Round(item.ArrowLength), value => item.ArrowLength = value));
+				Options.Add(SliderRow("Thickness", string.Empty, 4, 40, (int)MathF.Round(item.ArrowThickness), value => item.ArrowThickness = value));
 				Options.Add(ColorChips(item));
 				break;
 
@@ -571,7 +584,7 @@ public partial class ImageEditorPage : ContentPage
 			ColumnSpacing = 6,
 			ColumnDefinitions =
 			{
-				new ColumnDefinition(48), new ColumnDefinition(GridLength.Star), new ColumnDefinition(64), new ColumnDefinition(14)
+				new ColumnDefinition(68), new ColumnDefinition(GridLength.Star), new ColumnDefinition(64), new ColumnDefinition(14)
 			}
 		};
 		grid.Add(new Label { Text = title, FontSize = 12, TextColor = Resource("TextSecondary"), VerticalOptions = LayoutOptions.Center });

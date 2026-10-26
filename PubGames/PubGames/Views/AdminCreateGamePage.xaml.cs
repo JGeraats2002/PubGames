@@ -35,6 +35,39 @@ public partial class AdminCreateGamePage : ContentPage
 
 	private void OnCategoryTapped(object? sender, CategoryChoice choice) => choice.IsSelected = !choice.IsSelected;
 
+	private void OnGeneralTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.GeneralPage);
+	private void OnScoringTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.ScoringPage);
+	private void OnRulesTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.RulesPage);
+
+	private async void ShowPage(int page)
+	{
+		if (_vm.CurrentPage == page) return;
+		StopMoving();
+		_vm.CurrentPage = page;
+		await FormScroll.ScrollToAsync(0, 0, false);
+	}
+
+	/// <summary>"+ Add your rules": choose a part that isn't on this page yet. It shows in its own place in the form.</summary>
+	private async void OnAddSectionClicked(object? sender, EventArgs e)
+	{
+		var options = _vm.AddableSections();
+		if (options.Count == 0) return;
+
+		var choice = await DisplayActionSheetAsync("Add your rules", "Cancel", null, options.Select(o => o.Title).ToArray());
+		if (options.FirstOrDefault(o => o.Title == choice) is { } picked)
+			_vm.AddSection(picked.Section);
+	}
+
+	/// <summary>The ✕ next to a part: take it off the form, clearing what was filled in.</summary>
+	private async void OnRemoveSectionClicked(object? sender, EventArgs e)
+	{
+		if (sender is not Button { CommandParameter: GameFormSection section }) return;
+
+		var title = AdminCreateGameViewModel.TitleOf(section);
+		if (await DisplayAlertAsync($"Remove {title}?", "What you filled in here is cleared. You can add it again with + Add your rules.", "Remove", "Keep"))
+			_vm.RemoveSection(section);
+	}
+
 	/// <summary>
 	/// Asks where the picture comes from: the phone's photos, the camera, or
 	/// the image editor (which then opens). Null when cancelled.

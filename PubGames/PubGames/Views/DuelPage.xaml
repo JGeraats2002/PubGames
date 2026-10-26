@@ -28,7 +28,7 @@
 								       LineBreakMode="TailTruncation" VerticalOptions="Center" />
 
 								<!-- Type in the score: one box. -->
-								<Entry Grid.Column="1" Text="{Binding Typed}" Placeholder="score" Keyboard="Telephone"
+								<Entry Grid.Column="1" Text="{Binding Typed}" Placeholder="0" Keyboard="Telephone"
 								       WidthRequest="90" HorizontalTextAlignment="End" VerticalOptions="Center"
 								       IsVisible="{Binding IsTyped, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
 

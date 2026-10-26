@@ -62,7 +62,7 @@ public partial class DuelViewModel : ObservableObject
 
 	public string PlusLabel => Rules.PlusLabel;
 
-	public string AmountPlaceholder => Rules.ManualAmounts?.ExampleAmount()?.ToString(CultureInfo.CurrentCulture) ?? "amount";
+	public string AmountPlaceholder => Rules.ManualAmounts?.ExampleAmount()?.ToString(CultureInfo.CurrentCulture) ?? "0";
 
 	[ObservableProperty]
 	private string message = string.Empty;

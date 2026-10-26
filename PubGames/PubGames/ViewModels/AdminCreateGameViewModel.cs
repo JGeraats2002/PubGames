@@ -21,6 +21,22 @@ public enum PictureSource
 }
 
 /// <summary>
+/// The parts of the scoring page that are added with "+ Add your rules". A
+/// new game starts without any; they always show in this order, whatever order
+/// they were added in.
+/// </summary>
+public enum GameFormSection
+{
+	ScoringType,
+	Results,
+	Ties,
+	Turns
+}
+
+/// <summary>A part of the form, its title in the add list, and the form page it's on.</summary>
+public record GameFormSectionInfo(GameFormSection Section, string Title, int Page);
+
+/// <summary>
 /// Create a new game, or edit/delete an existing one when opened with a
 /// "gameId" navigation parameter from the admin library.
 ///
@@ -78,6 +94,130 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	[ObservableProperty]
 	private string name = string.Empty;
+
+	// The form's three pages: general info, scoring, written rules.
+	public const int GeneralPage = 0;
+	public const int ScoringPage = 1;
+	public const int RulesPage = 2;
+
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(IsGeneralPage), nameof(IsScoringPage), nameof(IsRulesPage), nameof(CanAddSection), nameof(HasNothingAdded))]
+	private int currentPage = GeneralPage;
+
+	public bool IsGeneralPage => CurrentPage == GeneralPage;
+	public bool IsScoringPage => CurrentPage == ScoringPage;
+	public bool IsRulesPage => CurrentPage == RulesPage;
+
+	/// <summary>Every part that can be added, in the order the form shows them.</summary>
+	public static IReadOnlyList<GameFormSectionInfo> Sections { get; } =
+	[
+		new(GameFormSection.ScoringType, "Scoring type", ScoringPage),
+		new(GameFormSection.Results, "Subgame results", ScoringPage),
+		new(GameFormSection.Ties, "Ties", ScoringPage),
+		new(GameFormSection.Turns, "Turns and the end of a subgame", ScoringPage)
+	];
+
+	[ObservableProperty] private bool scoringTypeAdded;
+	[ObservableProperty] private bool resultsAdded;
+	[ObservableProperty] private bool tiesAdded;
+	[ObservableProperty] private bool turnsAdded;
+
+	public bool IsAdded(GameFormSection section) => section switch
+	{
+		GameFormSection.ScoringType => ScoringTypeAdded,
+		GameFormSection.Results => ResultsAdded,
+		GameFormSection.Ties => TiesAdded,
+		_ => TurnsAdded
+	};
+
+	private void SetAdded(GameFormSection section, bool added)
+	{
+		switch (section)
+		{
+			case GameFormSection.ScoringType: ScoringTypeAdded = added; break;
+			case GameFormSection.Results: ResultsAdded = added; break;
+			case GameFormSection.Ties: TiesAdded = added; break;
+			default: TurnsAdded = added; break;
+		}
+		OnPropertyChanged(nameof(CanAddSection));
+		OnPropertyChanged(nameof(HasNothingAdded));
+	}
+
+	/// <summary>What can still be added on the page that's open, in the form's order.</summary>
+	public List<GameFormSectionInfo> AddableSections() =>
+		Sections.Where(s => s.Page == CurrentPage && !IsAdded(s.Section)).ToList();
+
+	/// <summary>The page has something left to add (only the scoring page has parts to add).</summary>
+	public bool CanAddSection => AddableSections().Count > 0;
+
+	/// <summary>Nothing has been added on the scoring page yet: show how to start.</summary>
+	public bool HasNothingAdded => CurrentPage == ScoringPage
+		&& Sections.Where(s => s.Page == CurrentPage).All(s => !IsAdded(s.Section));
+
+	public static string TitleOf(GameFormSection section) => Sections.First(s => s.Section == section).Title;
+
+	public void AddSection(GameFormSection section) => SetAdded(section, true);
+
+	/// <summary>Takes a part off the form again; what was filled in there goes back to how a new game starts.</summary>
+	public void RemoveSection(GameFormSection section)
+	{
+		SetAdded(section, false);
+		switch (section)
+		{
+			case GameFormSection.ScoringType:
+				Scoring.Reset();
+				OnPropertyChanged(nameof(ScoringType));
+				break;
+
+			case GameFormSection.Results:
+				_resultModeChosen = false;
+				ResultMode = ResultMode.Winner;
+				_lowestWins = null;
+				OnPropertyChanged(nameof(SelectedResultModeOption));
+				OnPropertyChanged(nameof(BestScoreIndex));
+				break;
+
+			case GameFormSection.Ties:
+				AllowTies = true;
+				_tieBreakMoment = TieBreakMoment.SubgamesAndFinal;
+				_tieBreakScope = TieBreakScope.Decisive;
+				OnPropertyChanged(nameof(SelectedTieBreakMoment));
+				OnPropertyChanged(nameof(SelectedTieBreakScope));
+				DuelSameScoring = true;
+				DuelScoring.Reset();
+				_duelLowestWins = null;
+				OnPropertyChanged(nameof(DuelBestScoreIndex));
+				break;
+
+			case GameFormSection.Turns:
+				_startRotation = StartRotation.None;
+				OnPropertyChanged(nameof(SelectedStartRotation));
+				FixedTurnOrder = false;
+				HasEndScore = false;
+				EndScore = string.Empty;
+				_endMode = EndMode.Automatic;
+				OnPropertyChanged(nameof(SelectedEndMode));
+				OnPropertyChanged(nameof(CanHaveEqualizingTurn));
+				EqualizingTurn = false;
+				break;
+		}
+	}
+
+	/// <summary>An existing game or request shows the parts it uses: everything that isn't how a new game starts.</summary>
+	private void ShowAddedSections()
+	{
+		SetAdded(GameFormSection.ScoringType, Scoring.IsChosen);
+		SetAdded(GameFormSection.Results, _resultModeChosen);
+		SetAdded(GameFormSection.Ties, !AllowTies);
+		SetAdded(GameFormSection.Turns, _startRotation != StartRotation.None || FixedTurnOrder || HasEndScore);
+	}
+
+	/// <summary>Saving found something missing in a part: open its page and make sure the part is on it.</summary>
+	private void ShowProblemIn(GameFormSection section)
+	{
+		SetAdded(section, true);
+		CurrentPage = Sections.First(s => s.Section == section).Page;
+	}
 
 	/// <summary>The rules as pieces of text with the pictures in between (see EditableRulesBlock); saved as RulesText.</summary>
 	public ObservableCollection<EditableRulesBlock> RulesBlocks { get; private set; } = EditableRulesBlock.FromRulesText(string.Empty);
@@ -437,6 +577,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowScoring(_editing.ScoringType, _editing.ScoringSettings);
 		ShowPlayers(_editing.MinPlayers, _editing.MaxPlayers);
 		SelectCategories(_editing.CategoryIds);
+		ShowAddedSections();
 	}
 
 	private async Task LoadRequestAsync(string requestId)
@@ -470,6 +611,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowScoring(request.ProposedScoringType, ScoringSettings.FromJson(request.ProposedScoringSettingsText));
 		ShowPlayers(request.ProposedMinPlayers, request.ProposedMaxPlayers);
 		SelectCategories(request.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries));
+		ShowAddedSections();
 	}
 
 	/// <summary>Loads the category list (called when the page appears; the game may still be loading).</summary>
@@ -741,23 +883,35 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (string.IsNullOrWhiteSpace(Name))
 		{
 			StatusMessage = "Give the game a name first.";
+			CurrentPage = GeneralPage;
 			return;
 		}
 
 		if (ReadPlayers(out _, out _) is { } playersProblem)
 		{
 			StatusMessage = playersProblem;
+			CurrentPage = GeneralPage;
 			return;
 		}
 
 		if (MissingCategories() is { } missing)
 		{
 			StatusMessage = missing;
+			CurrentPage = GeneralPage;
 			return;
 		}
 
 		if (ReadScoringSettings() is null)
+		{
+			// Show the part that's missing a choice; other problems are in a part that's already on the scoring page.
+			if (!Scoring.IsChosen)
+				ShowProblemIn(GameFormSection.ScoringType);
+			else if (!_resultModeChosen || _lowestWins is null)
+				ShowProblemIn(GameFormSection.Results);
+			else
+				CurrentPage = ScoringPage;
 			return;
+		}
 
 		var me = _team.Me;
 		if (me is null)

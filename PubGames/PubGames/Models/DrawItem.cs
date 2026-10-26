@@ -114,6 +114,58 @@ public class DrawItem
 	public bool Curved { get; set; }
 	public bool BothEnds { get; set; }
 
+	/// <summary>
+	/// An arrow with a corner: two arms from the corner, which is the arrow's
+	/// centre (it turns around it). Arm 1 points right, arm 2 is BendAngle
+	/// degrees further clockwise; the head is at the end of arm 2 (and of arm 1
+	/// too with BothEnds) - two hands of a clock.
+	/// </summary>
+	public bool Bent { get; set; }
+
+	/// <summary>Straight and curved arrows: the length from tip to tip.</summary>
+	public float ArrowLength { get; set; } = DefaultArrowLength;
+
+	/// <summary>The line's thickness; the heads grow with it.</summary>
+	public float ArrowThickness { get; set; } = DefaultArrowThickness;
+
+	/// <summary>Bent arrows: degrees from arm 1 to arm 2, clockwise (180 is straight).</summary>
+	public float BendAngle { get; set; } = 90;
+
+	/// <summary>Bent arrows: the length of each arm, from the corner to its end.</summary>
+	public float Arm1Length { get; set; } = 150;
+	public float Arm2Length { get; set; } = 110;
+
+	public const float DefaultArrowLength = 230;
+	public const float DefaultArrowThickness = 14;
+
+	/// <summary>How big the heads are compared with a normal arrow: they grow with the line, but less than it does.</summary>
+	[JsonIgnore]
+	private float HeadScale => (ArrowThickness + DefaultArrowThickness) / (2 * DefaultArrowThickness);
+
+	/// <summary>Bent arrows: the end of arm 2, with the corner at (0, 0).</summary>
+	[JsonIgnore]
+	private PointF Arm2End
+	{
+		get
+		{
+			var angle = BendAngle * MathF.PI / 180;
+			return new PointF(Arm2Length * MathF.Cos(angle), Arm2Length * MathF.Sin(angle));
+		}
+	}
+
+	private SizeF ArrowHalfSize()
+	{
+		// Room for the heads beside the line.
+		var head = 32 * HeadScale;
+		if (Bent)
+		{
+			// The corner is the centre, so the box reaches as far as the furthest arm in every direction.
+			var end = Arm2End;
+			return new(Math.Max(Arm1Length, Math.Abs(end.X)) + head / 2, Math.Max(head, Math.Abs(end.Y) + head / 2));
+		}
+		return new(ArrowLength / 2, Curved ? Math.Max(70, 40 + head) : Math.Max(45, head + 8));
+	}
+
 	[JsonIgnore]
 	public string Label => Kind switch
 	{
@@ -137,7 +189,7 @@ public class DrawItem
 	[JsonIgnore]
 	public SizeF HalfSize => Kind switch
 	{
-		DrawKind.Arrow => new(115, Curved ? 70 : 45),
+		DrawKind.Arrow => ArrowHalfSize(),
 		DrawKind.Text => new(Math.Max(50, Text.Length * 15 + 20), 38),
 		DrawKind.Card => Deck ? new(88, 118) : new(75, 105),
 		DrawKind.Die => Shape == 0 ? new(75, 75) : new(80, 112),
@@ -209,38 +261,79 @@ public class DrawItem
 	private void DrawArrow(ICanvas canvas)
 	{
 		var color = ItemColor;
+		var k = HeadScale;
 		canvas.StrokeColor = color;
-		canvas.StrokeSize = 14;
+		canvas.StrokeSize = ArrowThickness;
 
-		if (!Curved)
+		if (Bent)
 		{
-			canvas.DrawLine(BothEnds ? -70 : -100, 0, 70, 0);
-			DrawArrowHead(canvas, color, 105, 0, 0);
+			// Arm 1 from its end to the corner, then arm 2; the line stops inside a head so the tip stays sharp.
+			var arm1End = new PointF(Arm1Length, 0);
+			var arm2End = Arm2End;
+			var bent = new PathF();
+			bent.MoveTo(BothEnds ? LineEndBefore(arm1End, new PointF(1, 0), k) : arm1End);
+			bent.LineTo(0, 0);
+			bent.LineTo(LineEndBefore(arm2End, Direction(arm2End), k));
+			canvas.DrawPath(bent);
+			DrawArrowHeadAtTip(canvas, color, arm2End, Direction(arm2End), k);
 			if (BothEnds)
-				DrawArrowHead(canvas, color, -105, 0, 180);
+				DrawArrowHeadAtTip(canvas, color, arm1End, new PointF(1, 0), k);
 			return;
 		}
 
-		// An arc; the heads point along it.
+		var half = ArrowLength / 2;
+		if (!Curved)
+		{
+			var tip = new PointF(half - 2, 0);
+			var tail = new PointF(-tip.X, 0);
+			var start = BothEnds ? LineEndBefore(tail, new PointF(-1, 0), k) : new PointF(-half + 15, 0);
+			var end = LineEndBefore(tip, new PointF(1, 0), k);
+			canvas.DrawLine(start, end);
+			DrawArrowHeadAtTip(canvas, color, tip, new PointF(1, 0), k);
+			if (BothEnds)
+				DrawArrowHeadAtTip(canvas, color, tail, new PointF(-1, 0), k);
+			return;
+		}
+
+		// An arc, stretched to the length; the heads point along it.
+		var sx = ArrowLength / DefaultArrowLength;
+		var control = new PointF(0, -75);
+		var arcEnd = new PointF(82 * sx, 14);
+		var arcStart = BothEnds ? new PointF(-82 * sx, 14) : new PointF(-100 * sx, 30);
 		var path = new PathF();
-		path.MoveTo(BothEnds ? -82 : -100, BothEnds ? 14 : 30);
-		path.QuadTo(0, -75, 82, 14);
+		path.MoveTo(arcStart);
+		path.QuadTo(control, arcEnd);
 		canvas.DrawPath(path);
-		DrawArrowHead(canvas, color, 102, 34, 47);
+		var endDirection = Direction(new PointF(arcEnd.X - control.X, arcEnd.Y - control.Y));
+		DrawArrowHeadAtTip(canvas, color, new PointF(arcEnd.X + endDirection.X * 36 * k, arcEnd.Y + endDirection.Y * 36 * k), endDirection, k);
 		if (BothEnds)
-			DrawArrowHead(canvas, color, -102, 34, 133);
+		{
+			var startDirection = Direction(new PointF(arcStart.X - control.X, arcStart.Y - control.Y));
+			DrawArrowHeadAtTip(canvas, color, new PointF(arcStart.X + startDirection.X * 36 * k, arcStart.Y + startDirection.Y * 36 * k), startDirection, k);
+		}
 	}
 
-	/// <summary>A filled triangle with its tip at (x, y), pointing in the direction of the angle.</summary>
-	private static void DrawArrowHead(ICanvas canvas, Color color, float x, float y, float degrees)
+	/// <summary>The direction of a point seen from (0, 0), as a length of 1.</summary>
+	private static PointF Direction(PointF to)
+	{
+		var length = MathF.Max(0.001f, MathF.Sqrt(to.X * to.X + to.Y * to.Y));
+		return new PointF(to.X / length, to.Y / length);
+	}
+
+	/// <summary>Where the line stops before a head with its tip at `tip`: inside the head, so the head covers the line's end.</summary>
+	private static PointF LineEndBefore(PointF tip, PointF direction, float k) =>
+		new(tip.X - direction.X * 43 * k, tip.Y - direction.Y * 43 * k);
+
+	/// <summary>A filled triangle with its tip at `tip`, pointing in `direction`, `k` times the normal size.</summary>
+	private static void DrawArrowHeadAtTip(ICanvas canvas, Color color, PointF tip, PointF direction, float k)
 	{
 		canvas.SaveState();
-		canvas.Translate(x, y);
-		canvas.Rotate(degrees);
+		canvas.Translate(tip.X, tip.Y);
+		canvas.Rotate(MathF.Atan2(direction.Y, direction.X) * 180 / MathF.PI);
 		var head = new PathF();
-		head.MoveTo(8, 0);
-		head.LineTo(-42, -32);
-		head.LineTo(-42, 32);
+		head.MoveTo(0, 0);
+		head.LineTo(-50 * k, -32 * k);
+		head.LineTo(-50 * k, 32 * k);
 		head.Close();
 		canvas.FillColor = color;
 		canvas.FillPath(head);

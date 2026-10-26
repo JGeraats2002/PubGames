@@ -159,7 +159,9 @@ public static class Help
 	{
 		var sections = new List<HelpSection>
 		{
-			new("Choices", "Every dropdown starts with \"Choose ...\": pick an option in each one. Saving tells you if a choice is still missing."),
+			new("Three pages", "The form has three pages at the top: 1 General (name, cover, price, number of players, categories), 2 Scoring (scoring type, subgame results, ties, turns) and 3 Rules (how to play). Players don't see these pages - they see the game as before."),
+			new("Add your rules", "The scoring page of a new game starts empty. Tap + Add your rules and choose what this game needs; it appears in its own place on the page, always in the same order, whatever order you add things in. The ✕ next to a part takes it off again and clears what you filled in. A part you don't add keeps its default: ties allowed, the seats stay as they are, no end score. A game always needs a scoring type and subgame results - saving adds them for you if they're missing."),
+			new("Choices", "Every dropdown starts with \"Choose ...\": pick an option in each one. Saving tells you if a choice is still missing and opens the page it's on."),
 			new("Name and cover", "Give the game a name. The cover image is shown square and as wide as the page, with the same centre crop as the small icon in the game lists - keep the important part in the middle."),
 			new("Pictures", "For the cover and for pictures in the rules you choose: upload an image from your phone, take a photo, or create an image. Create an image opens an editor where you place arrows, text, cards, dice, hands, drinks and more - handy for explaining a game, and always in the same style. A picture made there can be changed later: tap the cover button again and choose Edit this image, or hold the picture in the rules. Only a cover can have a background colour; pictures in the rules are always on cream."),
 			new("Price", "Tick \"This game is paid\" and fill in the price. It's a one-time price per player, and you set it.")
@@ -188,6 +190,7 @@ public static class Help
 		new("Add things", "The buttons at the top add something to the image: arrows, text, cards, dice, hands, drinks and more. A table goes under everything else, to show where the game is played."),
 		new("Place them", "Tap something on the image to select it, then drag it. With two fingers you make it bigger or smaller and turn it. Below the image: Place across and Place up and down line it up with the edges, the middle or the quarter lines; Across and Down set the exact place of its centre (across goes from 0 to 1000); Size and Turn set its exact size and angle - type a number to make two things exactly alike."),
 		new("Choose what it shows", "With something selected you see its choices: a card's suit and value or a whole deck, the number on a die or a dice cup, heads or tails, how full a drink is, which fingers a hand holds up (Neutral is a flat hand; Choose fingers starts as a fist)."),
+		new("Arrows", "Length and Thickness make an arrow longer or thicker; turned upright, a longer arrow is higher. Bent gives the arrow a corner: Angle sets how far arm 2 is turned from arm 1, and Arm 1 and Arm 2 set how long each arm is. A bent arrow turns around its corner. With Both ways each arm gets a head, like the two hands of a clock: set the angle and the arm lengths, then turn it with Turn to show any time."),
 		new("Order and copies", "To front and To back decide what lies on top where things overlap. Copy makes another one just like it. Remove from image takes it away."),
 		new("Undo", "Undo takes back your last change. Tap it again to go back further."),
 		cover

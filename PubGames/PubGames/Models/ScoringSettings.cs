@@ -201,14 +201,15 @@ public sealed record ScoringSettings
 	}
 
 	/// <summary>
-	/// An amount the rules allow, as an example for the amount box: the one
-	/// closest to 0 (positive first), but not 0 itself. Null when there are no
-	/// rules - then the box stays empty - or when nothing is allowed.
+	/// An amount the rules allow, as the placeholder of the amount box: 0 when
+	/// the rules allow it (and when there are no rules), otherwise the allowed
+	/// amount closest to 0 (positive first). Null when nothing is allowed.
 	/// </summary>
 	public int? ExampleAmount()
 	{
-		if (AmountRules.Count == 0) return null;
+		if (AmountRules.Count == 0) return 0;
 		var allows = AmountRuleSet.Predicate(AmountRules);
+		if (allows(0)) return 0;
 		var bound = ScoreRange ?? AmountRuleSet.Reach(AmountRules) + 100_000;
 		for (var n = 1; n <= bound; n++)
 		{

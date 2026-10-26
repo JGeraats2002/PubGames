@@ -43,7 +43,7 @@ public partial class ScoreboardPage : ContentPage
 			Footer.IsVisible = true;
 			ScoreMessage.IsVisible = _vm.Rules.ManualAmounts is not null;
 			TurnDoneButton.IsVisible = _vm.FixedTurnOrder && _vm.Rules.ManualAmounts is null;
-			_amountPlaceholder = _vm.Rules.ManualAmounts?.ExampleAmount()?.ToString() ?? string.Empty;
+			_amountPlaceholder = _vm.Rules.ManualAmounts?.ExampleAmount()?.ToString() ?? "0";
 			ScoreMessage.Text = string.Empty;
 			_builtForCount = -1; // other players may sit in the same number of seats
 			UpdateFooter();
@@ -727,7 +727,7 @@ public partial class ScoreboardPage : ContentPage
 	{
 		var text = await DisplayPromptAsync(row.Player.Name,
 			$"How many {_vm.Rules.Unit} to add? Use a minus sign to subtract.",
-			"Add", "Cancel", placeholder: "e.g. 10 or -5", maxLength: 6, keyboard: Keyboard.Telephone);
+			"Add", "Cancel", placeholder: "0", maxLength: 6, keyboard: Keyboard.Telephone);
 		if (int.TryParse(text?.Trim().Replace('−', '-'), out var amount))
 			await _vm.AdjustScoreAsync(row, amount);
 	}

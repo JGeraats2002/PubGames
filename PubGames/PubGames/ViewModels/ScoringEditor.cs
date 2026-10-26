@@ -155,6 +155,14 @@ public partial class ScoringEditor : ObservableObject
 			AmountRules.Add(EditableScoreRule.From(rule));
 	}
 
+	/// <summary>Back to how a new game starts: nothing chosen, default numbers, no amount rules.</summary>
+	public void Reset()
+	{
+		Show(ScoringType.PlusMinus, ScoringSettings.Default);
+		_chosen = false;
+		NotifyTypeChanged();
+	}
+
 	/// <summary>
 	/// The form's numbers filled into `settings`, or null with `problem` saying
 	/// what to fix: no scoring type chosen, a rule without a kind, or numbers

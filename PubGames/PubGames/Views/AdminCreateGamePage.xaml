@@ -8,9 +8,68 @@
              x:DataType="vm:AdminCreateGameViewModel"
              Title="{Binding PageTitle}">
 
-	<Grid RowDefinitions="*,Auto">
-	<ScrollView>
-		<VerticalStackLayout Padding="20" Spacing="14">
+	<ContentPage.Resources>
+		<!-- The tabs at the top: the open page filled, the others outlined. -->
+		<Style x:Key="TabButton" TargetType="Button">
+			<Setter Property="BackgroundColor" Value="Transparent" />
+			<Setter Property="TextColor" Value="{StaticResource Primary}" />
+			<Setter Property="BorderColor" Value="{StaticResource Border}" />
+			<Setter Property="BorderWidth" Value="1" />
+			<Setter Property="Padding" Value="4,0" />
+			<Setter Property="HeightRequest" Value="40" />
+			<Setter Property="FontSize" Value="14" />
+		</Style>
+
+		<!-- Section titles, with a ✕ to take the part off the form again. -->
+		<Style x:Key="SectionTitle" TargetType="Label">
+			<Setter Property="FontSize" Value="12" />
+			<Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+			<Setter Property="VerticalOptions" Value="Center" />
+		</Style>
+		<Style x:Key="RemoveSectionButton" TargetType="Button">
+			<Setter Property="Text" Value="✕" />
+			<Setter Property="BackgroundColor" Value="Transparent" />
+			<Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+			<Setter Property="BorderWidth" Value="0" />
+			<Setter Property="Padding" Value="8,0" />
+			<Setter Property="HeightRequest" Value="32" />
+			<Setter Property="MinimumWidthRequest" Value="32" />
+			<Setter Property="FontSize" Value="14" />
+		</Style>
+	</ContentPage.Resources>
+
+	<Grid RowDefinitions="Auto,*,Auto">
+
+	<!-- 1 General, 2 Scoring, 3 Rules. Players see none of this: they see the game as before. -->
+	<Grid Padding="20,12,20,8" ColumnDefinitions="*,*,*" ColumnSpacing="8">
+		<Button Text="1 General" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
+			<Button.Triggers>
+				<DataTrigger TargetType="Button" Binding="{Binding IsGeneralPage}" Value="True">
+					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+					<Setter Property="TextColor" Value="White" />
+				</DataTrigger>
+			</Button.Triggers>
+		</Button>
+		<Button Grid.Column="1" Text="2 Scoring" Style="{StaticResource TabButton}" Clicked="OnScoringTabClicked">
+			<Button.Triggers>
+				<DataTrigger TargetType="Button" Binding="{Binding IsScoringPage}" Value="True">
+					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+					<Setter Property="TextColor" Value="White" />
+				</DataTrigger>
+			</Button.Triggers>
+		</Button>
+		<Button Grid.Column="2" Text="3 Rules" Style="{StaticResource TabButton}" Clicked="OnRulesTabClicked">
+			<Button.Triggers>
+				<DataTrigger TargetType="Button" Binding="{Binding IsRulesPage}" Value="True">
+					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+					<Setter Property="TextColor" Value="White" />
+				</DataTrigger>
+			</Button.Triggers>
+		</Button>
+	</Grid>
+
+	<ScrollView x:Name="FormScroll" Grid.Row="1">
+		<VerticalStackLayout Padding="20,8,20,20" Spacing="14">
 
 			<!-- Moderators: what happens with their submission, or why it was rejected. -->
 			<Border IsVisible="{Binding HasReviewInfo}" BackgroundColor="{StaticResource SurfaceMuted}"
@@ -21,182 +80,235 @@
 				<Label Text="{Binding ReviewInfo}" FontSize="13" />
 			</Border>
 
-			<Label Text="Game name" FontSize="12" TextColor="{StaticResource TextSecondary}" />
-			<Entry Placeholder="e.g. Kings cup" Text="{Binding Name}" />
+			<!-- ===== Page 1: general info ===== -->
+			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsGeneralPage}">
 
-			<Label Text="Cover image" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<!-- Square and as wide as the page, on every phone; the same part of the picture as the icon in the game lists. -->
-			<Border IsVisible="{Binding HasCover}" StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="8" />
-				</Border.StrokeShape>
-				<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
-			</Border>
-			<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-				<Button Text="{Binding CoverButtonText}" Clicked="OnCoverClicked"
-				        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
-				        BorderColor="{StaticResource Border}" BorderWidth="1" />
-				<Button Grid.Column="1" Text="Remove" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-				        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			</Grid>
+				<Label Text="Game name" Style="{StaticResource SectionTitle}" />
+				<Entry Placeholder="e.g. Kings cup" Text="{Binding Name}" />
 
-			<Label Text="Pricing" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<HorizontalStackLayout Spacing="8">
-				<CheckBox IsChecked="{Binding IsPaid}" />
-				<Label Text="This game is paid" VerticalOptions="Center" />
-			</HorizontalStackLayout>
-			<Entry Placeholder="0,50" Text="{Binding Price}" Keyboard="Numeric" IsVisible="{Binding IsPaid}" />
-
-			<Label Text="Scoring type" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<views:ScoringEditorView BindingContext="{Binding Scoring}" />
-
-			<!-- For every scoring type. How many subgames to play, the players choose when they start. -->
-			<Label Text="Subgame results" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="8" />
-				</Border.StrokeShape>
-				<VerticalStackLayout Spacing="10">
-					<Label Text="Result of each subgame" />
-					<Picker Title="Choose result of each subgame" ItemsSource="{Binding ResultModeOptions}" SelectedItem="{Binding SelectedResultModeOption}" />
-					<Label Text="{Binding ScoreDirectionTitle}" />
-					<Picker Title="{Binding ScoreDirectionPrompt}" ItemsSource="{Binding BestScoreOptions}" SelectedIndex="{Binding BestScoreIndex}" />
+				<VerticalStackLayout Spacing="14">
+					<Label Text="Cover image" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<!-- Square and as wide as the page, on every phone; the same part of the picture as the icon in the game lists. -->
+					<Border IsVisible="{Binding HasCover}" StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+					</Border>
+					<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+						<Button Text="{Binding CoverButtonText}" Clicked="OnCoverClicked"
+						        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
+						        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
+						        BorderColor="{StaticResource Border}" BorderWidth="1" />
+						<Button Grid.Column="1" Text="Remove" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
+						        BorderColor="{StaticResource Border}" BorderWidth="1" />
+					</Grid>
 				</VerticalStackLayout>
-			</Border>
 
-			<!-- Allowed: tied players share the result. Not allowed: they play a duel, scored like the game or with its own scoring. -->
-			<Label Text="Ties" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="8" />
-				</Border.StrokeShape>
-				<VerticalStackLayout Spacing="10">
+				<VerticalStackLayout Spacing="14">
+					<Label Text="Pricing" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<HorizontalStackLayout Spacing="8">
-						<CheckBox IsChecked="{Binding AllowTies}" />
-						<Label Text="Ties are allowed" VerticalOptions="Center" />
+						<CheckBox IsChecked="{Binding IsPaid}" />
+						<Label Text="This game is paid" VerticalOptions="Center" />
 					</HorizontalStackLayout>
-
-					<VerticalStackLayout Spacing="10" IsVisible="{Binding HasNoTies}">
-						<Label Text="When is a tie played off" />
-						<Picker Title="Choose when" ItemsSource="{Binding TieBreakMomentOptions}" SelectedItem="{Binding SelectedTieBreakMoment}" />
-						<Label Text="Which ties are played off" />
-						<Picker Title="Choose which ties" ItemsSource="{Binding TieBreakScopeOptions}" SelectedItem="{Binding SelectedTieBreakScope}" />
-						<HorizontalStackLayout Spacing="8">
-							<CheckBox IsChecked="{Binding DuelSameScoring}" />
-							<Label Text="The duel uses the game's scoring" VerticalOptions="Center" />
-						</HorizontalStackLayout>
-					</VerticalStackLayout>
-
-					<VerticalStackLayout Spacing="10" IsVisible="{Binding HasDuelScoring}">
-						<Label Text="Duel scoring" FontAttributes="Bold" />
-						<views:ScoringEditorView BindingContext="{Binding DuelScoring}" />
-						<Label Text="Who wins the duel" />
-						<Picker Title="Choose who wins the duel" ItemsSource="{Binding DuelBestScoreOptions}" SelectedIndex="{Binding DuelBestScoreIndex}" />
-					</VerticalStackLayout>
+					<Entry Placeholder="0,50" Text="{Binding Price}" Keyboard="Numeric" IsVisible="{Binding IsPaid}" />
 				</VerticalStackLayout>
-			</Border>
 
-			<!-- Who starts the next subgame (the seats turn), a fixed input order, and a score that ends a subgame. -->
-			<Label Text="Turns and the end of a subgame" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="8" />
-				</Border.StrokeShape>
-				<VerticalStackLayout Spacing="10">
-					<Label Text="Who starts the next subgame" />
-					<Picker Title="Choose who starts" ItemsSource="{Binding StartRotationOptions}" SelectedItem="{Binding SelectedStartRotation}" />
-
-					<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-						<CheckBox IsChecked="{Binding FixedTurnOrder}" VerticalOptions="Center" />
-						<Label Grid.Column="1" Text="Fixed input order: seat 1 first, then seat 2, ... Everyone has to enter a score, also 0."
-						       VerticalOptions="Center" />
-					</Grid>
-
-					<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-						<Label Text="A subgame ends at score" VerticalOptions="Center" />
-						<Switch Grid.Column="1" IsToggled="{Binding HasEndScore}" VerticalOptions="Center" />
-						<Entry Grid.Column="2" Text="{Binding EndScore}" Keyboard="Telephone" Placeholder="e.g. 100"
-						       HorizontalTextAlignment="End" IsVisible="{Binding HasEndScore}" />
-					</Grid>
-					<VerticalStackLayout Spacing="10" IsVisible="{Binding HasEndScore}">
-						<Label Text="How the subgame ends" />
-						<Picker Title="Choose how it ends" ItemsSource="{Binding EndModeOptions}" SelectedItem="{Binding SelectedEndMode}" />
-						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding CanHaveEqualizingTurn}">
-							<CheckBox IsChecked="{Binding EqualizingTurn}" VerticalOptions="Center" />
-							<Label Grid.Column="1" Text="Equalizing turn: the players after the one who reached it still get their turn in that round (needs a fixed input order)"
-							       VerticalOptions="Center" />
-						</Grid>
-					</VerticalStackLayout>
-				</VerticalStackLayout>
-			</Border>
-
-			<!-- Each limit has its own switch. Both off: any number of players. Players filter games by this. -->
-			<Label Text="Number of players" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="8" />
-				</Border.StrokeShape>
-				<VerticalStackLayout Spacing="10">
-					<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-						<Label Text="Minimum players" VerticalOptions="Center" />
-						<Switch Grid.Column="1" IsToggled="{Binding HasMinPlayers}" VerticalOptions="Center" />
-						<Entry Grid.Column="2" Text="{Binding MinPlayers}" Keyboard="Numeric" Placeholder="e.g. 2"
-						       HorizontalTextAlignment="End" IsVisible="{Binding HasMinPlayers}" />
-					</Grid>
-					<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-						<Label Text="Maximum players" VerticalOptions="Center" />
-						<Switch Grid.Column="1" IsToggled="{Binding HasMaxPlayers}" VerticalOptions="Center" />
-						<Entry Grid.Column="2" Text="{Binding MaxPlayers}" Keyboard="Numeric" Placeholder="e.g. 6"
-						       HorizontalTextAlignment="End" IsVisible="{Binding HasMaxPlayers}" />
-					</Grid>
-					<Label Text="{Binding PlayersPreview}" FontSize="12" FontAttributes="Bold" />
-				</VerticalStackLayout>
-			</Border>
-
-			<!-- Tap to select; at least one per main category. Players filter games by these. -->
-			<Label Text="Categories" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding CategoryChoiceGroups}">
-				<BindableLayout.ItemTemplate>
-					<DataTemplate x:DataType="models:CategoryChoiceGroup">
-						<VerticalStackLayout Spacing="6">
-							<Label Text="{Binding Title}" FontAttributes="Bold" />
-							<views:CategoryClouds ItemsSource="{Binding Choices}" Placeholder="Choose one or more" CategoryTapped="OnCategoryTapped" />
+				<!-- Each limit has its own switch. Both off: any number of players. Players filter games by this. -->
+				<VerticalStackLayout Spacing="14">
+					<Label Text="Number of players" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<VerticalStackLayout Spacing="10">
+							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+								<Label Text="Minimum players" VerticalOptions="Center" />
+								<Switch Grid.Column="1" IsToggled="{Binding HasMinPlayers}" VerticalOptions="Center" />
+								<Entry Grid.Column="2" Text="{Binding MinPlayers}" Keyboard="Numeric" Placeholder="e.g. 2"
+								       HorizontalTextAlignment="End" IsVisible="{Binding HasMinPlayers}" />
+							</Grid>
+							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+								<Label Text="Maximum players" VerticalOptions="Center" />
+								<Switch Grid.Column="1" IsToggled="{Binding HasMaxPlayers}" VerticalOptions="Center" />
+								<Entry Grid.Column="2" Text="{Binding MaxPlayers}" Keyboard="Numeric" Placeholder="e.g. 6"
+								       HorizontalTextAlignment="End" IsVisible="{Binding HasMaxPlayers}" />
+							</Grid>
+							<Label Text="{Binding PlayersPreview}" FontSize="12" FontAttributes="Bold" />
 						</VerticalStackLayout>
-					</DataTemplate>
-				</BindableLayout.ItemTemplate>
+					</Border>
+				</VerticalStackLayout>
+
+				<!-- Tap to select; at least one per main category. Players filter games by these. -->
+				<VerticalStackLayout Spacing="14">
+					<Label Text="Categories" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding CategoryChoiceGroups}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="models:CategoryChoiceGroup">
+								<VerticalStackLayout Spacing="6">
+									<Label Text="{Binding Title}" FontAttributes="Bold" />
+									<views:CategoryClouds ItemsSource="{Binding Choices}" Placeholder="Choose one or more" CategoryTapped="OnCategoryTapped" />
+								</VerticalStackLayout>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+				</VerticalStackLayout>
 			</VerticalStackLayout>
 
-			<!-- The rules. Pieces of text and pictures follow each other without anything in between, inside one box, so it
-			     reads and types as one text. Hold a picture to edit, move or remove it. -->
-			<Label Text="How to play" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,10,0,0" />
-			<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="8" />
-				</Border.StrokeShape>
-				<VerticalStackLayout Spacing="0" BindableLayout.ItemsSource="{Binding RulesBlocks}">
-					<BindableLayout.ItemTemplate>
-						<DataTemplate x:DataType="models:EditableRulesBlock">
-							<Grid>
-								<views:PlainEditor Text="{Binding Text}" IsVisible="{Binding IsText}" Placeholder="{Binding Placeholder}"
-								                   AutoSize="TextChanges" Focused="OnRulesEditorFocused" />
-								<!-- The margin is the empty line above and below every picture. -->
-								<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" Margin="0,14">
-									<views:RulesImage.Behaviors>
-										<views:TapAndHoldBehavior Held="OnRulesImageHeld" />
-									</views:RulesImage.Behaviors>
-								</views:RulesImage>
-							</Grid>
-						</DataTemplate>
-					</BindableLayout.ItemTemplate>
+			<!-- ===== Page 2: scoring ===== -->
+			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsScoringPage}">
+
+				<!-- The scoring page starts empty; this adds the parts a game needs. They always show in the same order. -->
+				<Button Text="+ Add your rules" Clicked="OnAddSectionClicked" IsVisible="{Binding CanAddSection}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+
+				<Label Text="Nothing added yet. Tap + Add your rules to add the scoring type, subgame results, ties or turns."
+				       IsVisible="{Binding HasNothingAdded}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+
+				<VerticalStackLayout Spacing="14" IsVisible="{Binding ScoringTypeAdded}">
+					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+						<Label Text="Scoring type" Style="{StaticResource SectionTitle}" />
+						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
+						        CommandParameter="{x:Static vm:GameFormSection.ScoringType}" />
+					</Grid>
+					<views:ScoringEditorView BindingContext="{Binding Scoring}" />
 				</VerticalStackLayout>
-			</Border>
-			<Label Text="Hold a picture to edit, move or remove it." FontSize="12" TextColor="{StaticResource TextSecondary}" />
-			<Button Text="Add picture at the cursor" Clicked="OnInsertRulesImageClicked"
-			        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+
+				<!-- For every scoring type. How many subgames to play, the players choose when they start. -->
+				<VerticalStackLayout Spacing="14" IsVisible="{Binding ResultsAdded}">
+					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+						<Label Text="Subgame results" Style="{StaticResource SectionTitle}" />
+						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
+						        CommandParameter="{x:Static vm:GameFormSection.Results}" />
+					</Grid>
+					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<VerticalStackLayout Spacing="10">
+							<Label Text="Result of each subgame" />
+							<Picker Title="Choose result of each subgame" ItemsSource="{Binding ResultModeOptions}" SelectedItem="{Binding SelectedResultModeOption}" />
+							<Label Text="{Binding ScoreDirectionTitle}" />
+							<Picker Title="{Binding ScoreDirectionPrompt}" ItemsSource="{Binding BestScoreOptions}" SelectedIndex="{Binding BestScoreIndex}" />
+						</VerticalStackLayout>
+					</Border>
+				</VerticalStackLayout>
+
+				<!-- Allowed: tied players share the result. Not allowed: they play a duel, scored like the game or with its own scoring. -->
+				<VerticalStackLayout Spacing="14" IsVisible="{Binding TiesAdded}">
+					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+						<Label Text="Ties" Style="{StaticResource SectionTitle}" />
+						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
+						        CommandParameter="{x:Static vm:GameFormSection.Ties}" />
+					</Grid>
+					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<VerticalStackLayout Spacing="10">
+							<HorizontalStackLayout Spacing="8">
+								<CheckBox IsChecked="{Binding AllowTies}" />
+								<Label Text="Ties are allowed" VerticalOptions="Center" />
+							</HorizontalStackLayout>
+
+							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasNoTies}">
+								<Label Text="When is a tie played off" />
+								<Picker Title="Choose when" ItemsSource="{Binding TieBreakMomentOptions}" SelectedItem="{Binding SelectedTieBreakMoment}" />
+								<Label Text="Which ties are played off" />
+								<Picker Title="Choose which ties" ItemsSource="{Binding TieBreakScopeOptions}" SelectedItem="{Binding SelectedTieBreakScope}" />
+								<HorizontalStackLayout Spacing="8">
+									<CheckBox IsChecked="{Binding DuelSameScoring}" />
+									<Label Text="The duel uses the game's scoring" VerticalOptions="Center" />
+								</HorizontalStackLayout>
+							</VerticalStackLayout>
+
+							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasDuelScoring}">
+								<Label Text="Duel scoring" FontAttributes="Bold" />
+								<views:ScoringEditorView BindingContext="{Binding DuelScoring}" />
+								<Label Text="Who wins the duel" />
+								<Picker Title="Choose who wins the duel" ItemsSource="{Binding DuelBestScoreOptions}" SelectedIndex="{Binding DuelBestScoreIndex}" />
+							</VerticalStackLayout>
+						</VerticalStackLayout>
+					</Border>
+				</VerticalStackLayout>
+
+				<!-- Who starts the next subgame (the seats turn), a fixed input order, and a score that ends a subgame. -->
+				<VerticalStackLayout Spacing="14" IsVisible="{Binding TurnsAdded}">
+					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+						<Label Text="Turns and the end of a subgame" Style="{StaticResource SectionTitle}" />
+						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
+						        CommandParameter="{x:Static vm:GameFormSection.Turns}" />
+					</Grid>
+					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="8" />
+						</Border.StrokeShape>
+						<VerticalStackLayout Spacing="10">
+							<Label Text="Who starts the next subgame" />
+							<Picker Title="Choose who starts" ItemsSource="{Binding StartRotationOptions}" SelectedItem="{Binding SelectedStartRotation}" />
+
+							<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+								<CheckBox IsChecked="{Binding FixedTurnOrder}" VerticalOptions="Center" />
+								<Label Grid.Column="1" Text="Fixed input order: seat 1 first, then seat 2, ... Everyone has to enter a score, also 0."
+								       VerticalOptions="Center" />
+							</Grid>
+
+							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+								<Label Text="A subgame ends at score" VerticalOptions="Center" />
+								<Switch Grid.Column="1" IsToggled="{Binding HasEndScore}" VerticalOptions="Center" />
+								<Entry Grid.Column="2" Text="{Binding EndScore}" Keyboard="Telephone" Placeholder="e.g. 100"
+								       HorizontalTextAlignment="End" IsVisible="{Binding HasEndScore}" />
+							</Grid>
+							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasEndScore}">
+								<Label Text="How the subgame ends" />
+								<Picker Title="Choose how it ends" ItemsSource="{Binding EndModeOptions}" SelectedItem="{Binding SelectedEndMode}" />
+								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding CanHaveEqualizingTurn}">
+									<CheckBox IsChecked="{Binding EqualizingTurn}" VerticalOptions="Center" />
+									<Label Grid.Column="1" Text="Equalizing turn: the players after the one who reached it still get their turn in that round (needs a fixed input order)"
+									       VerticalOptions="Center" />
+								</Grid>
+							</VerticalStackLayout>
+						</VerticalStackLayout>
+					</Border>
+				</VerticalStackLayout>
+			</VerticalStackLayout>
+
+			<!-- ===== Page 3: the written rules =====
+			     Pieces of text and pictures follow each other without anything in between, inside one box, so it
+			     reads and types as one text. Hold a picture to edit, move or remove it. -->
+			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsRulesPage}">
+				<Label Text="How to play" Style="{StaticResource SectionTitle}" />
+				<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="8" />
+					</Border.StrokeShape>
+					<VerticalStackLayout Spacing="0" BindableLayout.ItemsSource="{Binding RulesBlocks}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="models:EditableRulesBlock">
+								<Grid>
+									<views:PlainEditor Text="{Binding Text}" IsVisible="{Binding IsText}" Placeholder="{Binding Placeholder}"
+									                   AutoSize="TextChanges" Focused="OnRulesEditorFocused" />
+									<!-- The margin is the empty line above and below every picture. -->
+									<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" Margin="0,14">
+										<views:RulesImage.Behaviors>
+											<views:TapAndHoldBehavior Held="OnRulesImageHeld" />
+										</views:RulesImage.Behaviors>
+									</views:RulesImage>
+								</Grid>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+				</Border>
+				<Label Text="Hold a picture to edit, move or remove it." FontSize="12" TextColor="{StaticResource TextSecondary}" />
+				<Button Text="Add picture at the cursor" Clicked="OnInsertRulesImageClicked"
+				        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+				        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			</VerticalStackLayout>
+
+			<!-- On every page. -->
 			<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{StaticResource Primary}" />
 
 			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" Margin="0,6,0,0" />
@@ -215,7 +327,7 @@
 	</ScrollView>
 
 	<!-- While a picture is being moved; stays in view at the bottom whatever is scrolled. -->
-	<Border x:Name="MoveBar" Grid.Row="1" IsVisible="False" BackgroundColor="{StaticResource SurfaceMuted}"
+	<Border x:Name="MoveBar" Grid.Row="2" IsVisible="False" BackgroundColor="{StaticResource SurfaceMuted}"
 	        StrokeThickness="0" Padding="16,10">
 		<VerticalStackLayout Spacing="8">
 			<Label Text="Tap in the text where the picture should go, then tap Place here." FontSize="13" />

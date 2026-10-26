@@ -55,8 +55,12 @@ public partial class DuelViewModel : ObservableObject
 
 	public bool HasButtons => !IsTyped;
 
-	/// <summary>How to keep score in this duel, and which score wins it.</summary>
-	public string Explanation => $"{Rules.Explanation} The {(Setup.Settings.LowestWins ? "lowest" : "highest")} score wins the duel.";
+	/// <summary>The score that ends the duel; none when the players type in their final score.</summary>
+	private int? EndScore => IsTyped ? null : Setup.Settings.EndScore;
+
+	/// <summary>How to keep score in this duel, which score wins it, and when it ends.</summary>
+	public string Explanation => $"{Rules.Explanation} The {(Setup.Settings.LowestWins ? "lowest" : "highest")} score wins the duel."
+		+ (EndScore is { } end ? $" The duel ends at {end}." : string.Empty);
 
 	public string MinusLabel => Rules.MinusLabel;
 
@@ -67,8 +71,12 @@ public partial class DuelViewModel : ObservableObject
 	[ObservableProperty]
 	private string message = string.Empty;
 
-	/// <summary>+ (1) or − (-1): by the step, or by the typed amount within the duel's amount rules.</summary>
-	public void Adjust(DuelRow row, int direction)
+	/// <summary>
+	/// + (1) or − (-1): by the step, or by the typed amount within the duel's
+	/// amount rules. True when this reached the duel's end score and the duel
+	/// ends by itself; with an end the players choose, Message says it's reached.
+	/// </summary>
+	public bool Adjust(DuelRow row, int direction)
 	{
 		Message = string.Empty;
 		var delta = direction > 0 ? Rules.PlusStep : Rules.MinusStep ?? -Rules.PlusStep;
@@ -77,17 +85,22 @@ public partial class DuelViewModel : ObservableObject
 			if (ReadNumber(row.Typed) is not { } amount)
 			{
 				Message = $"{row.Player.Name}: type an amount first. {manual.AllowedAmountsHint()}";
-				return;
+				return false;
 			}
 			if (!manual.AllowsAmount(amount))
 			{
 				Message = $"{row.Player.Name}: {amount} isn't allowed. {manual.AllowedAmountsHint()}";
-				return;
+				return false;
 			}
 			delta = direction > 0 ? amount : -amount;
 			row.Typed = string.Empty;
 		}
 		row.Score = Rules.Clamp(row.Score + delta);
+
+		if (EndScore is not { } end || !Setup.Settings.ReachesEnd(row.Score)) return false;
+		if (Setup.Settings.EndMode == EndMode.Automatic) return true;
+		Message = $"{row.Player.Name} reached {end}: you can finish the duel.";
+		return false;
 	}
 
 	/// <summary>

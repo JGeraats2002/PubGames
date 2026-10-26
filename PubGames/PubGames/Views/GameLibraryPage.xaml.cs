@@ -26,6 +26,13 @@ public partial class GameLibraryPage : ContentPage
 	{
 		if (e.Parameter is not PubGame game) return;
 
+		// Every game stays in the list, but it only opens with a number of players it's made for.
+		if (game.PlayerCountProblem(_vm.Players.Count) is { } problem)
+		{
+			await DisplayAlertAsync("Not the right number of players", problem, "OK");
+			return;
+		}
+
 		if (!await _vm.IsOwnedAsync(game))
 		{
 			// TODO: show the unlock/paywall dialog and kick off Google Play

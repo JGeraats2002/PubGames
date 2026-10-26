@@ -40,9 +40,9 @@
 
 	<Grid RowDefinitions="Auto,*,Auto">
 
-	<!-- 1 General, 2 Scoring, 3 Rules. Players see none of this: they see the game as before. -->
+	<!-- General, Scoring, Rules. Players see none of this: they see the game as before. -->
 	<Grid Padding="20,12,20,8" ColumnDefinitions="*,*,*" ColumnSpacing="8">
-		<Button Text="1 General" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
+		<Button Text="General" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsGeneralPage}" Value="True">
 					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
@@ -50,7 +50,7 @@
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
-		<Button Grid.Column="1" Text="2 Scoring" Style="{StaticResource TabButton}" Clicked="OnScoringTabClicked">
+		<Button Grid.Column="1" Text="Scoring" Style="{StaticResource TabButton}" Clicked="OnScoringTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsScoringPage}" Value="True">
 					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
@@ -58,7 +58,7 @@
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
-		<Button Grid.Column="2" Text="3 Rules" Style="{StaticResource TabButton}" Clicked="OnRulesTabClicked">
+		<Button Grid.Column="2" Text="Rules" Style="{StaticResource TabButton}" Clicked="OnRulesTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsRulesPage}" Value="True">
 					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
@@ -159,22 +159,18 @@
 			<!-- ===== Page 2: scoring ===== -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsScoringPage}">
 
-				<!-- The scoring page starts empty; this adds the parts a game needs. They always show in the same order. -->
+				<!-- Only the scoring type is always there (a game needs one); this adds the other parts. They always show in the same order. -->
 				<Button Text="+ Add your rules" Clicked="OnAddSectionClicked" IsVisible="{Binding CanAddSection}"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
-				<Label Text="Nothing added yet. Tap + Add your rules to add the scoring type, subgame results, ties or turns."
-				       IsVisible="{Binding HasNothingAdded}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
-
-				<VerticalStackLayout Spacing="14" IsVisible="{Binding ScoringTypeAdded}">
-					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
-						<Label Text="Scoring type" Style="{StaticResource SectionTitle}" />
-						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
-						        CommandParameter="{x:Static vm:GameFormSection.ScoringType}" />
-					</Grid>
+				<VerticalStackLayout Spacing="14">
+					<Label Text="Scoring type" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<views:ScoringEditorView BindingContext="{Binding Scoring}" />
 				</VerticalStackLayout>
+
+				<Label Text="Everything else is optional. Tap + Add your rules to add subgame results, ties or turns. Without subgame results, the winner is noted and the highest score wins."
+				       IsVisible="{Binding HasNothingAdded}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 
 				<!-- For every scoring type. How many subgames to play, the players choose when they start. -->
 				<VerticalStackLayout Spacing="14" IsVisible="{Binding ResultsAdded}">
@@ -196,7 +192,8 @@
 					</Border>
 				</VerticalStackLayout>
 
-				<!-- Allowed: tied players share the result. Not allowed: they play a duel, scored like the game or with its own scoring. -->
+				<!-- Allowed: tied players share the result. Not allowed: they play a duel, by the game's rules or by its own,
+				     filled in like the game's (or copied from them and changed). -->
 				<VerticalStackLayout Spacing="14" IsVisible="{Binding TiesAdded}">
 					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
 						<Label Text="Ties" Style="{StaticResource SectionTitle}" />
@@ -220,15 +217,34 @@
 								<Picker Title="Choose which ties" ItemsSource="{Binding TieBreakScopeOptions}" SelectedItem="{Binding SelectedTieBreakScope}" />
 								<HorizontalStackLayout Spacing="8">
 									<CheckBox IsChecked="{Binding DuelSameScoring}" />
-									<Label Text="The duel uses the game's scoring" VerticalOptions="Center" />
+									<Label Text="The duel uses the game's rules" VerticalOptions="Center" />
 								</HorizontalStackLayout>
 							</VerticalStackLayout>
 
 							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasDuelScoring}">
-								<Label Text="Duel scoring" FontAttributes="Bold" />
+								<Label Text="The duel's rules" FontAttributes="Bold" />
+								<Button Text="Copy the game's rules" Clicked="OnCopyGameRulesClicked"
+								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+								        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+								<Label Text="Fills in everything below with the game's rules, so you only change what's different - for example a lower end score."
+								       FontSize="12" TextColor="{StaticResource TextSecondary}" />
+
+								<Label Text="Duel scoring type" />
 								<views:ScoringEditorView BindingContext="{Binding DuelScoring}" />
+
 								<Label Text="Who wins the duel" />
 								<Picker Title="Choose who wins the duel" ItemsSource="{Binding DuelBestScoreOptions}" SelectedIndex="{Binding DuelBestScoreIndex}" />
+
+								<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+									<Label Text="The duel ends at score" VerticalOptions="Center" />
+									<Switch Grid.Column="1" IsToggled="{Binding DuelHasEndScore}" VerticalOptions="Center" />
+									<Entry Grid.Column="2" Text="{Binding DuelEndScore}" Keyboard="Telephone" Placeholder="e.g. 10"
+									       HorizontalTextAlignment="End" IsVisible="{Binding DuelHasEndScore}" />
+								</Grid>
+								<VerticalStackLayout Spacing="10" IsVisible="{Binding DuelHasEndScore}">
+									<Label Text="How the duel ends" />
+									<Picker Title="Choose how it ends" ItemsSource="{Binding EndModeOptions}" SelectedItem="{Binding SelectedDuelEndMode}" />
+								</VerticalStackLayout>
 							</VerticalStackLayout>
 						</VerticalStackLayout>
 					</Border>

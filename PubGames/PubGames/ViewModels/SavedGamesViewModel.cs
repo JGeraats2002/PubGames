@@ -14,20 +14,42 @@ public partial class SavedGameRow : ObservableObject
 }
 
 /// <summary>
-/// Every saved game on this phone: tap one to continue it (or to see how it
-/// ended). Select chooses games to delete, with Select all / Deselect all.
-/// At the top: how long games are kept.
+/// The saved games on this phone, on two pages: unfinished games (tap one to
+/// continue it) and finished games (tap one to see how it ended). Each page
+/// has its own time for how long games are kept. Select chooses games to
+/// delete on the open page, with Select all / Deselect all.
 /// </summary>
 public partial class SavedGamesViewModel : ObservableObject
 {
 	private readonly SavedGames _savedGames;
+
+	/// <summary>Every saved game, finished or not; Rows shows the ones of the open page.</summary>
+	private List<SavedGameRow> _all = new();
 
 	public SavedGamesViewModel(SavedGames savedGames)
 	{
 		_savedGames = savedGames;
 	}
 
+	/// <summary>The games on the open page.</summary>
 	public ObservableCollection<SavedGameRow> Rows { get; } = new();
+
+	/// <summary>False: unfinished games. True: finished games.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(ShowsUnfinished), nameof(SelectedRetention), nameof(RetentionInfo), nameof(RetentionTitle), nameof(EmptyText))]
+	private bool showsFinished;
+
+	public bool ShowsUnfinished => !ShowsFinished;
+
+	partial void OnShowsFinishedChanged(bool value)
+	{
+		IsSelecting = false;
+		SelectAll(false);
+		ShowRows();
+	}
+
+	public string UnfinishedTabText => $"Unfinished ({_all.Count(r => !r.Game.IsFinished)})";
+	public string FinishedTabText => $"Finished ({_all.Count(r => r.Game.IsFinished)})";
 
 	/// <summary>Choosing games to delete: rows show a tick box and tapping one ticks it.</summary>
 	[ObservableProperty]
@@ -52,33 +74,52 @@ public partial class SavedGamesViewModel : ObservableObject
 
 	public bool IsEmpty => IsLoaded && Rows.Count == 0;
 
+	public string EmptyText => ShowsFinished
+		? "No finished games saved."
+		: "No unfinished games. A game is saved once someone has a score.";
+
 	public List<SavedGamesRetentionOption> RetentionOptions { get; } = SavedGamesRetentionOption.All;
 
-	public SavedGamesRetentionOption? SelectedRetention
+	public string RetentionTitle => ShowsFinished ? "Keep finished games" : "Keep unfinished games";
+
+	private SavedGamesRetention Retention
 	{
-		get => RetentionOptions.FirstOrDefault(o => o.Retention == _savedGames.Retention);
+		get => ShowsFinished ? _savedGames.FinishedRetention : _savedGames.Retention;
 		set
 		{
-			if (value is null || value.Retention == _savedGames.Retention) return;
-			_savedGames.Retention = value.Retention;
+			if (ShowsFinished)
+				_savedGames.FinishedRetention = value;
+			else
+				_savedGames.Retention = value;
+		}
+	}
+
+	/// <summary>The time for the open page's games.</summary>
+	public SavedGamesRetentionOption? SelectedRetention
+	{
+		get => RetentionOptions.FirstOrDefault(o => o.Retention == Retention);
+		set
+		{
+			if (value is null || value.Retention == Retention) return;
+			Retention = value.Retention;
 			OnPropertyChanged();
 			OnPropertyChanged(nameof(RetentionInfo));
 		}
 	}
 
 	/// <summary>What the chosen time means.</summary>
-	public string RetentionInfo => _savedGames.Retention switch
+	public string RetentionInfo => (Retention, ShowsFinished) switch
 	{
-		SavedGamesRetention.DontSave => "Games aren't kept: once you leave a game it's gone (a finished game's result still counts in the stats).",
-		SavedGamesRetention.Forever => "Games are kept until you delete them.",
+		(SavedGamesRetention.DontSave, true) => "Finished games aren't kept: once a game is finished and you leave it, it's gone. Its result still counts in the stats.",
+		(SavedGamesRetention.DontSave, false) => "Unfinished games aren't kept: once you leave a game it's gone.",
+		(SavedGamesRetention.Forever, _) => "Games are kept until you delete them.",
 		_ => $"A game is deleted {SelectedRetention?.Label} after it was last played. Only games with at least one score are kept, on this phone only."
 	};
 
 	public async Task LoadAsync()
 	{
 		var games = await _savedGames.GetAsync();
-		Rows.Clear();
-		foreach (var game in games)
+		_all = games.Select(game =>
 		{
 			var row = new SavedGameRow { Game = game };
 			row.PropertyChanged += (_, e) =>
@@ -86,10 +127,21 @@ public partial class SavedGamesViewModel : ObservableObject
 				if (e.PropertyName == nameof(SavedGameRow.IsSelected))
 					SelectedCount = Rows.Count(r => r.IsSelected);
 			};
-			Rows.Add(row);
-		}
-		SelectedCount = 0;
+			return row;
+		}).ToList();
+		OnPropertyChanged(nameof(UnfinishedTabText));
+		OnPropertyChanged(nameof(FinishedTabText));
+		ShowRows();
 		IsLoaded = true;
+	}
+
+	/// <summary>Fills Rows with the open page's games, newest first.</summary>
+	private void ShowRows()
+	{
+		Rows.Clear();
+		foreach (var row in _all.Where(r => r.Game.IsFinished == ShowsFinished))
+			Rows.Add(row);
+		SelectedCount = 0;
 		OnPropertyChanged(nameof(IsEmpty));
 	}
 
@@ -111,9 +163,14 @@ public partial class SavedGamesViewModel : ObservableObject
 		var selected = Rows.Where(r => r.IsSelected).ToList();
 		await _savedGames.DeleteAsync(selected.Select(r => r.Game.Session.Id));
 		foreach (var row in selected)
+		{
 			Rows.Remove(row);
+			_all.Remove(row);
+		}
 		SelectedCount = 0;
 		IsSelecting = false;
 		OnPropertyChanged(nameof(IsEmpty));
+		OnPropertyChanged(nameof(UnfinishedTabText));
+		OnPropertyChanged(nameof(FinishedTabText));
 	}
 }

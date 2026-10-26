@@ -155,6 +155,31 @@ public partial class ScoringEditor : ObservableObject
 			AmountRules.Add(EditableScoreRule.From(rule));
 	}
 
+	/// <summary>Everything filled in here as one text, to see whether the form changed.</summary>
+	public string Snapshot() => string.Join("\u001F",
+		_chosen, ScoringType, ScoreStep, StartScore, HasMaxScore, MaxScore, HasMinScore, MinScore, HasWarningScore, WarningScore,
+		string.Join(";", AmountRules.Select(r => $"{r.Kind?.Kind}:{r.Value}:{r.Value2}:{r.OrWithPrevious}")));
+
+	/// <summary>Takes over another editor's scoring type, numbers and amount rules (the duel copying the game's).</summary>
+	public void CopyFrom(ScoringEditor other)
+	{
+		_chosen = other._chosen && ScoringTypeOptions.Any(o => o.Type == other.ScoringType);
+		ScoringType = other.ScoringType;
+		NotifyTypeChanged();
+		ScoreStep = other.ScoreStep;
+		StartScore = other.StartScore;
+		HasMaxScore = other.HasMaxScore;
+		MaxScore = other.MaxScore;
+		HasMinScore = other.HasMinScore;
+		MinScore = other.MinScore;
+		HasWarningScore = other.HasWarningScore;
+		WarningScore = other.WarningScore;
+		while (AmountRules.Count > 0)
+			AmountRules.RemoveAt(0); // not Clear(): that doesn't say which rules left
+		foreach (var rule in other.AmountRules)
+			AmountRules.Add(new EditableScoreRule { Kind = rule.Kind, Value = rule.Value, Value2 = rule.Value2, OrWithPrevious = rule.OrWithPrevious });
+	}
+
 	/// <summary>Back to how a new game starts: nothing chosen, default numbers, no amount rules.</summary>
 	public void Reset()
 	{

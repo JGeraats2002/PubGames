@@ -32,6 +32,10 @@ public partial class SavedGamesPage : ContentPage
 		await Shell.Current.GoToAsync(nameof(ScoreboardPage), new Dictionary<string, object> { ["sessionId"] = row.Game.Session.Id });
 	}
 
+	private void OnUnfinishedTabClicked(object? sender, EventArgs e) => _vm.ShowsFinished = false;
+
+	private void OnFinishedTabClicked(object? sender, EventArgs e) => _vm.ShowsFinished = true;
+
 	private void OnSelectClicked(object? sender, EventArgs e) => _vm.ToggleSelecting();
 
 	private void OnSelectAllClicked(object? sender, EventArgs e) => _vm.SelectAll(true);

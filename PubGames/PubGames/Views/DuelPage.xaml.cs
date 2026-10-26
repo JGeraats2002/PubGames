@@ -31,14 +31,15 @@ public partial class DuelPage : ContentPage
 
 	private void OnMinusClicked(object? sender, EventArgs e)
 	{
-		if (sender is BindableObject { BindingContext: DuelRow row })
-			_vm.Adjust(row, -1);
+		if (sender is BindableObject { BindingContext: DuelRow row } && _vm.Adjust(row, -1))
+			OnDoneClicked(this, EventArgs.Empty);
 	}
 
+	/// <summary>Reaching an end score that ends the duel by itself goes straight to checking the score.</summary>
 	private void OnPlusClicked(object? sender, EventArgs e)
 	{
-		if (sender is BindableObject { BindingContext: DuelRow row })
-			_vm.Adjust(row, +1);
+		if (sender is BindableObject { BindingContext: DuelRow row } && _vm.Adjust(row, +1))
+			OnDoneClicked(this, EventArgs.Empty);
 	}
 
 	private async void OnDoneClicked(object? sender, EventArgs e)

@@ -21,10 +21,51 @@ public partial class AdminCreateGamePage : ContentPage
 		InfoButton.Attach(this, () => Help.CreateGame(_vm.IsModerator, _vm.ScoringType));
 		_vm.Finished += async (_, message) =>
 		{
+			_leaving = true;
 			if (message is not null)
 				await DisplayAlertAsync("Done", message, "OK");
 			await Shell.Current.GoToAsync("..");
 		};
+		// The back arrow at the top asks first too.
+		Shell.SetBackButtonBehavior(this, new BackButtonBehavior { Command = new Command(async () => await LeaveAsync()) });
+	}
+
+	/// <summary>Saved, deleted, withdrawn or chosen not to save: going back doesn't ask (again).</summary>
+	private bool _leaving;
+
+	/// <summary>The phone's back button: ask first.</summary>
+	protected override bool OnBackButtonPressed()
+	{
+		_ = LeaveAsync();
+		return true;
+	}
+
+	/// <summary>
+	/// Going back with unsaved changes asks whether to save them. Saving goes
+	/// back once it worked; if something is still missing, the form stays open
+	/// and says what.
+	/// </summary>
+	private async Task LeaveAsync()
+	{
+		if (_leaving) return;
+
+		if (_vm.HasUnsavedChanges)
+		{
+			const string discard = "Don't save";
+			var save = _vm.SaveButtonText;
+			var choice = await DisplayActionSheetAsync("Save your changes?", "Keep editing", discard, save);
+			if (choice == save)
+			{
+				await _vm.SaveCommand.ExecuteAsync(null);
+				if (!_leaving && !string.IsNullOrEmpty(_vm.StatusMessage))
+					await DisplayAlertAsync("Not saved yet", _vm.StatusMessage, "OK");
+				return;
+			}
+			if (choice != discard) return;
+		}
+
+		_leaving = true;
+		await Shell.Current.GoToAsync("..");
 	}
 
 	protected override async void OnAppearing()
@@ -56,6 +97,15 @@ public partial class AdminCreateGamePage : ContentPage
 		var choice = await DisplayActionSheetAsync("Add your rules", "Cancel", null, options.Select(o => o.Title).ToArray());
 		if (options.FirstOrDefault(o => o.Title == choice) is { } picked)
 			_vm.AddSection(picked.Section);
+	}
+
+	private async void OnCopyGameRulesClicked(object? sender, EventArgs e)
+	{
+		if (_vm.DuelScoring.IsChosen
+			&& !await DisplayAlertAsync("Copy the game's rules?", "What you filled in for the duel is replaced by the game's rules.", "Copy", "Cancel"))
+			return;
+		if (!_vm.CopyGameRulesToDuel())
+			await DisplayAlertAsync("No rules to copy yet", "Choose the game's scoring type first, at the top of this page.", "OK");
 	}
 
 	/// <summary>The ✕ next to a part: take it off the form, clearing what was filled in.</summary>

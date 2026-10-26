@@ -41,15 +41,15 @@ public static class Help
 
 	public static PageHelp SavedGames { get; } = new("Saved games",
 	[
-		new("Your games", "Every game played on this phone in which someone has a score, newest first. Tap an unfinished game to continue it, or a finished one to see the scoreboard and the final result."),
+		new("Your games", "Every game played on this phone in which someone has a score, newest first. On two pages: Unfinished and Finished. Tap an unfinished game to continue it, or a finished one to see the scoreboard and the final result."),
 		new("Delete games", "Tap Select, then tap the games to delete - or Select all / Deselect all - and tap Delete. Cancel stops selecting."),
-		new("Keep saved games", "Choose how long games are kept: 1 week, 1 month (unless you change it), 6 months, 1 year, never delete, or don't save games at all. The time counts from the last score. Games are only kept on this phone; a finished game's result in the stats stays.")
+		new("Keep saved games", "Each page has its own time for how long its games are kept: 1 week, 1 month (unless you change it), 6 months, 1 year, never delete, or don't save them at all - for example keep unfinished games but not finished ones. The time counts from the last score. Games are only kept on this phone; a finished game's result in the stats stays.")
 	]);
 
 	public static PageHelp GameLibrary { get; } = new("Choose a game",
 	[
 		new("Find a game", "Search by name, or tap Filter: set the number of players and tap the categories you're looking for, per main category. Nothing there is required; the button shows how many filters are set and Clear filters shows everything again."),
-		new("Start", "Under each game's name you see how many players it's for and its categories. Tap a game to read its rules and start playing. Paid games show their price.")
+		new("Start", "Under each game's name you see how many players it's for and its categories. Tap a game to read its rules and start playing. Every game is in the list, but it only opens when you have the right number of players for it: if not, the app says how many players to add or take out. Paid games show their price.")
 	]);
 
 	public static PageHelp GameStart { get; } = new("Rules and start",
@@ -124,7 +124,9 @@ public static class Help
 		};
 		var which = settings.TieBreakScope == TieBreakScope.Every ? "Players who share a place"
 			: mode == ResultMode.Loser ? "Players who share the loss" : "Players who share 1st place";
-		var scoring = settings.DuelSameScoring ? "scored like the game" : "with its own scoring, shown on the duel screen";
+		var duelEnd = settings.DuelSameScoring ? settings.EndScore : settings.DuelSettings?.EndScore;
+		var scoring = (settings.DuelSameScoring ? "by the game's rules" : "by its own rules, shown on the duel screen")
+			+ (duelEnd is { } end ? $", up to {end}" : string.Empty);
 		return $"This game has no ties {when}. {which} play a duel, {scoring}. When the duel is over, tap Duel finished and check the score: only when you confirm it does the duel decide the result - one winner or loser, or places one after another so the points differ. Still tied after the duel? Then those players duel again.";
 	}
 
@@ -159,8 +161,9 @@ public static class Help
 	{
 		var sections = new List<HelpSection>
 		{
-			new("Three pages", "The form has three pages at the top: 1 General (name, cover, price, number of players, categories), 2 Scoring (scoring type, subgame results, ties, turns) and 3 Rules (how to play). Players don't see these pages - they see the game as before."),
-			new("Add your rules", "The scoring page of a new game starts empty. Tap + Add your rules and choose what this game needs; it appears in its own place on the page, always in the same order, whatever order you add things in. The ✕ next to a part takes it off again and clears what you filled in. A part you don't add keeps its default: ties allowed, the seats stay as they are, no end score. A game always needs a scoring type and subgame results - saving adds them for you if they're missing."),
+			new("Three pages", "The form has three pages at the top: General (name, cover, price, number of players, categories), Scoring (scoring type, subgame results, ties, turns) and Rules (how to play). Players don't see these pages - they see the game as before."),
+			new("Add your rules", "A game needs a name, at least one category per main category and a scoring type; everything else is optional. On the scoring page the scoring type is always there; tap + Add your rules to add subgame results, ties or turns. They appear in their own place, always in the same order, whatever order you add them in. The ✕ next to a part takes it off again and clears what you filled in. A part you don't add keeps its default: the winner is noted and the highest score wins, ties are allowed, the seats stay as they are, no end score."),
+			new("Going back", "Going back with the arrow at the top or the phone's back button while you've changed something asks whether to save your changes, not save them, or keep editing."),
 			new("Choices", "Every dropdown starts with \"Choose ...\": pick an option in each one. Saving tells you if a choice is still missing and opens the page it's on."),
 			new("Name and cover", "Give the game a name. The cover image is shown square and as wide as the page, with the same centre crop as the small icon in the game lists - keep the important part in the middle."),
 			new("Pictures", "For the cover and for pictures in the rules you choose: upload an image from your phone, take a photo, or create an image. Create an image opens an editor where you place arrows, text, cards, dice, hands, drinks and more - handy for explaining a game, and always in the same style. A picture made there can be changed later: tap the cover button again and choose Edit this image, or hold the picture in the rules. Only a cover can have a background colour; pictures in the rules are always on cream."),
@@ -173,9 +176,9 @@ public static class Help
 		if (type == ScoringType.ManualPlusMinus)
 			sections.Add(new("Rules for entered amounts", "+ Add rule adds a rule; ✕ removes it. Lower than 11 allows 10; lower than or equal to 11 also allows 11; between includes both numbers. Amounts may be negative. Tap AND / OR above a rule to switch how it links to the rule above: OR goes first, so rules linked with OR form a group where one must be true, and AND joins groups that must all be true. The bold line below the rules shows exactly what's allowed. No rules: any amount."));
 		sections.Add(new("Turns and the end of a subgame", "Who starts the next subgame: the seats turn so that player sits in seat 1 - everyone keeps their neighbours. Left of a player is the next seat, right of a player the seat before. Fixed input order: scores are entered seat by seat and everyone has to enter one, also 0. A subgame ends at score: once a player reaches it the subgame ends, automatically or when the players end it. With an automatic end and a fixed input order you can add an equalizing turn: the players after the one who reached it still get their turn in that round."));
-		sections.Add(new("Ties", "Ticked \"Ties are allowed\": tied players share the win, the loss or the place, and get the same points. Unticked, a tie is played off in a duel. Choose when: after every subgame, after the final total, or both. Choose which ties: only a shared 1st place (in a loser game: a shared loss), or every shared place. Tick \"The duel uses the game's scoring\" to duel with the same scoring as the game, or untick it to give the duel its own scoring - for example to 10 while the game goes to 100 - and choose which score wins the duel. With Type in the score the players play the duel their own way and type in everyone's score. Explain the duel itself in How to play."));
+		sections.Add(new("Ties", "Ticked \"Ties are allowed\": tied players share the win, the loss or the place, and get the same points. Unticked, a tie is played off in a duel. Choose when: after every subgame, after the final total, or both. Choose which ties: only a shared 1st place (in a loser game: a shared loss), or every shared place. Tick \"The duel uses the game's rules\" to duel just like the game, or untick it to fill in the duel's own rules the same way as the game's: its scoring type and numbers, which score wins the duel, and a score at which the duel ends (by itself, or when the players end it). Copy the game's rules fills all of that in with the game's, so you only change what's different - for example a duel to 10 while the game goes to 100. With Type in the score the players play the duel their own way and type in everyone's score. Explain the duel itself in How to play."));
 		sections.Add(new("Subgame results", "Choose how the result of each subgame is noted - the winner(s), everyone's place, or the loser(s) - and which score wins, loses or is 1st. After each subgame the app fills this in from the scores and the players can change it. The players choose how many subgames they play (1 unless they change it)."));
-		sections.Add(new("Number of players", "Switch on a minimum and/or a maximum and fill in the number. Only a maximum of 3 means 1, 2 or 3 players; only a minimum of 2 means 2 or more. Both off: any number, shown as Any. Players can filter games by how many they are."));
+		sections.Add(new("Number of players", "Switch on a minimum and/or a maximum and fill in the number. Only a maximum of 3 means 1, 2 or 3 players; only a minimum of 2 means 2 or more. Both off: any number, shown as Any. Players can filter games by how many they are, and can only start a game with a number of players it's made for."));
 		sections.Add(new("Categories", "The categories are listed under their main categories (Play style, Duration, ...). Open each main category and tap at least one category in it, so players can find the game; tap more if several fit. Tap again to unselect."));
 		sections.Add(new("How to play", "Write the rules as one text. To add a picture, tap in the text where it should go - also in the middle of a sentence - then tap Add picture at the cursor. The text is split there and the picture gets its own place, with an empty line above and below, on a cream background. Hold a picture to move it (tap in the text where it should go, then Place here), to remove it, or - if you made it with Create an image - to edit it."));
 		sections.Add(new("Checks before saving", "Saving checks that everything fits together: for example the starting score between the minimum and maximum, the warning within them, and amount rules that allow at least one useful amount. The message above the button says what to fix."));

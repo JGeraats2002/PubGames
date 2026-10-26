@@ -65,18 +65,31 @@ public sealed class SavedGame
 /// unfinished ones can be continued, finished ones looked back at. Only
 /// games in which at least one score was entered are kept. They're only on
 /// this phone (the cloud just gets each finished game's result for the
-/// stats), and are cleaned up after the chosen time - 1 month unless changed.
+/// stats), and are cleaned up after the chosen time - 1 month unless changed,
+/// with a separate time for unfinished and for finished games.
 /// </summary>
 public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 {
+	// Unfinished games keep the key they always had; finished games got their own setting later.
 	private const string RetentionKey = "savedGamesRetention";
+	private const string FinishedRetentionKey = "finishedGamesRetention";
 
+	/// <summary>How long unfinished games are kept.</summary>
 	public SavedGamesRetention Retention
 	{
-		get => Enum.TryParse<SavedGamesRetention>(Preferences.Default.Get(RetentionKey, nameof(SavedGamesRetention.Month)), out var r)
-			? r : SavedGamesRetention.Month;
+		get => Read(RetentionKey, SavedGamesRetention.Month);
 		set => Preferences.Default.Set(RetentionKey, value.ToString());
 	}
+
+	/// <summary>How long finished games are kept; until it's chosen, the same as for unfinished games.</summary>
+	public SavedGamesRetention FinishedRetention
+	{
+		get => Read(FinishedRetentionKey, Retention);
+		set => Preferences.Default.Set(FinishedRetentionKey, value.ToString());
+	}
+
+	private static SavedGamesRetention Read(string key, SavedGamesRetention fallback) =>
+		Enum.TryParse<SavedGamesRetention>(Preferences.Default.Get(key, fallback.ToString()), out var r) ? r : fallback;
 
 	/// <summary>Games older than this are deleted; null keeps them.</summary>
 	private static TimeSpan? MaxAge(SavedGamesRetention retention) => retention switch
@@ -90,15 +103,13 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 
 	/// <summary>
 	/// The saved games, newest first, after cleaning up: games without a single
-	/// score, and games older than the chosen time (with Don't save: every
-	/// game). A finished game whose result hasn't reached the stats yet is
+	/// score, and games older than the time chosen for unfinished or for
+	/// finished games (with Don't save: every such game). A finished game whose result hasn't reached the stats yet is
 	/// kept until it has. Call when no game is open, e.g. on the Players page.
 	/// </summary>
 	public async Task<List<SavedGame>> GetAsync()
 	{
 		var sessions = await local.GetSessionsAsync(auth.AccountId);
-		var retention = Retention;
-		var maxAge = MaxAge(retention);
 		var games = new Dictionary<string, PubGame?>();
 		var saved = new List<SavedGame>();
 		var delete = new List<string>();
@@ -106,6 +117,9 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 		foreach (var session in sessions)
 		{
 			var waitingForStats = session.EndedAt is not null && !session.IsSynced;
+			// Finished and unfinished games each have their own time.
+			var retention = session.EndedAt is null ? Retention : FinishedRetention;
+			var maxAge = MaxAge(retention);
 			var tooOld = retention == SavedGamesRetention.DontSave
 				|| maxAge is { } age && DateTime.UtcNow - session.LastActivity > age;
 			if (tooOld && !waitingForStats)

@@ -134,10 +134,12 @@ public sealed record ScoringSettings
 	{
 		if (AllowTies) return "ties allowed";
 		var (type, duel) = DuelScoring(gameType);
-		var scoring = DuelSameScoring ? "same scoring as the game"
+		var scoring = DuelSameScoring ? "same rules as the game"
 			: type is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
 				? $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {duel.SummaryFor(type, withResult: false)}, {(duel.LowestWins ? "lowest" : "highest")} score wins"
 				: $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {(duel.LowestWins ? "lowest" : "highest")} score wins";
+		if (!DuelSameScoring && duel.EndScore is { } duelEnd)
+			scoring += $", ends at {duelEnd}";
 		return $"no ties: duel {TieBreakMomentOption.LabelFor(TieBreakMoment).ToLowerInvariant()}, {TieBreakScopeOption.LabelFor(TieBreakScope, ResultMode).ToLowerInvariant()}, {scoring}";
 	}
 

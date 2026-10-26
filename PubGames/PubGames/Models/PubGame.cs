@@ -61,6 +61,21 @@ public class PubGame
 	[Ignore]
 	public string PlayersLabel => PlayersLabelFor(MinPlayers, MaxPlayers);
 
+	/// <summary>
+	/// Why this game can't be played with this many players - how many to add
+	/// or take out - or null when the number fits.
+	/// </summary>
+	public string? PlayerCountProblem(int players)
+	{
+		static string Players(int n) => n == 1 ? "1 player" : $"{n} players";
+
+		if (MinPlayers is { } least && players < least)
+			return $"{Name} is for {PlayersLabel} players and you have {Players(players)}. Add at least {Players(least - players)} more to play this game.";
+		if (MaxPlayers is { } most && players > most)
+			return $"{Name} is for {PlayersLabel} players and you have {Players(players)}. Take out at least {Players(players - most)} to play this game.";
+		return null;
+	}
+
 	public static string PlayersLabelFor(int? min, int? max) => (min, max) switch
 	{
 		(null, null) => "Any",

@@ -27,7 +27,6 @@ public enum PictureSource
 /// </summary>
 public enum GameFormSection
 {
-	ScoringType,
 	Results,
 	Ties,
 	Turns
@@ -111,20 +110,17 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Every part that can be added, in the order the form shows them.</summary>
 	public static IReadOnlyList<GameFormSectionInfo> Sections { get; } =
 	[
-		new(GameFormSection.ScoringType, "Scoring type", ScoringPage),
 		new(GameFormSection.Results, "Subgame results", ScoringPage),
 		new(GameFormSection.Ties, "Ties", ScoringPage),
 		new(GameFormSection.Turns, "Turns and the end of a subgame", ScoringPage)
 	];
 
-	[ObservableProperty] private bool scoringTypeAdded;
 	[ObservableProperty] private bool resultsAdded;
 	[ObservableProperty] private bool tiesAdded;
 	[ObservableProperty] private bool turnsAdded;
 
 	public bool IsAdded(GameFormSection section) => section switch
 	{
-		GameFormSection.ScoringType => ScoringTypeAdded,
 		GameFormSection.Results => ResultsAdded,
 		GameFormSection.Ties => TiesAdded,
 		_ => TurnsAdded
@@ -134,7 +130,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		switch (section)
 		{
-			case GameFormSection.ScoringType: ScoringTypeAdded = added; break;
 			case GameFormSection.Results: ResultsAdded = added; break;
 			case GameFormSection.Ties: TiesAdded = added; break;
 			default: TurnsAdded = added; break;
@@ -164,11 +159,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		SetAdded(section, false);
 		switch (section)
 		{
-			case GameFormSection.ScoringType:
-				Scoring.Reset();
-				OnPropertyChanged(nameof(ScoringType));
-				break;
-
 			case GameFormSection.Results:
 				_resultModeChosen = false;
 				ResultMode = ResultMode.Winner;
@@ -187,6 +177,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 				DuelScoring.Reset();
 				_duelLowestWins = null;
 				OnPropertyChanged(nameof(DuelBestScoreIndex));
+				ShowDuelEnd(null, EndMode.Automatic);
 				break;
 
 			case GameFormSection.Turns:
@@ -206,17 +197,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>An existing game or request shows the parts it uses: everything that isn't how a new game starts.</summary>
 	private void ShowAddedSections()
 	{
-		SetAdded(GameFormSection.ScoringType, Scoring.IsChosen);
-		SetAdded(GameFormSection.Results, _resultModeChosen);
+		// Results are only shown when they're not the default: winner(s), highest score wins.
+		SetAdded(GameFormSection.Results, _resultModeChosen && (ResultMode != ResultMode.Winner || _lowestWins == true));
 		SetAdded(GameFormSection.Ties, !AllowTies);
 		SetAdded(GameFormSection.Turns, _startRotation != StartRotation.None || FixedTurnOrder || HasEndScore);
-	}
-
-	/// <summary>Saving found something missing in a part: open its page and make sure the part is on it.</summary>
-	private void ShowProblemIn(GameFormSection section)
-	{
-		SetAdded(section, true);
-		CurrentPage = Sections.First(s => s.Section == section).Page;
 	}
 
 	/// <summary>The rules as pieces of text with the pictures in between (see EditableRulesBlock); saved as RulesText.</summary>
@@ -353,7 +337,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 	}
 
-	/// <summary>The duel is scored like the game; unticked, the duel gets its own scoring below.</summary>
+	/// <summary>The duel is played by the game's rules; unticked, the duel gets its own rules below.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasDuelScoring))]
 	private bool duelSameScoring = true;
@@ -378,6 +362,53 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			_duelLowestWins = value == 1;
 			OnPropertyChanged();
 		}
+	}
+
+	/// <summary>The duel ends when a player reaches its end score, e.g. 10 while the game goes to 100.</summary>
+	[ObservableProperty]
+	private bool duelHasEndScore;
+
+	/// <summary>Text, like the score settings; checked on save.</summary>
+	[ObservableProperty]
+	private string duelEndScore = string.Empty;
+
+	private EndMode _duelEndMode = EndMode.Automatic;
+
+	public EndModeOption? SelectedDuelEndMode
+	{
+		get => EndModeOptions.FirstOrDefault(o => o.Mode == _duelEndMode);
+		set
+		{
+			if (value is null) return;
+			_duelEndMode = value.Mode;
+			OnPropertyChanged();
+		}
+	}
+
+	private void ShowDuelEnd(int? endScore, EndMode mode)
+	{
+		DuelHasEndScore = endScore is not null;
+		DuelEndScore = endScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
+		_duelEndMode = mode;
+		OnPropertyChanged(nameof(SelectedDuelEndMode));
+	}
+
+	/// <summary>
+	/// Fills in the duel's rules with the game's: scoring type and numbers, which
+	/// score wins and the end score, to change from there - e.g. a lower end
+	/// score. False when the game has no scoring type yet.
+	/// </summary>
+	public bool CopyGameRulesToDuel()
+	{
+		if (!Scoring.IsChosen) return false;
+		DuelScoring.CopyFrom(Scoring);
+		_duelLowestWins = ResultsAdded ? _lowestWins ?? false : false;
+		OnPropertyChanged(nameof(DuelBestScoreIndex));
+		DuelHasEndScore = HasEndScore;
+		DuelEndScore = EndScore;
+		_duelEndMode = _endMode;
+		OnPropertyChanged(nameof(SelectedDuelEndMode));
+		return true;
 	}
 
 	// Turns and the end of a subgame.
@@ -526,6 +557,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_permissions = permissions;
 
 		IsModerator = _team.Me is { } me && !_permissions.CanChangeGamesDirectly(me);
+		// A new game; replaced once an existing game or request has loaded.
+		_savedForm = FormSnapshot();
 	}
 
 	/// <summary>Images uploaded while this form was open; the ones the saved game doesn't show are deleted again.</summary>
@@ -548,7 +581,23 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			await LoadRequestAsync(requestId);
 		else if (query.TryGetValue("gameId", out var gid) && gid is string gameId)
 			await LoadGameAsync(gameId);
+		_savedForm = FormSnapshot();
 	}
+
+	/// <summary>The form as it was opened (or last saved); null while still loading.</summary>
+	private string? _savedForm;
+
+	/// <summary>Something was changed since the form was opened: leaving asks whether to save.</summary>
+	public bool HasUnsavedChanges => _savedForm is not null && _savedForm != FormSnapshot();
+
+	/// <summary>Everything that can be filled in on the form, as one text, to see whether anything changed.</summary>
+	private string FormSnapshot() => string.Join("\u001F",
+		Name, EditableRulesBlock.ToRulesText(RulesBlocks), CoverImageUrl, IsPaid, Price,
+		HasMinPlayers, MinPlayers, HasMaxPlayers, MaxPlayers,
+		string.Join(",", SelectedCategoryIds().Order()),
+		Scoring.Snapshot(), _resultModeChosen, ResultMode, _lowestWins,
+		AllowTies, _tieBreakMoment, _tieBreakScope, DuelSameScoring, DuelScoring.Snapshot(), _duelLowestWins, DuelHasEndScore, DuelEndScore, _duelEndMode,
+		_startRotation, FixedTurnOrder, HasEndScore, EndScore, _endMode, EqualizingTurn);
 
 	private async Task LoadGameAsync(string gameId)
 	{
@@ -619,6 +668,21 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		if (CategoryChoices.Count > 0) return;
 
+		// Showing the categories isn't a change: a category without a main category drops off the list.
+		var untouched = _savedForm is not null && !HasUnsavedChanges;
+		try
+		{
+			await FillCategoriesAsync();
+		}
+		finally
+		{
+			if (untouched)
+				_savedForm = FormSnapshot();
+		}
+	}
+
+	private async Task FillCategoriesAsync()
+	{
 		var categories = await _categories.GetCachedAsync();
 		var groups = await _categories.GetCachedGroupsAsync();
 		try
@@ -716,6 +780,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			DuelScoring.Show(settings.DuelScoringType, duel);
 			_duelLowestWins = duel.LowestWins;
 			OnPropertyChanged(nameof(DuelBestScoreIndex));
+			ShowDuelEnd(duel.EndScore, duel.EndMode);
 		}
 	}
 
@@ -735,32 +800,33 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			StatusMessage = "Choose a scoring type.";
 			return null;
 		}
-		if (!_resultModeChosen)
+		// Not added: the winner(s) are noted and the highest score wins.
+		var resultMode = ResultMode.Winner;
+		var lowestWins = false;
+		if (ResultsAdded)
 		{
-			StatusMessage = "Choose how the result of each subgame is noted.";
-			return null;
-		}
-		if (_lowestWins is not { } lowestWins)
-		{
-			StatusMessage = $"{ScoreDirectionPrompt}: the highest or the lowest score.";
-			return null;
-		}
-
-		int? endScore = null;
-		if (HasEndScore)
-		{
-			// Some keyboards type a real minus sign (−) instead of a hyphen.
-			if (!int.TryParse(EndScore.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var end))
+			if (!_resultModeChosen)
 			{
-				StatusMessage = "Enter a whole number for the end score, or switch it off.";
+				StatusMessage = "Choose how the result of each subgame is noted.";
 				return null;
 			}
-			endScore = end;
+			if (_lowestWins is not { } chosenLowestWins)
+			{
+				StatusMessage = $"{ScoreDirectionPrompt}: the highest or the lowest score.";
+				return null;
+			}
+			(resultMode, lowestWins) = (ResultMode, chosenLowestWins);
+		}
+
+		if (ReadEndScore(HasEndScore, EndScore, "the end score", out var endScore) is { } endProblem)
+		{
+			StatusMessage = endProblem;
+			return null;
 		}
 
 		var basis = new ScoringSettings
 		{
-			ResultMode = ResultMode, LowestWins = lowestWins,
+			ResultMode = resultMode, LowestWins = lowestWins,
 			AllowTies = AllowTies, TieBreakMoment = _tieBreakMoment, TieBreakScope = _tieBreakScope,
 			DuelSameScoring = DuelSameScoring,
 			StartRotation = _startRotation, FixedTurnOrder = FixedTurnOrder,
@@ -785,7 +851,12 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 				StatusMessage = "Duel scoring: choose whether the highest or the lowest score wins the duel.";
 				return null;
 			}
-			if (DuelScoring.Read(new ScoringSettings { LowestWins = duelLowestWins }, out var duelProblem) is not { } duel)
+			if (ReadEndScore(DuelHasEndScore, DuelEndScore, "the duel's end score", out var duelEnd) is { } duelEndProblem)
+			{
+				StatusMessage = $"Duel scoring: {duelEndProblem}";
+				return null;
+			}
+			if (DuelScoring.Read(DuelBasis(duelLowestWins, duelEnd), out var duelProblem) is not { } duel)
 			{
 				StatusMessage = duelProblem ?? string.Empty;
 				return null;
@@ -793,7 +864,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			settings = settings with { DuelScoringType = DuelScoring.ScoringType, DuelSettings = duel };
 		}
 		else if (DuelScoring.IsChosen && _duelLowestWins is { } keptLowestWins
-			&& DuelScoring.Read(new ScoringSettings { LowestWins = keptLowestWins }, out _) is { } kept
+			&& ReadEndScore(DuelHasEndScore, DuelEndScore, string.Empty, out var keptEnd) is null
+			&& DuelScoring.Read(DuelBasis(keptLowestWins, keptEnd), out _) is { } kept
 			&& kept.Problem(DuelScoring.ScoringType) is null)
 		{
 			// Not used now, but kept so ticking "same scoring" again later doesn't lose the duel's own scoring.
@@ -806,6 +878,22 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			return null;
 		}
 		return settings;
+	}
+
+	/// <summary>The duel's own settings besides its scoring type and numbers.</summary>
+	private ScoringSettings DuelBasis(bool lowestWins, int? endScore) =>
+		new() { LowestWins = lowestWins, EndScore = endScore, EndMode = _duelEndMode };
+
+	/// <summary>An end score from the form: null when switched off. Returns what's wrong, or null when it's fine.</summary>
+	private static string? ReadEndScore(bool has, string text, string what, out int? value)
+	{
+		value = null;
+		if (!has) return null;
+		// Some keyboards type a real minus sign (−) instead of a hyphen.
+		if (!int.TryParse(text.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var end))
+			return $"Enter a whole number for {what}, or switch it off.";
+		value = end;
+		return null;
 	}
 
 	private void ShowRules(string rules)
@@ -903,13 +991,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 		if (ReadScoringSettings() is null)
 		{
-			// Show the part that's missing a choice; other problems are in a part that's already on the scoring page.
-			if (!Scoring.IsChosen)
-				ShowProblemIn(GameFormSection.ScoringType);
-			else if (!_resultModeChosen || _lowestWins is null)
-				ShowProblemIn(GameFormSection.Results);
-			else
-				CurrentPage = ScoringPage;
+			CurrentPage = ScoringPage;
 			return;
 		}
 

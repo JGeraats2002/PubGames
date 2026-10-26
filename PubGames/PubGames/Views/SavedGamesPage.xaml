@@ -6,16 +6,49 @@
              x:DataType="vm:SavedGamesViewModel"
              Title="Saved games">
 
-	<Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16" RowSpacing="10">
+	<ContentPage.Resources>
+		<!-- The two pages: the open one filled, the other outlined. -->
+		<Style x:Key="TabButton" TargetType="Button">
+			<Setter Property="BackgroundColor" Value="Transparent" />
+			<Setter Property="TextColor" Value="{StaticResource Primary}" />
+			<Setter Property="BorderColor" Value="{StaticResource Border}" />
+			<Setter Property="BorderWidth" Value="1" />
+			<Setter Property="Padding" Value="4,0" />
+			<Setter Property="HeightRequest" Value="40" />
+			<Setter Property="FontSize" Value="14" />
+		</Style>
+	</ContentPage.Resources>
 
-		<!-- How long games are kept on this phone. -->
-		<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,8">
+	<Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="10">
+
+		<!-- Unfinished games first, finished games on their own page. -->
+		<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+			<Button Text="{Binding UnfinishedTabText}" Style="{StaticResource TabButton}" Clicked="OnUnfinishedTabClicked">
+				<Button.Triggers>
+					<DataTrigger TargetType="Button" Binding="{Binding ShowsUnfinished}" Value="True">
+						<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+						<Setter Property="TextColor" Value="White" />
+					</DataTrigger>
+				</Button.Triggers>
+			</Button>
+			<Button Grid.Column="1" Text="{Binding FinishedTabText}" Style="{StaticResource TabButton}" Clicked="OnFinishedTabClicked">
+				<Button.Triggers>
+					<DataTrigger TargetType="Button" Binding="{Binding ShowsFinished}" Value="True">
+						<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+						<Setter Property="TextColor" Value="White" />
+					</DataTrigger>
+				</Button.Triggers>
+			</Button>
+		</Grid>
+
+		<!-- How long the open page's games are kept on this phone. -->
+		<Border Grid.Row="1" BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,8">
 			<Border.StrokeShape>
 				<RoundRectangle CornerRadius="8" />
 			</Border.StrokeShape>
 			<VerticalStackLayout Spacing="4">
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-					<Label Text="Keep saved games" VerticalOptions="Center" FontAttributes="Bold" />
+					<Label Text="{Binding RetentionTitle}" VerticalOptions="Center" FontAttributes="Bold" />
 					<Picker Grid.Column="1" ItemsSource="{Binding RetentionOptions}" SelectedItem="{Binding SelectedRetention}" MinimumWidthRequest="150" />
 				</Grid>
 				<Label Text="{Binding RetentionInfo}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
@@ -23,7 +56,7 @@
 		</Border>
 
 		<!-- Select: choose games to delete. -->
-		<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+		<Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
 			<Button Text="{Binding SelectButtonText}" Clicked="OnSelectClicked" HorizontalOptions="Start"
 			        HeightRequest="36" Padding="14,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
@@ -35,9 +68,9 @@
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 		</Grid>
 
-		<ScrollView Grid.Row="2">
+		<ScrollView Grid.Row="3">
 			<VerticalStackLayout Spacing="8">
-				<Label Text="No saved games. A game is saved once someone has a score." IsVisible="{Binding IsEmpty}"
+				<Label Text="{Binding EmptyText}" IsVisible="{Binding IsEmpty}"
 				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 				<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
 					<BindableLayout.ItemTemplate>
@@ -73,7 +106,7 @@
 			</VerticalStackLayout>
 		</ScrollView>
 
-		<Button Grid.Row="3" Text="{Binding DeleteButtonText}" Clicked="OnDeleteClicked" IsVisible="{Binding HasSelection}"
+		<Button Grid.Row="4" Text="{Binding DeleteButtonText}" Clicked="OnDeleteClicked" IsVisible="{Binding HasSelection}"
 		        BackgroundColor="{StaticResource Danger}" />
 
 	</Grid>

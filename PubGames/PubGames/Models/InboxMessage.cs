@@ -3,6 +3,9 @@ using SQLite;
 
 namespace PubGames.Models;
 
+/// <summary>
+/// What kind of message it is: written by someone, or sent by the app with a review decision.
+/// </summary>
 public enum MessageKind
 {
 	/// <summary>Written by an admin or moderator.</summary>
@@ -28,6 +31,7 @@ public class InboxMessage
 	/// </summary>
 	public const string AllAdmins = "admins";
 
+	/// <summary>The message's unique id.</summary>
 	[PrimaryKey]
 	public string Id { get; set; } = Guid.NewGuid().ToString("N");
 
@@ -35,16 +39,22 @@ public class InboxMessage
 	[Indexed]
 	public string ToEmail { get; set; } = string.Empty;
 
+	/// <summary>The sender's email.</summary>
 	public string FromEmail { get; set; } = string.Empty;
 
+	/// <summary>The sender's name.</summary>
 	public string FromName { get; set; } = string.Empty;
 
+	/// <summary>What the message says.</summary>
 	public string Text { get; set; } = string.Empty;
 
+	/// <summary>When it was sent (UTC).</summary>
 	public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
+	/// <summary>Whether the recipient has seen it.</summary>
 	public bool IsRead { get; set; }
 
+	/// <summary>A message written by someone, or a review decision.</summary>
 	public MessageKind Kind { get; set; } = MessageKind.Message;
 
 	/// <summary>For review decisions: the request it's about, so a rejected one can be edited and submitted again.</summary>
@@ -53,17 +63,23 @@ public class InboxMessage
 	/// <summary>A rejected new game or change: the message offers "Edit and submit again".</summary>
 	public bool OffersResubmit { get; set; }
 
+	/// <summary>The sender's name, or their email without a name.</summary>
 	[Ignore]
 	public string FromLabel => string.IsNullOrEmpty(FromName) ? FromEmail : FromName;
 
+	/// <summary>
+	/// The message's heading: who it's from (and to all admins), or that it's a review decision.
+	/// </summary>
 	[Ignore]
 	public string Heading => Kind == MessageKind.ReviewDecision
 		? $"Review decision from {FromLabel}"
 		: ToEmail == AllAdmins ? $"{FromLabel} to all admins" : $"From {FromLabel}";
 
+	/// <summary>When it was sent, in the phone's time: "27 Oct, 14:05".</summary>
 	[Ignore]
 	public string SentLabel => SentAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture);
 
+	/// <summary>Not seen yet: shows a "New" badge.</summary>
 	[Ignore]
 	public bool IsUnread => !IsRead;
 }

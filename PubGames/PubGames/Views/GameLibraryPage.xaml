@@ -14,7 +14,7 @@
 		<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 			<SearchBar Placeholder="Search games" Text="{Binding SearchText}" />
 			<Button Grid.Column="1" Text="{Binding Filters.ButtonText}" Clicked="OnFilterClicked"
-			        HeightRequest="40" Padding="14,0" FontSize="13" VerticalOptions="Center"
+			        HeightRequest="48" Padding="14,0" FontSize="13" VerticalOptions="Center"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 		</Grid>

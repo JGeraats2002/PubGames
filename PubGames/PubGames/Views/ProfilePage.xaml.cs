@@ -8,6 +8,7 @@ public partial class ProfilePage : ContentPage
 {
 	private readonly AccountViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public ProfilePage(AccountViewModel vm)
 	{
 		InitializeComponent();
@@ -18,6 +19,10 @@ public partial class ProfilePage : ContentPage
 	/// <summary>The owner's friend code: the next one is fetched as soon as the shown one runs out.</summary>
 	private IDispatcherTimer? _codeTimer;
 
+	/// <summary>
+	/// Every time the page shows: the profile is loaded, and for the owner the friend code - which is
+	/// refreshed once it runs out.
+	/// </summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
@@ -30,12 +35,14 @@ public partial class ProfilePage : ContentPage
 		_codeTimer.Start();
 	}
 
+	/// <summary>Leaving the page: the friend code is no longer checked.</summary>
 	protected override void OnDisappearing()
 	{
 		base.OnDisappearing();
 		_codeTimer?.Stop();
 	}
 
+	/// <summary>Every 20 seconds: once the friend code has run out, the next one is fetched.</summary>
 	private async void OnCodeTimerTick(object? sender, EventArgs e)
 	{
 		if (_vm.FriendCodeValidUntil is not { } until || DateTime.UtcNow >= until)

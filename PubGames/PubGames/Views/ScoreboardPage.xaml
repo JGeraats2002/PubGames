@@ -13,11 +13,11 @@
 			<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
 				<Label Text="{Binding SubgameLabel}" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
 				<Button Grid.Column="1" Text="− subgame" Clicked="OnFewerSubgamesClicked" IsVisible="{Binding CanHaveFewerSubgames}"
-				        HeightRequest="34" Padding="10,0" FontSize="12"
+				        HeightRequest="48" Padding="10,0" FontSize="12"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 				<Button Grid.Column="2" Text="+ subgame" Clicked="OnMoreSubgamesClicked"
 				        IsVisible="{Binding IsFinished, Converter={StaticResource InvertedBoolConverter}}"
-				        HeightRequest="34" Padding="10,0" FontSize="12"
+				        HeightRequest="48" Padding="10,0" FontSize="12"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 			</Grid>
 			<!-- Manual plus / minus: why an amount wasn't accepted. A fixed height, so the cards don't jump. -->
@@ -28,7 +28,7 @@
 			       TextColor="{StaticResource PrimaryDark}" LineBreakMode="WordWrap" MaxLines="2" />
 			<!-- Fixed input order with + and − by a step: the player whose turn it is taps this when they're done. -->
 			<Button x:Name="TurnDoneButton" Text="Turn done ▶" Clicked="OnTurnDoneClicked" IsVisible="False"
-			        HeightRequest="38" Padding="12,0" FontSize="13" HorizontalOptions="End" />
+			        HeightRequest="48" Padding="12,0" FontSize="13" HorizontalOptions="End" />
 		</VerticalStackLayout>
 
 		<!-- One card per player, all on screen at once: filled in by ScoreboardPage.xaml.cs,

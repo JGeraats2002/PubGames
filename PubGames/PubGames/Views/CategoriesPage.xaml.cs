@@ -3,6 +3,10 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// Admin tab &gt; Categories: the main categories with their categories - added, renamed, reordered or
+/// deleted by admins, proposed by moderators.
+/// </summary>
 public partial class CategoriesPage : ContentPage
 {
 	private const string ChooseGames = "Choose its games";
@@ -13,6 +17,7 @@ public partial class CategoriesPage : ContentPage
 
 	private readonly CategoriesViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public CategoriesPage(CategoriesViewModel vm)
 	{
 		InitializeComponent();
@@ -27,6 +32,7 @@ public partial class CategoriesPage : ContentPage
 		await _vm.LoadAsync();
 	}
 
+	/// <summary>Adds a category (admins) or proposes one (moderators).</summary>
 	private async void OnAddClicked(object? sender, EventArgs e) => await AddCategoryAsync(group: null);
 
 	/// <param name="group">The main category to add it to; null to ask.</param>
@@ -50,6 +56,7 @@ public partial class CategoriesPage : ContentPage
 			await DisplayAlertAsync("Done", done, "OK");
 	}
 
+	/// <summary>Adds a main category (admins) or proposes one (moderators).</summary>
 	private async void OnAddGroupClicked(object? sender, EventArgs e)
 	{
 		var name = await DisplayPromptAsync(
@@ -103,10 +110,13 @@ public partial class CategoriesPage : ContentPage
 
 	// The arrows on a category's row: one place up or down within its main category. At the top or bottom nothing happens.
 
+	/// <summary>Moves a category one place up in its main category.</summary>
 	private async void OnCategoryUpClicked(object? sender, EventArgs e) => await MoveCategoryAsync(sender, -1);
 
+	/// <summary>Moves a category one place down in its main category.</summary>
 	private async void OnCategoryDownClicked(object? sender, EventArgs e) => await MoveCategoryAsync(sender, +1);
 
+	/// <summary>Moves the tapped category one place up (-1) or down (+1).</summary>
 	private async Task MoveCategoryAsync(object? sender, int direction)
 	{
 		if (sender is BindableObject { BindingContext: CategoryRow row }

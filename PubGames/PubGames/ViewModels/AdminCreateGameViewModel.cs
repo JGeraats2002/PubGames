@@ -78,6 +78,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[NotifyPropertyChangedFor(nameof(PageTitle), nameof(SaveButtonText), nameof(DeleteButtonText), nameof(CanDelete))]
 	private bool isModerator;
 
+	/// <summary>Changing an existing game (not making a new one).</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(PageTitle), nameof(SaveButtonText), nameof(CanDelete))]
 	private bool isEditing;
@@ -87,12 +88,14 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[NotifyPropertyChangedFor(nameof(HasReviewInfo))]
 	private string reviewInfo = string.Empty;
 
+	/// <summary>Whether there's something to tell the moderator about their review request.</summary>
 	public bool HasReviewInfo => !string.IsNullOrEmpty(ReviewInfo);
 
 	/// <summary>The moderator opened a request that's still waiting for review, so it can be withdrawn.</summary>
 	[ObservableProperty]
 	private bool canWithdraw;
 
+	/// <summary>The game's name, as typed.</summary>
 	[ObservableProperty]
 	private string name = string.Empty;
 
@@ -101,12 +104,16 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	public const int ScoringPage = 1;
 	public const int RulesPage = 2;
 
+	/// <summary>The page of the form that's open: General, Scoring or Rules.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(IsGeneralPage), nameof(IsScoringPage), nameof(IsRulesPage), nameof(CanAddSection))]
 	private int currentPage = GeneralPage;
 
+	/// <summary>The General page is open.</summary>
 	public bool IsGeneralPage => CurrentPage == GeneralPage;
+	/// <summary>The Scoring page is open.</summary>
 	public bool IsScoringPage => CurrentPage == ScoringPage;
+	/// <summary>The Rules page is open.</summary>
 	public bool IsRulesPage => CurrentPage == RulesPage;
 
 	/// <summary>Every part that can be added, in the order the form shows them.</summary>
@@ -119,8 +126,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[ObservableProperty] private bool subgameAdded;
 	[ObservableProperty] private bool tiesAdded;
 
+	/// <summary>Whether this part of the scoring page is on the form.</summary>
 	public bool IsAdded(GameFormSection section) => section == GameFormSection.Subgame ? SubgameAdded : TiesAdded;
 
+	/// <summary>Puts a part of the scoring page on the form or takes it off.</summary>
 	private void SetAdded(GameFormSection section, bool added)
 	{
 		if (section == GameFormSection.Subgame) SubgameAdded = added;
@@ -135,8 +144,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>The page has something left to add (only the scoring page has parts to add).</summary>
 	public bool CanAddSection => AddableSections().Count > 0;
 
+	/// <summary>A part's title, as the add list and its heading show it.</summary>
 	public static string TitleOf(GameFormSection section) => Sections.First(s => s.Section == section).Title;
 
+	/// <summary>Puts a part on the scoring page (+ Add your rules).</summary>
 	public void AddSection(GameFormSection section) => SetAdded(section, true);
 
 	/// <summary>Takes a part off the form again; what was filled in there goes back to how a new game starts.</summary>
@@ -194,17 +205,22 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[NotifyPropertyChangedFor(nameof(HasCover), nameof(CoverButtonText))]
 	private string? coverImageUrl;
 
+	/// <summary>A picture is uploading: choosing another waits.</summary>
 	[ObservableProperty]
 	[NotifyCanExecuteChangedFor(nameof(SaveCommand))]
 	private bool isUploading;
 
+	/// <summary>Whether the game has a cover picture.</summary>
 	public bool HasCover => !string.IsNullOrEmpty(CoverImageUrl);
+	/// <summary>The cover button's text: upload one, or change it.</summary>
 	public string CoverButtonText => HasCover ? "Change cover image" : "Upload cover image";
 
+	/// <summary>Whether the game has to be unlocked.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(SelectedPriceOption))]
 	private bool isPaid;
 
+	/// <summary>The game's price, one of the fixed prices.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(SelectedPriceOption))]
 	private decimal price = 0.99m;
@@ -227,6 +243,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>The game's scoring type and its numbers.</summary>
 	public ScoringEditor Scoring { get; } = new(ScoringTypeOption.All, "Choose scoring type");
 
+	/// <summary>The scoring type that's chosen.</summary>
 	public ScoringType ScoringType => Scoring.ScoringType;
 
 	// A new game starts with nothing chosen in the dropdowns ("Choose ..."); an existing game shows its choices.
@@ -247,6 +264,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		OnPropertyChanged(nameof(SelectedTieBreakScope));
 	}
 
+	/// <summary>The label above "which score wins", worded for how results are noted.</summary>
 	public string ScoreDirectionTitle => ResultMode switch
 	{
 		ResultMode.Loser => "Who loses a subgame",
@@ -262,8 +280,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_ => "Choose who wins"
 	};
 
+	/// <summary>The ways of noting a subgame's result, for the picker.</summary>
 	public List<ResultModeOption> ResultModeOptions { get; } = ResultModeOption.All;
 
+	/// <summary>Which score wins (or loses, or is 1st), for the picker.</summary>
 	public List<string> BestScoreOptions => ScoringSettings.ScoreDirectionOptions(ResultMode);
 
 	/// <summary>Null until chosen.</summary>
@@ -305,6 +325,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Ties aren't allowed: show when and how they're played off.</summary>
 	public bool HasNoTies => !AllowTies;
 
+	/// <summary>When ties are played off, for the picker.</summary>
 	public List<TieBreakMomentOption> TieBreakMomentOptions { get; } = TieBreakMomentOption.All;
 
 	private TieBreakMoment _tieBreakMoment = TieBreakMoment.SubgamesAndFinal;
@@ -340,6 +361,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>The duel's own scoring type and numbers, e.g. to 10 while the game goes to 100.</summary>
 	public ScoringEditor DuelScoring { get; } = new(ScoringTypeOption.DuelOptions, "Choose the duel's scoring type", "Duel scoring: ");
 
+	/// <summary>Which score wins the duel, for the picker.</summary>
 	public List<string> DuelBestScoreOptions { get; } = ["Highest score wins the duel", "Lowest score wins the duel"];
 
 	/// <summary>Null until chosen.</summary>
@@ -375,6 +397,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 	}
 
+	/// <summary>How the duel ends changed: the fields for its numbers show or hide.</summary>
 	private void NotifyDuelEnd()
 	{
 		OnPropertyChanged(nameof(IsDuelTurns));
@@ -383,25 +406,33 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		OnPropertyChanged(nameof(CanHaveDuelMargin));
 	}
 
+	/// <summary>The duel ends after a number of turns each.</summary>
 	public bool IsDuelTurns => _duelEnd == DuelEnd.Turns;
+	/// <summary>The duel ends when someone reaches a score.</summary>
 	public bool IsDuelScore => _duelEnd == DuelEnd.Score;
+	/// <summary>The duel is best of a number of rounds.</summary>
 	public bool IsDuelBestOf => _duelEnd == DuelEnd.BestOf;
 
 	/// <summary>Winning by a lead goes with a number of turns or a score, not with best of.</summary>
 	public bool CanHaveDuelMargin => IsDuelTurns || IsDuelScore;
 
+	/// <summary>How many turns each player gets in the duel, as typed.</summary>
 	[ObservableProperty]
 	private string duelTurns = "1";
 
+	/// <summary>The score the duel goes to, as typed.</summary>
 	[ObservableProperty]
 	private string duelEndScore = string.Empty;
 
+	/// <summary>Best of how many rounds, as typed.</summary>
 	[ObservableProperty]
 	private string duelRounds = "3";
 
+	/// <summary>Whether the duel has to be won by a lead.</summary>
 	[ObservableProperty]
 	private bool duelHasMargin;
 
+	/// <summary>The lead needed to win the duel, as typed.</summary>
 	[ObservableProperty]
 	private string duelMargin = "2";
 
@@ -506,6 +537,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[ObservableProperty]
 	private string endScore = string.Empty;
 
+	/// <summary>How a subgame ends at its end score, for the picker.</summary>
 	public List<EndModeOption> EndModeOptions { get; } = EndModeOption.All;
 
 	private EndMode _endMode = EndMode.Automatic;
@@ -525,9 +557,13 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>An equalizing turn only goes with an automatic end.</summary>
 	public bool CanHaveEqualizingTurn => HasEndScore && _endMode == EndMode.Automatic;
 
+	/// <summary>
+	/// The players after the one who reached the end score still get their turn in that round.
+	/// </summary>
 	[ObservableProperty]
 	private bool equalizingTurn;
 
+	/// <summary>The names of the chosen categories, shown under the category picker.</summary>
 	[ObservableProperty]
 	private List<string> selectedCategories = new();
 
@@ -537,14 +573,17 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
 	private bool hasMinPlayers;
 
+	/// <summary>The minimum number of players, as typed.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
 	private string minPlayers = string.Empty;
 
+	/// <summary>Whether the game has a maximum number of players.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
 	private bool hasMaxPlayers;
 
+	/// <summary>The maximum number of players, as typed.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(PlayersPreview))]
 	private string maxPlayers = string.Empty;
@@ -554,6 +593,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		? problem
 		: $"Players: {PubGame.PlayersLabelFor(min, max)}";
 
+	/// <summary>Shows a minimum and maximum number of players (either can be off).</summary>
 	private void ShowPlayers(int? min, int? max)
 	{
 		HasMinPlayers = min is not null;
@@ -581,6 +621,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return min > max ? "The minimum number of players can't be higher than the maximum." : null;
 	}
 
+	/// <summary>What's still missing or went wrong, or that it's saving.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -589,8 +630,12 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>"New game" or "Edit game".</summary>
 	public string PageTitle => IsEditing ? "Edit game" : "New game";
 
+	/// <summary>
+	/// The save button's text: publish or save (admins), or submit for review (moderators).
+	/// </summary>
 	public string SaveButtonText => (IsModerator, IsEditing) switch
 	{
 		(false, false) => "Publish game",
@@ -599,6 +644,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		(true, true) => "Submit changes for review"
 	};
 
+	/// <summary>The delete button's text: delete (admins) or request deletion (moderators).</summary>
 	public string DeleteButtonText => IsModerator ? "Request deletion" : "Delete game";
 
 	/// <summary>Only an existing, published game can be deleted (or have its deletion requested).</summary>
@@ -616,6 +662,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>What the game/proposal was in, until the category list has loaded.</summary>
 	private HashSet<string> _selectedCategoryIds = new();
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, cloud sync, the permissions, the sign-in, the
+	/// team, the picture store and the categories - from the app (dependency injection).
+	/// </summary>
 	public AdminCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions,
 		IAuthService auth, ITeamService team, IImageStore images, ICategoryService categories)
 	{
@@ -671,6 +721,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_duelEnd, DuelTurns, DuelEndScore, DuelRounds, DuelHasMargin, DuelMargin,
 		_startRotation, FixedTurnOrder, HasEndScore, EndScore, _endMode, EqualizingTurn);
 
+	/// <summary>Opens a game to change it: fills the form with it and shows the parts it uses.</summary>
 	private async Task LoadGameAsync(string gameId)
 	{
 		_editing = await _local.GetGameAsync(gameId);
@@ -701,6 +752,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowAddedSections();
 	}
 
+	/// <summary>Opens a moderator's review request: fills the form with what they proposed.</summary>
 	private async Task LoadRequestAsync(string requestId)
 	{
 		_request = await _local.GetReviewRequestAsync(requestId);
@@ -722,6 +774,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		};
 	}
 
+	/// <summary>Fills the form with what a review request proposes.</summary>
 	private void ShowProposal(ReviewRequest request)
 	{
 		Name = request.ProposedName;
@@ -753,6 +806,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 	}
 
+	/// <summary>
+	/// Shows the categories to choose from, under their main categories, with the game's own ones selected.
+	/// </summary>
 	private async Task FillCategoriesAsync()
 	{
 		var categories = await _categories.GetCachedAsync();
@@ -792,6 +848,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return SelectedCategoryIds().Count == 0 ? "Pick at least one category, so players can find the game." : null;
 	}
 
+	/// <summary>Selects these categories (remembered until the categories have loaded).</summary>
 	private void SelectCategories(IEnumerable<string> ids)
 	{
 		_selectedCategoryIds = ids.ToHashSet();
@@ -799,6 +856,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			choice.IsSelected = _selectedCategoryIds.Contains(choice.Category.Id);
 	}
 
+	/// <summary>The ids of the categories that are selected.</summary>
 	private List<string> SelectedCategoryIds() => CategoryChoices.Count > 0
 		? CategoryChoices.Where(c => c.IsSelected).Select(c => c.Category.Id).ToList()
 		: _selectedCategoryIds.ToList();
@@ -968,12 +1026,14 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return null;
 	}
 
+	/// <summary>Splits the rules into pieces of text and pictures for the editor.</summary>
 	private void ShowRules(string rules)
 	{
 		RulesBlocks = EditableRulesBlock.FromRulesText(rules);
 		OnPropertyChanged(nameof(RulesBlocks));
 	}
 
+	/// <summary>A picture can be chosen while no other picture is uploading.</summary>
 	private bool CanUpload() => !IsUploading;
 
 	/// <summary>Sets the cover to a picture from the given source.</summary>
@@ -988,6 +1048,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	public Task<string?> GetDrawingAsync(string? reference) =>
 		string.IsNullOrEmpty(reference) ? Task.FromResult<string?>(null) : _images.GetDrawingAsync(reference);
 
+	/// <summary>Takes the cover picture off the game.</summary>
 	[RelayCommand]
 	private void RemoveCover() => CoverImageUrl = null;
 
@@ -1117,6 +1178,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return game;
 	}
 
+	/// <summary>Admins: saves the game in the cloud straight away; players see it at once.</summary>
 	private async Task PublishDirectlyAsync()
 	{
 		var game = FormAsGame(_editing);
@@ -1163,6 +1225,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return true;
 	}
 
+	/// <summary>
+	/// Moderators: sends the new game or the changes to an admin as a review request; players keep seeing the
+	/// current version until it's approved.
+	/// </summary>
 	private async Task SubmitForReviewAsync()
 	{
 		if (await IsTakenByAnotherModeratorAsync()) return;
@@ -1229,6 +1295,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		Finished?.Invoke(this, null);
 	}
 
+	/// <summary>Moderators: asks an admin to delete the game.</summary>
 	private async Task RequestDeletionAsync()
 	{
 		if (await IsTakenByAnotherModeratorAsync()) return;
@@ -1277,6 +1344,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		Finished?.Invoke(this, "Request withdrawn.");
 	}
 
+	/// <summary>
+	/// The user's own request of this kind for this game that's still waiting, if there is one.
+	/// </summary>
 	private async Task<ReviewRequest?> FindMyWaitingRequestAsync(string gameId, ReviewRequestType type)
 	{
 		var email = TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
@@ -1284,6 +1354,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			.FirstOrDefault(r => r.GameId == gameId && r.Type == type && r.IsWaitingForReview);
 	}
 
+	/// <summary>Whether two versions of a game are alike in everything players see.</summary>
 	private static bool SameContent(PubGame a, PubGame b) =>
 		// Older games have their pictures without the empty lines around them; that's no change.
 		a.Name == b.Name && RulesImages.Normalize(a.RulesText) == RulesImages.Normalize(b.RulesText) && a.CoverImageUrl == b.CoverImageUrl
@@ -1291,6 +1362,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		&& a.MinPlayers == b.MinPlayers && a.MaxPlayers == b.MaxPlayers
 		&& a.CategoryIds.ToHashSet().SetEquals(b.CategoryIds);
 
+	/// <summary>
+	/// Saves the game in the cloud; false (with the reason on the page) when that didn't work.
+	/// </summary>
 	private async Task<bool> TrySaveToCloudAsync(PubGame game)
 	{
 		try
@@ -1309,6 +1383,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		return false;
 	}
 
+	/// <summary>
+	/// Saves the review request in the cloud; false (with the reason on the page) when that didn't work.
+	/// </summary>
 	private async Task<bool> TrySaveRequestAsync(ReviewRequest request)
 	{
 		try

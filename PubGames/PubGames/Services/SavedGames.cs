@@ -16,6 +16,7 @@ public enum SavedGamesRetention
 /// <summary>A retention as the dropdown shows it.</summary>
 public sealed record SavedGamesRetentionOption(SavedGamesRetention Retention)
 {
+	/// <summary>How long games are kept, as the picker shows it.</summary>
 	public string Label => Retention switch
 	{
 		SavedGamesRetention.DontSave => "Don't save games",
@@ -29,18 +30,22 @@ public sealed record SavedGamesRetentionOption(SavedGamesRetention Retention)
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Every choice of how long games are kept, as the picker shows them.</summary>
 	public static List<SavedGamesRetentionOption> All { get; } = Enum.GetValues<SavedGamesRetention>().Select(r => new SavedGamesRetentionOption(r)).ToList();
 }
 
 /// <summary>A saved game as the lists show it.</summary>
 public sealed class SavedGame
 {
+	/// <summary>The saved game night.</summary>
 	public required GameSession Session { get; init; }
+	/// <summary>The name of the game that was played.</summary>
 	public required string GameName { get; init; }
 
 	/// <summary>"Jan 120 · Sanne 80 · Piet 40" while playing; the players' names once finished.</summary>
 	public required string Players { get; init; }
 
+	/// <summary>Whether the game was finished.</summary>
 	public bool IsFinished => Session.EndedAt is not null;
 
 	/// <summary>"Unfinished · subgame 2 of 3 · today 21:14" or "Finished · 12 Oct".</summary>
@@ -88,6 +93,7 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 		set => Preferences.Default.Set(FinishedRetentionKey, value.ToString());
 	}
 
+	/// <summary>A saved choice of how long games are kept, or the default when none was saved.</summary>
 	private static SavedGamesRetention Read(string key, SavedGamesRetention fallback) =>
 		Enum.TryParse<SavedGamesRetention>(Preferences.Default.Get(key, fallback.ToString()), out var r) ? r : fallback;
 
@@ -157,5 +163,6 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 		return saved.OrderByDescending(g => g.Session.LastActivity).ToList();
 	}
 
+	/// <summary>Deletes these games from the phone.</summary>
 	public Task DeleteAsync(IEnumerable<string> sessionIds) => local.DeleteSessionsAsync(sessionIds);
 }

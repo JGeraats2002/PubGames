@@ -9,8 +9,10 @@ namespace PubGames.ViewModels;
 /// <summary>One pass plan on the page: its name, Google Play's price, and whether it's the one running.</summary>
 public sealed record PassPlanRow(PassPlan Plan, string Price, bool IsCurrent)
 {
+	/// <summary>The plan's name: Week, Month or Year.</summary>
 	public string Name => Plan.Name;
 
+	/// <summary>The plan's button: its price per period, or "Your plan".</summary>
 	public string ButtonText => IsCurrent ? "Your plan" : $"{Price} / {Plan.Name.ToLowerInvariant()}";
 }
 
@@ -24,20 +26,28 @@ public partial class SubscriptionViewModel : ObservableObject
 	private readonly IStoreService _store;
 	private readonly ILocalDatabaseService _local;
 
+	/// <summary>
+	/// Gets the services it works with - the store and the phone's database - from the app (dependency
+	/// injection).
+	/// </summary>
 	public SubscriptionViewModel(IStoreService store, ILocalDatabaseService local)
 	{
 		_store = store;
 		_local = local;
 	}
 
+	/// <summary>The three plans with Google Play's prices.</summary>
 	public ObservableCollection<PassPlanRow> Plans { get; } = new();
 
+	/// <summary>Whether the pass runs, until when, and whether it renews.</summary>
 	[ObservableProperty]
 	private string status = string.Empty;
 
+	/// <summary>Whether the pass runs: Manage subscription shows.</summary>
 	[ObservableProperty]
 	private bool hasPass;
 
+	/// <summary>What happened with a purchase or restore, or what went wrong.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -46,18 +56,21 @@ public partial class SubscriptionViewModel : ObservableObject
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>Buying or restoring: a spinner shows and the buttons wait.</summary>
 	[ObservableProperty]
 	private bool isBusy;
 
+	/// <summary>Shows whether the pass runs, and the plans with Google Play's prices.</summary>
 	public async Task LoadAsync()
 	{
 		ShowStatus(await _store.RefreshAsync());
 		var prices = await _store.PassPricesAsync();
 		Plans.Clear();
-		foreach (var p in prices)
-			Plans.Add(new PassPlanRow(p.Plan, p.Price, _store.Current.HasPass && _store.Current.PassPlan == p.Plan.BasePlanId));
+		foreach (var planPrice in prices)
+			Plans.Add(new PassPlanRow(planPrice.Plan, planPrice.Price, _store.Current.HasPass && _store.Current.PassPlan == planPrice.Plan.BasePlanId));
 	}
 
+	/// <summary>Shows until when the pass runs and whether it renews.</summary>
 	private void ShowStatus(Entitlements e)
 	{
 		HasPass = e.HasPass;
@@ -69,6 +82,7 @@ public partial class SubscriptionViewModel : ObservableObject
 
 
 
+	/// <summary>Buys a pass plan with Google Play.</summary>
 	public async Task BuyAsync(PassPlanRow row)
 	{
 		if (row.IsCurrent || IsBusy) return;
@@ -91,6 +105,9 @@ public partial class SubscriptionViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>
+	/// Checks every purchase of this account with Google Play again and unlocks what was bought.
+	/// </summary>
 	public async Task RestoreAsync()
 	{
 		if (IsBusy) return;

@@ -9,10 +9,10 @@
 		<!-- Undo takes back the last change; the ⓘ explains the editor. -->
 		<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
 			<Label x:Name="Heading" Text="Create image" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
-			<Button Grid.Column="1" Text="↶ Undo" Clicked="OnUndoClicked" HeightRequest="38" Padding="14,0" FontSize="13"
+			<Button Grid.Column="1" Text="↶ Undo" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="2" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="38" WidthRequest="44" Padding="0" FontSize="16"
+			<Button SemanticProperties.Description="Help" Grid.Column="2" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 		</Grid>

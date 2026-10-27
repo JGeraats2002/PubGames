@@ -21,6 +21,7 @@ public enum ScoringType
 /// <summary>A scoring type as the dropdown shows it.</summary>
 public sealed record ScoringTypeOption(ScoringType Type)
 {
+	/// <summary>This scoring type, as the app calls it.</summary>
 	public string Label => LabelFor(Type);
 
 	/// <summary>The Picker shows this.</summary>
@@ -32,11 +33,13 @@ public sealed record ScoringTypeOption(ScoringType Type)
 	/// </summary>
 	public static List<ScoringTypeOption> All { get; } = [new(ScoringType.PlusMinus), new(ScoringType.ManualPlusMinus)];
 
+	/// <summary>Whether admins can still choose this scoring type for a new game.</summary>
 	public static bool IsOffered(ScoringType type) => All.Any(o => o.Type == type);
 
 	/// <summary>What admins can pick for a tie-break duel: the game's types, or typing in the duel's score.</summary>
 	public static List<ScoringTypeOption> DuelOptions { get; } = [.. All, new(ScoringType.TypedScore)];
 
+	/// <summary>What a scoring type is called in the app.</summary>
 	public static string LabelFor(ScoringType type) => type switch
 	{
 		ScoringType.PlusMinus => "Plus / minus",

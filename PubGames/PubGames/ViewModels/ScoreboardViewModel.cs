@@ -8,15 +8,20 @@ namespace PubGames.ViewModels;
 /// <summary>UI-facing wrapper pairing a participant row with the player's display info.</summary>
 public partial class ParticipantRow : ObservableObject
 {
+	/// <summary>The player's seat and score at the game night.</summary>
 	public required SessionParticipant Participant { get; init; }
+	/// <summary>The player.</summary>
 	public required Player Player { get; init; }
 
+	/// <summary>The player's score in this subgame.</summary>
 	public int Score => Participant.Score;
+	/// <summary>Still playing (not sitting out).</summary>
 	public bool IsActive => Participant.IsActive;
 
 	/// <summary>1-based seat number as shown on screen.</summary>
 	public int Seat => Participant.Position + 1;
 
+	/// <summary>Has the best score: the card stands out.</summary>
 	[ObservableProperty]
 	private bool isLeader;
 
@@ -33,6 +38,7 @@ public partial class ParticipantRow : ObservableObject
 	[NotifyPropertyChangedFor(nameof(HasStatus))]
 	private string status = string.Empty;
 
+	/// <summary>Whether the card shows a badge (warning, max, min).</summary>
 	public bool HasStatus => !string.IsNullOrEmpty(Status);
 
 	/// <summary>Fixed input order: it's this player's turn to enter a score.</summary>
@@ -47,6 +53,7 @@ public partial class ParticipantRow : ObservableObject
 	[ObservableProperty]
 	private string shortStatus = string.Empty;
 
+	/// <summary>Shows whether the player is at a limit or the warning score.</summary>
 	public void UpdateStatus(ScoringRules rules)
 	{
 		IsAtLimit = rules.IsAtLimit(Score);
@@ -72,17 +79,21 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 {
 	private readonly ILocalDatabaseService _local;
 
+	/// <summary>Every player at the game night, in seat order.</summary>
 	public ObservableCollection<ParticipantRow> Rows { get; } = new();
 
+	/// <summary>The game night.</summary>
 	[ObservableProperty]
 	private GameSession? session;
 
+	/// <summary>The game's name, as the page's title.</summary>
 	[ObservableProperty]
 	private string gameName = "Score";
 
 	/// <summary>The game being played, for its rules behind the ⓘ.</summary>
 	public PubGame? Game { get; private set; }
 
+	/// <summary>How scores are kept in this game.</summary>
 	[ObservableProperty]
 	private ScoringRules rules = ScoringRules.For(ScoringType.PointTally);
 
@@ -90,6 +101,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 	[ObservableProperty]
 	private ScoringSettings settings = ScoringSettings.Default;
 
+	/// <summary>The subgame that's being played (1 or more).</summary>
 	public int CurrentRound => Math.Max(1, Session?.CurrentRound ?? 1);
 
 	/// <summary>"Subgame 2 of 5", or "Subgame 2" when the players decide when to finish.</summary>
@@ -98,6 +110,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		: Session?.SubgameCount is { } count ? $"Subgame {CurrentRound} of {count}"
 		: $"Subgame {CurrentRound}";
 
+	/// <summary>Whether the game is finished.</summary>
 	public bool IsFinished => Session?.EndedAt is not null;
 
 	/// <summary>Scores are entered seat by seat (see ScoringSettings.FixedTurnOrder).</summary>
@@ -111,6 +124,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 	[NotifyPropertyChangedFor(nameof(HasEndMessage))]
 	private string endMessage = string.Empty;
 
+	/// <summary>Whether someone reached the end score: the message shows.</summary>
 	public bool HasEndMessage => EndMessage.Length > 0;
 
 	/// <summary>
@@ -147,6 +161,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		NotifySubgameChanged();
 	}
 
+	/// <summary>The subgame changed: everything that depends on it updates.</summary>
 	private void NotifySubgameChanged()
 	{
 		OnPropertyChanged(nameof(FixedTurnOrder));
@@ -165,6 +180,9 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 	/// <summary>Raised after the players were (re)loaded, so the page can rebuild its layout.</summary>
 	public event EventHandler? RowsReloaded;
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database - from the app (dependency injection).
+	/// </summary>
 	public ScoreboardViewModel(ILocalDatabaseService local)
 	{
 		_local = local;
@@ -177,6 +195,9 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 			await LoadAsync(sessionId);
 	}
 
+	/// <summary>
+	/// Loads the game night: the game, its players in seat order with their scores, and whose turn it is.
+	/// </summary>
 	public async Task LoadAsync(string sessionId)
 	{
 		Session = await _local.GetSessionAsync(sessionId);

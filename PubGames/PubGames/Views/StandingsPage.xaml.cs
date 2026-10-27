@@ -4,11 +4,18 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// The standings during a game, or the final result with Play again and back to the players.
+/// </summary>
 public partial class StandingsPage : ContentPage
 {
 	private readonly StandingsViewModel _vm;
 	private readonly GameNight _gameNight;
 
+	/// <summary>
+	/// Sets up the standings page with its view model, the ⓘ help, and the game night to start Play again
+	/// from.
+	/// </summary>
 	public StandingsPage(StandingsViewModel vm, GameNight gameNight)
 	{
 		InitializeComponent();

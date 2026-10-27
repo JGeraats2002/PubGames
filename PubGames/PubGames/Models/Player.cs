@@ -9,16 +9,20 @@ namespace PubGames.Models;
 /// </summary>
 public class Player
 {
+	/// <summary>The player's unique id.</summary>
 	[PrimaryKey]
 	public string Id { get; set; } = Guid.NewGuid().ToString();
 
 	/// <summary>The account (user) this player profile belongs to / was saved under.</summary>
 	public string OwnerAccountId { get; set; } = string.Empty;
 
+	/// <summary>The player's name, as shown in the game.</summary>
 	public string Name { get; set; } = string.Empty;
 
+	/// <summary>The initials shown when there's no picture: "JD".</summary>
 	public string? AvatarInitials { get; set; }
 
+	/// <summary>When the player was added (UTC).</summary>
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 	/// <summary>
@@ -42,12 +46,15 @@ public class Player
 	/// </summary>
 	public bool HasCustomName { get; set; }
 
+	/// <summary>Added by their personal code: the game counts in their stats.</summary>
 	[Ignore]
 	public bool IsLinked => !string.IsNullOrEmpty(LinkedAccountId);
 
+	/// <summary>Whether the player has a profile picture.</summary>
 	[Ignore]
 	public bool HasPhoto => !string.IsNullOrEmpty(PhotoRef);
 
+	/// <summary>No profile picture: their initials show instead.</summary>
 	[Ignore]
 	public bool HasNoPhoto => !HasPhoto;
 

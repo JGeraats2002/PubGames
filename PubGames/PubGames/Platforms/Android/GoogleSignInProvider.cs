@@ -14,6 +14,10 @@ namespace PubGames;
 /// </summary>
 public class GoogleSignInProvider : IGoogleSignInProvider
 {
+	/// <summary>
+	/// Shows Android's Google account picker (Credential Manager) and returns the chosen account's Google ID
+	/// token, which Firebase then turns into a sign-in.
+	/// </summary>
 	public async Task<string> GetGoogleIdTokenAsync(string webClientId)
 	{
 		var activity = Platform.CurrentActivity
@@ -36,6 +40,9 @@ public class GoogleSignInProvider : IGoogleSignInProvider
 		throw new AuthException("Google didn't return an ID token.");
 	}
 
+	/// <summary>
+	/// Forgets the chosen Google account on this phone, so the next sign-in shows the account picker again.
+	/// </summary>
 	public async Task SignOutAsync()
 	{
 		var activity = Platform.CurrentActivity;
@@ -47,13 +54,19 @@ public class GoogleSignInProvider : IGoogleSignInProvider
 		await callback.Task;
 	}
 
+	/// <summary>Turns Credential Manager's Java callback into a Task the sign-in can await.</summary>
 	private sealed class CredentialCallback : Java.Lang.Object, ICredentialManagerCallback
 	{
 		private readonly TaskCompletionSource<GetCredentialResponse> _tcs = new();
+		/// <summary>Completes when an account is picked, or fails when picking didn't work.</summary>
 		public Task<GetCredentialResponse> Task => _tcs.Task;
 
+		/// <summary>The user picked an account: hands the result to the waiting sign-in.</summary>
 		public void OnResult(Java.Lang.Object? result) => _tcs.TrySetResult((GetCredentialResponse)result!);
 
+		/// <summary>
+		/// Picking an account failed or was cancelled: the sign-in gets the error with a readable message.
+		/// </summary>
 		public void OnError(Java.Lang.Object e)
 		{
 			// The binding erases the Kotlin error type to Object; re-wrap as the managed exception peer.
@@ -68,12 +81,18 @@ public class GoogleSignInProvider : IGoogleSignInProvider
 		}
 	}
 
+	/// <summary>
+	/// Turns the Java callback of forgetting the account into a Task the sign-out can await.
+	/// </summary>
 	private sealed class ClearCallback : Java.Lang.Object, ICredentialManagerCallback
 	{
 		private readonly TaskCompletionSource _tcs = new();
+		/// <summary>Completes when the account is forgotten.</summary>
 		public Task Task => _tcs.Task;
 
+		/// <summary>The account is forgotten.</summary>
 		public void OnResult(Java.Lang.Object? result) => _tcs.TrySetResult();
+		/// <summary>Forgetting failed (e.g. nothing to forget): signing out goes on anyway.</summary>
 		public void OnError(Java.Lang.Object e) => _tcs.TrySetResult();
 	}
 }

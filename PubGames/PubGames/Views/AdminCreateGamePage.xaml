@@ -32,8 +32,9 @@
 			<Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
 			<Setter Property="BorderWidth" Value="0" />
 			<Setter Property="Padding" Value="8,0" />
-			<Setter Property="HeightRequest" Value="32" />
-			<Setter Property="MinimumWidthRequest" Value="32" />
+			<Setter Property="HeightRequest" Value="48" />
+			<Setter Property="MinimumWidthRequest" Value="48" />
+			<Setter Property="SemanticProperties.Description" Value="Remove this part" />
 			<Setter Property="FontSize" Value="14" />
 		</Style>
 	</ContentPage.Resources>
@@ -333,10 +334,10 @@
 		<VerticalStackLayout Spacing="8">
 			<Label Text="Moving picture" FontSize="13" FontAttributes="Bold" />
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-				<Button Text="Cancel" Clicked="OnCancelMoveClicked" HeightRequest="40"
+				<Button Text="Cancel" Clicked="OnCancelMoveClicked" HeightRequest="48"
 				        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
 				        BorderColor="{StaticResource Border}" BorderWidth="1" />
-				<Button Grid.Column="1" Text="Place here" Clicked="OnPlaceHereClicked" HeightRequest="40" />
+				<Button Grid.Column="1" Text="Place here" Clicked="OnPlaceHereClicked" HeightRequest="48" />
 			</Grid>
 		</VerticalStackLayout>
 	</Border>

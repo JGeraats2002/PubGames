@@ -57,13 +57,13 @@
 		<!-- Select: choose games to delete. -->
 		<Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
 			<Button Text="{Binding SelectButtonText}" Clicked="OnSelectClicked" HorizontalOptions="Start"
-			        HeightRequest="36" Padding="14,0" FontSize="13"
+			        HeightRequest="48" Padding="14,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
 			<Button Grid.Column="1" Text="Select all" Clicked="OnSelectAllClicked" IsVisible="{Binding IsSelecting}"
-			        HeightRequest="36" Padding="10,0" FontSize="13"
+			        HeightRequest="48" Padding="10,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 			<Button Grid.Column="2" Text="Deselect all" Clicked="OnDeselectAllClicked" IsVisible="{Binding IsSelecting}"
-			        HeightRequest="36" Padding="10,0" FontSize="13"
+			        HeightRequest="48" Padding="10,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 		</Grid>
 

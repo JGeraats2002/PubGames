@@ -218,7 +218,7 @@ function isOwner(request) {
 /** 8 random characters without look-alikes (no 0/O, 1/I/L), like "K7QM3XPA". */
 function newCode() {
   let code = "";
-  for (let i = 0; i < 8; i++) code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
+  for (let position = 0; position < 8; position++) code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
   return code;
 }
 
@@ -319,4 +319,56 @@ exports.removeRefunds = onSchedule({ schedule: "every day 04:00", timeZone: "Eur
     }
     pageToken = data.tokenPagination && data.tokenPagination.nextPageToken;
   } while (pageToken);
+});
+
+// ----- Deleting an account -----
+
+/** Deletes every document of a query, a batch at a time. */
+async function deleteWhere(query) {
+  const snapshot = await query.get();
+  for (let start = 0; start < snapshot.docs.length; start += 400) {
+    const batch = db.batch();
+    snapshot.docs.slice(start, start + 400).forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
+}
+
+/**
+ * The user deletes their account (Account > Settings > Delete account):
+ * their profile and picture, personal code, what they own, their feedback,
+ * blocks and link notes, and their place in other players' game results are
+ * removed, and then the sign-in account itself. Google Play requires apps
+ * with accounts to offer this. A running pass is cancelled in Google Play
+ * by the user (the app says so before deleting).
+ */
+exports.deleteAccount = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Sign in first.");
+
+  const profile = await db.collection("profiles").doc(uid).get();
+  if (profile.exists && profile.data().code)
+    await db.collection("codes").doc(profile.data().code).delete();
+  await db.collection("profiles").doc(uid).delete();
+  await deleteWhere(db.collection("profilePhotos").where("uid", "==", uid));
+  await db.collection("entitlements").doc(uid).delete();
+  await db.collection("subscriptions").doc(uid).delete();
+  await deleteWhere(db.collection("purchaseTokens").where("uid", "==", uid));
+  await deleteWhere(db.collection("feedback").where("fromUid", "==", uid));
+  await deleteWhere(db.collection("blocks").where("blockerUid", "==", uid));
+  await deleteWhere(db.collection("blocks").where("blockedUid", "==", uid));
+  await deleteWhere(db.collection("unlinks").where("fromUid", "==", uid));
+  await deleteWhere(db.collection("unlinks").where("toUid", "==", uid));
+
+  // Games they hosted go; in other games only their own result is taken out.
+  await deleteWhere(db.collection("gameResults").where("hostUid", "==", uid));
+  const played = await db.collection("gameResults").where("participantUids", "array-contains", uid).get();
+  for (const game of played.docs)
+    await game.ref.update({
+      participantUids: admin.firestore.FieldValue.arrayRemove(uid),
+      [`outcomes.${uid}`]: admin.firestore.FieldValue.delete()
+    });
+
+  await admin.auth().deleteUser(uid);
+  logger.info(`Account deleted: ${uid}`);
+  return { ok: true };
 });

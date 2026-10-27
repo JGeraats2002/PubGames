@@ -22,10 +22,13 @@ public enum ScoreRuleKind
 /// </summary>
 public sealed record ScoreRule(ScoreRuleKind Kind, int? Value = null, int? Value2 = null, bool OrWithPrevious = false)
 {
+	/// <summary>Whether the rule needs a number (even and odd don't).</summary>
 	public bool NeedsValue => Kind is not (ScoreRuleKind.Even or ScoreRuleKind.Odd);
 
+	/// <summary>Whether the rule needs a second number (between needs two).</summary>
 	public bool NeedsSecondValue => Kind == ScoreRuleKind.Between;
 
+	/// <summary>Whether an amount meets this one rule.</summary>
 	public bool Allows(int amount) => Kind switch
 	{
 		ScoreRuleKind.HigherThan => Value is { } v && amount > v,
@@ -72,6 +75,10 @@ public sealed record ScoreRule(ScoreRuleKind Kind, int? Value = null, int? Value
 /// </summary>
 public static class AmountRuleSet
 {
+	/// <summary>
+	/// The rules in groups: rules linked with OR form a group (one of them must be true), and the groups are
+	/// linked with AND (all must be true).
+	/// </summary>
 	public static List<List<ScoreRule>> Groups(IReadOnlyList<ScoreRule> rules)
 	{
 		var groups = new List<List<ScoreRule>>();
@@ -92,6 +99,7 @@ public static class AmountRuleSet
 		return amount => groups.All(g => g.Any(r => r.Allows(amount)));
 	}
 
+	/// <summary>Whether an amount meets all the rules (an empty list allows everything).</summary>
 	public static bool Allows(IReadOnlyList<ScoreRule> rules, int amount) => Predicate(rules)(amount);
 
 	/// <summary>"divisible by 50 and (higher than or equal to 350 or lower than 0)".</summary>
@@ -118,17 +126,20 @@ public static class AmountRuleSet
 /// <summary>A rule kind as the dropdown shows it: one symbol and its text.</summary>
 public sealed record ScoreRuleKindOption(ScoreRuleKind Kind)
 {
+	/// <summary>The rule's sign and name, as the picker shows it: "≥ Higher than or equal to".</summary>
 	public string Label => $"{SymbolFor(Kind)} {TextFor(Kind)}";
 
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Every kind of rule, as the picker shows them.</summary>
 	public static List<ScoreRuleKindOption> All { get; } = new[]
 	{
 		ScoreRuleKind.HigherThan, ScoreRuleKind.HigherOrEqual, ScoreRuleKind.LowerThan, ScoreRuleKind.LowerOrEqual,
 		ScoreRuleKind.Even, ScoreRuleKind.Odd, ScoreRuleKind.Between, ScoreRuleKind.DivisibleBy
 	}.Select(k => new ScoreRuleKindOption(k)).ToList();
 
+	/// <summary>The short sign of a rule (&gt;, ≥, &lt;, ≤, =, ÷ ...).</summary>
 	public static string SymbolFor(ScoreRuleKind kind) => kind switch
 	{
 		ScoreRuleKind.HigherThan => ">",
@@ -141,6 +152,7 @@ public sealed record ScoreRuleKindOption(ScoreRuleKind Kind)
 		_ => "÷"
 	};
 
+	/// <summary>What a kind of rule is called in the app.</summary>
 	public static string TextFor(ScoreRuleKind kind) => kind switch
 	{
 		ScoreRuleKind.HigherThan => "Higher than",

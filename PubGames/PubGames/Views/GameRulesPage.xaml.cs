@@ -4,10 +4,18 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// A game's rules, read before playing; then Start game (or Skip rules) starts the scoreboard, or for a paid
+/// game that isn't unlocked, Unlock to play.
+/// </summary>
 public partial class GameRulesPage : ContentPage
 {
 	private readonly GameRulesViewModel _vm;
 
+	/// <summary>
+	/// Sets up the rules page with its view model and the ⓘ help, and opens the scoreboard once the game has
+	/// started.
+	/// </summary>
 	public GameRulesPage(GameRulesViewModel vm)
 	{
 		InitializeComponent();
@@ -56,6 +64,7 @@ public partial class GameRulesPage : ContentPage
 			await DisplayAlertAsync("Not bought", problem ?? "The purchase didn't go through.", "OK");
 	}
 
+	/// <summary>Asks for a friend code and unlocks the game with it, or says why it didn't work.</summary>
 	private async Task RedeemAsync()
 	{
 		var typed = await DisplayPromptAsync("Code", "Type the code you were given.", "Use code", "Cancel",
@@ -65,7 +74,9 @@ public partial class GameRulesPage : ContentPage
 			await DisplayAlertAsync("Code not used", problem, "OK");
 	}
 
+	/// <summary>One subgame fewer.</summary>
 	private void OnFewerSubgamesClicked(object? sender, EventArgs e) => _vm.ChangeSubgameCount(-1);
 
+	/// <summary>One subgame more.</summary>
 	private void OnMoreSubgamesClicked(object? sender, EventArgs e) => _vm.ChangeSubgameCount(+1);
 }

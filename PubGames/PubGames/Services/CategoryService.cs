@@ -79,6 +79,10 @@ public interface ICategoryService
 	string LabelFor(IEnumerable<string> categoryIds, IEnumerable<GameCategory> categories);
 }
 
+/// <summary>
+/// Keeps the categories and main categories: from the cloud, cached on the phone, and changed by admins
+/// directly or by moderators through review requests.
+/// </summary>
 public class CategoryService : ICategoryService
 {
 	private const string Collection = "categories";
@@ -98,6 +102,10 @@ public class CategoryService : ICategoryService
 	/// <summary>Set once this phone has checked that every category has its "Add games to category" request.</summary>
 	private const string RequestsCheckedKey = "categories.addGamesRequestsChecked";
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, the cloud, cloud sync and the sign-in - from
+	/// the app (dependency injection).
+	/// </summary>
 	public CategoryService(ILocalDatabaseService local, FirestoreClient firestore, ICloudSyncService cloud, IAuthService auth)
 	{
 		_local = local;
@@ -106,8 +114,10 @@ public class CategoryService : ICategoryService
 		_auth = auth;
 	}
 
+	/// <inheritdoc />
 	public Task<List<GameCategory>> GetCachedAsync() => _local.GetCategoriesAsync();
 
+	/// <inheritdoc />
 	public async Task<List<GameCategory>> PullAsync()
 	{
 		var docs = await _firestore.GetAllAsync(Collection);
@@ -132,8 +142,10 @@ public class CategoryService : ICategoryService
 		return categories.OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
 	}
 
+	/// <inheritdoc />
 	public async Task<List<CategoryGroup>> GetCachedGroupsAsync() => CategoryGroup.InOrder(await _local.GetCategoryGroupsAsync());
 
+	/// <inheritdoc />
 	public async Task<List<CategoryGroup>> PullGroupsAsync()
 	{
 		var docs = await _firestore.GetAllAsync(GroupsCollection);
@@ -158,6 +170,7 @@ public class CategoryService : ICategoryService
 		return CategoryGroup.InOrder(groups);
 	}
 
+	/// <inheritdoc />
 	public async Task EnsureDefaultsAsync()
 	{
 		await _defaultsGate.WaitAsync();
@@ -189,6 +202,10 @@ public class CategoryService : ICategoryService
 		}
 	}
 
+	/// <summary>
+	/// Adds the starting categories of a main category (e.g. Duration: short, medium, long) when they don't
+	/// exist yet.
+	/// </summary>
 	private async Task CreateDefaultsAsync(List<GameCategory> categories)
 	{
 		// The categories first and the main categories last: if this stops halfway
@@ -196,11 +213,11 @@ public class CategoryService : ICategoryService
 		// Fixed ids, so two admins doing this at the same time don't create doubles.
 		foreach (var (groupId, _, names) in CategoryGroup.Defaults)
 		{
-			for (var i = 0; i < names.Length; i++)
+			for (var position = 0; position < names.Length; position++)
 			{
-				var existing = categories.FirstOrDefault(c => c.Name.Equals(names[i], StringComparison.CurrentCultureIgnoreCase));
+				var existing = categories.FirstOrDefault(c => c.Name.Equals(names[position], StringComparison.CurrentCultureIgnoreCase));
 				if (existing is null)
-					await FileAddGamesRequestAsync(await SaveAsync(new GameCategory { Id = $"{groupId}{i}", Name = names[i], GroupId = groupId, SortOrder = i }));
+					await FileAddGamesRequestAsync(await SaveAsync(new GameCategory { Id = $"{groupId}{position}", Name = names[position], GroupId = groupId, SortOrder = position }));
 				else if (string.IsNullOrEmpty(existing.GroupId))
 					await MoveAsync(existing, groupId);
 			}
@@ -293,6 +310,7 @@ public class CategoryService : ICategoryService
 		Preferences.Default.Set(RequestsCheckedKey, true);
 	}
 
+	/// <inheritdoc />
 	public async Task<GameCategory> AddAsync(string name, string groupId, string? id = null)
 	{
 		var existing = await PullAsync();
@@ -309,6 +327,10 @@ public class CategoryService : ICategoryService
 		return category;
 	}
 
+	/// <summary>
+	/// The id of a category's "add games to this category" request: one per category, so it isn't filed
+	/// twice.
+	/// </summary>
 	private static string AddGamesRequestId(GameCategory category) => $"addgames-{category.Id}";
 
 	/// <summary>So a new category doesn't stay empty: every admin sees this on the Requests page.</summary>
@@ -355,6 +377,7 @@ public class CategoryService : ICategoryService
 		await _local.DeleteCategoryAsync(category.Id);
 	}
 
+	/// <inheritdoc />
 	public async Task MoveAsync(GameCategory category, string groupId)
 	{
 		var others = (await GetCachedAsync()).Where(c => c.Id != category.Id).ToList();
@@ -370,6 +393,7 @@ public class CategoryService : ICategoryService
 	private static int NextPlace(IEnumerable<GameCategory> categories, string groupId) =>
 		categories.Where(c => c.GroupId == groupId).Select(c => c.SortOrder).DefaultIfEmpty(-1).Max() + 1;
 
+	/// <inheritdoc />
 	public async Task RenameAsync(GameCategory category, string name)
 	{
 		var others = (await PullAsync()).Where(c => c.Id != category.Id);
@@ -389,29 +413,32 @@ public class CategoryService : ICategoryService
 		}
 	}
 
+	/// <inheritdoc />
 	public Task DeleteAsync(GameCategory category) => DeleteAsync(category, replacement: null);
 
+	/// <inheritdoc />
 	public async Task ReorderAsync(IReadOnlyList<GameCategory> ordered)
 	{
-		for (var i = 0; i < ordered.Count; i++)
+		for (var position = 0; position < ordered.Count; position++)
 		{
-			if (ordered[i].SortOrder == i) continue;
-			ordered[i].SortOrder = i;
-			await SaveAsync(ordered[i]);
+			if (ordered[position].SortOrder == position) continue;
+			ordered[position].SortOrder = position;
+			await SaveAsync(ordered[position]);
 		}
 	}
 
 	/// <summary>Puts the main categories in this order (only done once, by SortOnceAsync: they can't be moved by hand).</summary>
 	private async Task ReorderGroupsAsync(IReadOnlyList<CategoryGroup> ordered)
 	{
-		for (var i = 0; i < ordered.Count; i++)
+		for (var position = 0; position < ordered.Count; position++)
 		{
-			if (ordered[i].SortOrder == i) continue;
-			ordered[i].SortOrder = i;
-			await SaveGroupAsync(ordered[i]);
+			if (ordered[position].SortOrder == position) continue;
+			ordered[position].SortOrder = position;
+			await SaveGroupAsync(ordered[position]);
 		}
 	}
 
+	/// <summary>Saves a category in the cloud and on the phone, and returns it.</summary>
 	private async Task<GameCategory> SaveAsync(GameCategory category)
 	{
 		await _firestore.SetAsync(Collection, category.Id, new Dictionary<string, object?>
@@ -426,6 +453,7 @@ public class CategoryService : ICategoryService
 		return category;
 	}
 
+	/// <inheritdoc />
 	public async Task<CategoryGroup> AddGroupAsync(string name, string? id = null)
 	{
 		var existing = await PullGroupsAsync();
@@ -440,6 +468,7 @@ public class CategoryService : ICategoryService
 		return group;
 	}
 
+	/// <inheritdoc />
 	public async Task RenameGroupAsync(CategoryGroup group, string name)
 	{
 		var others = (await PullGroupsAsync()).Where(g => g.Id != group.Id);
@@ -451,6 +480,7 @@ public class CategoryService : ICategoryService
 		await SaveGroupAsync(group);
 	}
 
+	/// <inheritdoc />
 	public async Task DeleteGroupAsync(CategoryGroup group)
 	{
 		// The categories first: if this stops halfway, deleting again finishes the job.
@@ -461,6 +491,7 @@ public class CategoryService : ICategoryService
 		await _local.DeleteCategoryGroupAsync(group.Id);
 	}
 
+	/// <summary>Saves a main category in the cloud and on the phone.</summary>
 	private async Task SaveGroupAsync(CategoryGroup group)
 	{
 		await _firestore.SetAsync(GroupsCollection, group.Id, new Dictionary<string, object?>
@@ -473,6 +504,7 @@ public class CategoryService : ICategoryService
 		await _local.SaveCategoryGroupAsync(group);
 	}
 
+	/// <inheritdoc />
 	public string? ValidateNewName(string name, string groupId, IEnumerable<GameCategory> existing)
 	{
 		name = GameCategory.NormalizeName(name);
@@ -485,6 +517,7 @@ public class CategoryService : ICategoryService
 		return null;
 	}
 
+	/// <inheritdoc />
 	public string? ValidateNewGroupName(string name, IEnumerable<CategoryGroup> existing)
 	{
 		name = GameCategory.NormalizeName(name);
@@ -497,6 +530,7 @@ public class CategoryService : ICategoryService
 		return null;
 	}
 
+	/// <inheritdoc />
 	public string LabelFor(IEnumerable<string> categoryIds, IEnumerable<GameCategory> categories)
 	{
 		var names = categories.ToDictionary(c => c.Id, c => c.Name);

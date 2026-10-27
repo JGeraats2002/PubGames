@@ -11,6 +11,7 @@ public partial class DuelPage : ContentPage
 	private readonly DuelViewModel _vm;
 	private readonly TaskCompletionSource<Dictionary<string, int>?> _result = new();
 
+	/// <summary>Sets up the duel page: its view model, and the buttons stay above the keyboard.</summary>
 	private DuelPage(DuelViewModel vm)
 	{
 		InitializeComponent();
@@ -29,24 +30,28 @@ public partial class DuelPage : ContentPage
 		return scores;
 	}
 
+	/// <summary>− for the player whose turn it is; when that ends the duel, the result is checked.</summary>
 	private async void OnMinusClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: DuelRow row } && _vm.Adjust(row, -1))
 			await FinishAsync();
 	}
 
+	/// <summary>+ for the player whose turn it is; when that ends the duel, the result is checked.</summary>
 	private async void OnPlusClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: DuelRow row } && _vm.Adjust(row, +1))
 			await FinishAsync();
 	}
 
+	/// <summary>Ends the turn; when that ends the duel, the result is checked.</summary>
 	private async void OnTurnDoneClicked(object? sender, EventArgs e)
 	{
 		if (_vm.TurnDone())
 			await FinishAsync();
 	}
 
+	/// <summary>Takes back the last turn.</summary>
 	private void OnUndoClicked(object? sender, EventArgs e) => _vm.Undo();
 
 	/// <summary>The duel ended by itself: the players check the result, or take back the last turn if something was entered wrong.</summary>
@@ -62,6 +67,7 @@ public partial class DuelPage : ContentPage
 	private async void OnInfoClicked(object? sender, EventArgs e) =>
 		await Navigation.PushModalAsync(new InfoPage(Models.Help.Duel(_vm.Explanation), modal: true));
 
+	/// <summary>Stops the duel without a result, after asking.</summary>
 	private async void OnCancelClicked(object? sender, EventArgs e)
 	{
 		if (await DisplayAlertAsync("Stop the duel?", "The tie isn't decided and nothing is saved yet.", "Stop the duel", "Keep playing"))

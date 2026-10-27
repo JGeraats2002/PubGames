@@ -39,13 +39,13 @@
 							<Label Text="{Binding Text}" FontSize="14" />
 							<HorizontalStackLayout Spacing="8">
 								<Button Text="Edit and submit again" Clicked="OnResubmitClicked" IsVisible="{Binding OffersResubmit}"
-								        FontSize="12" Padding="10,0" HeightRequest="36" />
+								        FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="Reply" Clicked="OnReplyClicked"
 								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="36" />
+								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="Delete" Clicked="OnDeleteClicked"
 								        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="36" />
+								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
 							</HorizontalStackLayout>
 						</VerticalStackLayout>
 					</Border>

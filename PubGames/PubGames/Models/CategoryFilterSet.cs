@@ -31,6 +31,7 @@ public partial class CategoryFilterSet : ObservableObject
 
 	partial void OnPlayersChanged(int value) => OnChanged();
 
+	/// <summary>"Any number of players" or "4 players": the player filter as the slider shows it.</summary>
 	public string PlayersText => Players switch
 	{
 		0 => "Any number of players",
@@ -41,6 +42,7 @@ public partial class CategoryFilterSet : ObservableObject
 	/// <summary>How many filters are set: each chosen category, and the number of players.</summary>
 	public int ActiveCount => _selected.Count + (Players > 0 ? 1 : 0);
 
+	/// <summary>Whether any filter is set.</summary>
 	public bool IsFiltering => ActiveCount > 0;
 
 	/// <summary>The Filter button's text, which says how many filters are set.</summary>
@@ -85,6 +87,7 @@ public partial class CategoryFilterSet : ObservableObject
 		OnChanged();
 	}
 
+	/// <summary>Whether this game fits every filter that's set.</summary>
 	public bool Matches(PubGame game) => Matches(game.CategoryIds, game.MinPlayers, game.MaxPlayers);
 
 	/// <summary>Whether a game with these categories and this many players fits every filter that's set.</summary>
@@ -101,6 +104,7 @@ public partial class CategoryFilterSet : ObservableObject
 		});
 	}
 
+	/// <summary>A filter changed: the filter button's text updates and the list filters again.</summary>
 	private void OnChanged()
 	{
 		OnPropertyChanged(nameof(ButtonText));

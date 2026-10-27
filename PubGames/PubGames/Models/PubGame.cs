@@ -9,16 +9,20 @@ namespace PubGames.Models;
 /// </summary>
 public class PubGame
 {
+	/// <summary>The game's unique id.</summary>
 	[PrimaryKey]
 	public string Id { get; set; } = Guid.NewGuid().ToString();
 
+	/// <summary>The game's name.</summary>
 	public string Name { get; set; } = string.Empty;
 
 	/// <summary>Rich-text/markdown explanation of how to play, may reference inline image URLs.</summary>
 	public string RulesText { get; set; } = string.Empty;
 
+	/// <summary>The cover picture's reference (see ImageRef), or null without one.</summary>
 	public string? CoverImageUrl { get; set; }
 
+	/// <summary>How scores are kept during the game.</summary>
 	public ScoringType ScoringType { get; set; } = ScoringType.PointTally;
 
 	/// <summary>The scoring type's settings (step, min, max, ...) as JSON; use ScoringSettings.</summary>
@@ -31,11 +35,13 @@ public class PubGame
 		set => ScoringSettingsText = value.ToJson();
 	}
 
+	/// <summary>The scoring type as the admin library shows it.</summary>
 	[Ignore]
 	public string ScoringLabel => ScoringType is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
 		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.SummaryFor(ScoringType)} · {ScoringSettings.TieSummaryFor(ScoringType)})"
 		: $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.ResultSummary} · {ScoringSettings.TieSummaryFor(ScoringType)})";
 
+	/// <summary>Whether the game has to be unlocked (bought, a code, or the pass).</summary>
 	public bool IsPaid { get; set; }
 
 	/// <summary>Price in euros, e.g. 0.50m. Ignored when IsPaid is false. Admin-set, not fixed by the platform.</summary>
@@ -76,6 +82,7 @@ public class PubGame
 		return null;
 	}
 
+	/// <summary>"2-6", "2+", "1-3" or "Any": the number of players a game is for.</summary>
 	public static string PlayersLabelFor(int? min, int? max) => (min, max) switch
 	{
 		(null, null) => "Any",
@@ -88,6 +95,7 @@ public class PubGame
 	[Ignore]
 	public string CategoryLabel { get; set; } = string.Empty;
 
+	/// <summary>Whether the game has no category yet.</summary>
 	[Ignore]
 	public bool HasNoCategory => string.IsNullOrEmpty(CategoryIdsText);
 
@@ -115,6 +123,7 @@ public class PubGame
 	[Ignore]
 	public string MissingLabel { get; set; } = string.Empty;
 
+	/// <summary>Whether something required is still missing (see MissingLabel).</summary>
 	[Ignore]
 	public bool HasMissing => MissingLabel.Length > 0;
 
@@ -126,9 +135,11 @@ public class PubGame
 	[Ignore]
 	public ReviewRequest? TakenBy { get; set; }
 
+	/// <summary>Whether another moderator has changes to it waiting for review.</summary>
 	[Ignore]
 	public bool IsTaken => TakenBy is not null;
 
+	/// <summary>Who has changes to it waiting for review, as the admin library shows it.</summary>
 	[Ignore]
 	public string TakenLabel => TakenBy switch
 	{
@@ -143,12 +154,16 @@ public class PubGame
 	/// <summary>Which admin/moderator account authored it.</summary>
 	public string CreatedByUserId { get; set; } = string.Empty;
 
+	/// <summary>Draft, published or deleted: players only see published games.</summary>
 	public GameStatus Status { get; set; } = GameStatus.Draft;
 
+	/// <summary>When the game was made (UTC).</summary>
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+	/// <summary>When it was published (UTC), or null while it's a draft.</summary>
 	public DateTime? PublishedAt { get; set; }
 
+	/// <summary>The status as the admin library shows it.</summary>
 	[Ignore]
 	public string StatusLabel => Status switch
 	{
@@ -159,6 +174,7 @@ public class PubGame
 		_ => "Waiting for review"
 	};
 
+	/// <summary>"€ 0,99" or "Free".</summary>
 	[Ignore]
 	public string PriceLabel => IsPaid ? Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("nl-NL")) : "Free";
 }

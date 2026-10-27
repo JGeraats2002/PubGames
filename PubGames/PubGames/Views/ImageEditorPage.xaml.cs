@@ -48,6 +48,10 @@ public partial class ImageEditorPage : ContentPage
 	/// <summary>Covers may have a coloured background; rules pictures are always on white.</summary>
 	private readonly bool _cover;
 
+	/// <summary>
+	/// Opens the editor for a cover (square, with a background colour) or a rules picture (wide), with an
+	/// earlier drawing to change, if there is one.
+	/// </summary>
 	private ImageEditorPage(bool cover, string? drawing)
 	{
 		InitializeComponent();
@@ -83,6 +87,9 @@ public partial class ImageEditorPage : ContentPage
 		return await page._result.Task;
 	}
 
+	/// <summary>
+	/// The page got its size (or the phone turned): the drawing area takes the width and the image's shape.
+	/// </summary>
 	protected override void OnSizeAllocated(double width, double height)
 	{
 		base.OnSizeAllocated(width, height);
@@ -102,6 +109,7 @@ public partial class ImageEditorPage : ContentPage
 		return true;
 	}
 
+	/// <summary>Leaves the editor without using the image, after asking when something was drawn.</summary>
 	private async void OnCancelClicked(object? sender, EventArgs e)
 	{
 		var nothingToLose = _opened is not null ? _board.ToJson() == _opened : _board.Items.Count == 0;
@@ -115,6 +123,10 @@ public partial class ImageEditorPage : ContentPage
 		await Navigation.PopModalAsync();
 	}
 
+	/// <summary>
+	/// Uses the image: it's turned into a picture and handed back with its drawing, so it can be changed
+	/// later.
+	/// </summary>
 	private async void OnUseClicked(object? sender, EventArgs e)
 	{
 		if (_board.Items.Count == 0)
@@ -139,6 +151,10 @@ public partial class ImageEditorPage : ContentPage
 		return stream.ToArray();
 	}
 
+	/// <summary>
+	/// Adds something to the drawing and selects it: a table goes under everything, the rest a little apart
+	/// so they don't land on top of each other.
+	/// </summary>
 	private void AddItem(DrawKind kind)
 	{
 		Checkpoint();
@@ -188,8 +204,12 @@ public partial class ImageEditorPage : ContentPage
 		}
 	}
 
+	/// <summary>Opens the editor's help.</summary>
 	private async void OnInfoClicked(object? sender, EventArgs e) => await InfoButton.ShowAsync(this, Help.ImageEditor(_cover));
 
+	/// <summary>
+	/// Selects an item (or nothing): its frame shows and its choices appear below the drawing.
+	/// </summary>
 	private void Select(DrawItem? item)
 	{
 		_board.Selected = item;
@@ -206,12 +226,16 @@ public partial class ImageEditorPage : ContentPage
 
 	// ----- Touch -----
 
+	/// <summary>
+	/// A touch on the screen as a place on the drawing (whose size doesn't depend on the screen).
+	/// </summary>
 	private PointF ToBoard(PointF touch)
 	{
 		var scale = (float)(DrawingBoard.Width / Canvas.Width);
 		return new PointF(touch.X * scale, touch.Y * scale);
 	}
 
+	/// <summary>A finger touches the drawing: the item under it is selected and can be dragged.</summary>
 	private void OnCanvasTouchStarted(object? sender, TouchEventArgs e)
 	{
 		if (e.Touches.Length == 0) return;
@@ -229,6 +253,9 @@ public partial class ImageEditorPage : ContentPage
 		_pinching = false;
 	}
 
+	/// <summary>
+	/// Dragging moves the selected item; two fingers make it bigger or smaller and turn it.
+	/// </summary>
 	private void OnCanvasTouchMoved(object? sender, TouchEventArgs e)
 	{
 		if (_board.Selected is not { } item || e.Touches.Length == 0) return;
@@ -266,6 +293,7 @@ public partial class ImageEditorPage : ContentPage
 		Canvas.Invalidate();
 	}
 
+	/// <summary>The fingers are lifted: the drag or pinch is done.</summary>
 	private void OnCanvasTouchEnded(object? sender, TouchEventArgs e)
 	{
 		// The choices show where the item is now, and its new size and angle.
@@ -277,6 +305,10 @@ public partial class ImageEditorPage : ContentPage
 
 	// ----- The choices below the drawing -----
 
+	/// <summary>
+	/// Shows the choices below the drawing: of the selected item, or of the image itself when nothing is
+	/// selected.
+	/// </summary>
 	private void ShowOptions()
 	{
 		Options.Clear();
@@ -432,7 +464,7 @@ public partial class ImageEditorPage : ContentPage
 
 		var delete = new Button
 		{
-			Text = "Remove from image", HeightRequest = 40, FontSize = 13, HorizontalOptions = LayoutOptions.Start,
+			Text = "Remove from image", HeightRequest = 48, FontSize = 13, HorizontalOptions = LayoutOptions.Start,
 			BackgroundColor = Colors.Transparent, TextColor = Resource("Danger"), BorderColor = Resource("Danger"), BorderWidth = 1
 		};
 		delete.Clicked += (_, _) =>
@@ -471,9 +503,9 @@ public partial class ImageEditorPage : ContentPage
 		var align = AlignOf(item, across);
 		var chosen = across ? item.AlignX : item.AlignY;
 		var icons = new HorizontalStackLayout { Spacing = 6 };
-		for (var i = 0; i < 3; i++)
+		for (var alignment = 0; alignment < 3; alignment++)
 		{
-			var index = i;
+			var index = alignment;
 			icons.Add(AlignIcon(across, index, chosen == index, () =>
 			{
 				// The item stays where it is; the number changes to the side it now gives.
@@ -570,7 +602,7 @@ public partial class ImageEditorPage : ContentPage
 		};
 		var chip = new Border
 		{
-			Content = icon, Padding = new Thickness(10, 6),
+			Content = icon, Padding = new Thickness(10, 11),
 			BackgroundColor = isOn ? Resource("Primary") : Colors.Transparent,
 			Stroke = isOn ? Resource("Primary") : Resource("Border"), StrokeThickness = 1,
 			StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 8 }
@@ -588,6 +620,7 @@ public partial class ImageEditorPage : ContentPage
 	{
 		private static readonly float[] Lengths = [1f, 0.6f, 0.85f, 0.5f];
 
+		/// <summary>Draws the stripes of an alignment icon in its colour.</summary>
 		public void Draw(ICanvas canvas, RectF rect)
 		{
 			canvas.StrokeColor = color;
@@ -595,11 +628,11 @@ public partial class ImageEditorPage : ContentPage
 			canvas.StrokeLineCap = LineCap.Round;
 			const float inset = 2f;
 			var (along, width) = across ? (rect.Width - 2 * inset, rect.Height) : (rect.Height - 2 * inset, rect.Width);
-			for (var i = 0; i < Lengths.Length; i++)
+			for (var stripe = 0; stripe < Lengths.Length; stripe++)
 			{
-				var length = along * Lengths[i];
+				var length = along * Lengths[stripe];
 				var start = align switch { 0 => inset, 2 => inset + along - length, _ => inset + (along - length) / 2 };
-				var at = inset + (width - 2 * inset) * (i + 0.5f) / Lengths.Length;
+				var at = inset + (width - 2 * inset) * (stripe + 0.5f) / Lengths.Length;
 				if (across)
 					canvas.DrawLine(start, at, start + length, at);
 				else
@@ -630,6 +663,7 @@ public partial class ImageEditorPage : ContentPage
 		return new SizeF((half.Width * cos + half.Height * sin) * item.Scale, (half.Width * sin + half.Height * cos) * item.Scale);
 	}
 
+	/// <summary>The colour choices of an item.</summary>
 	private View ColorChips(DrawItem item) =>
 		SortedChips("Colour", DrawItem.ColorNames, i => item.ColorIndex == i, i => item.ColorIndex = i);
 
@@ -656,10 +690,10 @@ public partial class ImageEditorPage : ContentPage
 	private View Chips(string? title, string[] choices, Func<int, bool> isOn, Action<int> choose, bool keepAligned = true)
 	{
 		var row = new FlexLayout { Wrap = Microsoft.Maui.Layouts.FlexWrap.Wrap };
-		for (var i = 0; i < choices.Length; i++)
+		for (var choiceIndex = 0; choiceIndex < choices.Length; choiceIndex++)
 		{
-			var index = i;
-			var chip = Chip(choices[i], isOn(i), () =>
+			var index = choiceIndex;
+			var chip = Chip(choices[choiceIndex], isOn(choiceIndex), () =>
 			{
 				Checkpoint();
 				if (keepAligned && _board.Selected is { } selected)
@@ -680,11 +714,12 @@ public partial class ImageEditorPage : ContentPage
 		};
 	}
 
+	/// <summary>One round choice button; filled when it's the chosen one.</summary>
 	private static Button Chip(string text, bool isOn, Action tapped)
 	{
 		var chip = new Button
 		{
-			Text = text, HeightRequest = 38, Padding = new Thickness(14, 0), FontSize = 13, CornerRadius = 19,
+			Text = text, HeightRequest = 48, Padding = new Thickness(14, 0), FontSize = 13, CornerRadius = 24,
 			BackgroundColor = isOn ? Resource("Primary") : Colors.Transparent,
 			TextColor = isOn ? Colors.White : Resource("TextPrimary"),
 			BorderColor = isOn ? Resource("Primary") : Resource("Border"), BorderWidth = 1
@@ -783,7 +818,9 @@ public partial class ImageEditorPage : ContentPage
 		return grid;
 	}
 
+	/// <summary>A short line of grey text.</summary>
 	private static Label Hint(string text) => new() { Text = text, FontSize = 13, TextColor = Resource("TextSecondary") };
 
+	/// <summary>A colour from the app's resources (App.xaml).</summary>
 	private static Color Resource(string key) => (Color)Application.Current!.Resources[key];
 }

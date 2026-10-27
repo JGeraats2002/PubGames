@@ -6,6 +6,7 @@ namespace PubGames.Services;
 /// <summary>Someone the user blocked: they can't add the user by code any more.</summary>
 public sealed record BlockedPlayer(string Uid, string Name, DateTime BlockedAt)
 {
+	/// <summary>"Blocked on 27 Oct 2026".</summary>
 	public string BlockedLabel => $"Blocked on {BlockedAt.ToLocalTime().ToString("d MMM yyyy", CultureInfo.CurrentCulture)}";
 }
 
@@ -40,6 +41,9 @@ public interface IPlayerLinkService
 	Task<HashSet<string>> TakeRemovedLinksAsync();
 }
 
+/// <summary>
+/// Removing links both ways and blocking, through the cloud "unlinks" and "blocks" collections.
+/// </summary>
 public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : IPlayerLinkService
 {
 	private const string Unlinks = "unlinks";
@@ -47,6 +51,7 @@ public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : I
 
 	private string Me => auth.CurrentUser?.Uid ?? throw new InvalidOperationException("Sign in first.");
 
+	/// <inheritdoc />
 	public Task UnlinkBothWaysAsync(string otherUid) =>
 		firestore.SetAsync(Unlinks, $"{Me}_{otherUid}", new Dictionary<string, object?>
 		{
@@ -55,6 +60,7 @@ public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : I
 			["createdAt"] = DateTime.UtcNow
 		});
 
+	/// <inheritdoc />
 	public async Task BlockAsync(string otherUid, string name)
 	{
 		await firestore.SetAsync(Blocks, $"{Me}_{otherUid}", new Dictionary<string, object?>
@@ -67,8 +73,10 @@ public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : I
 		await UnlinkBothWaysAsync(otherUid);
 	}
 
+	/// <inheritdoc />
 	public Task UnblockAsync(string otherUid) => firestore.DeleteAsync(Blocks, $"{Me}_{otherUid}");
 
+	/// <inheritdoc />
 	public async Task<List<BlockedPlayer>> GetBlockedAsync()
 	{
 		if (auth.CurrentUser is null) return [];
@@ -81,9 +89,11 @@ public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : I
 			.ToList();
 	}
 
+	/// <inheritdoc />
 	public async Task<bool> IsBlockedByAsync(string otherUid) =>
 		await firestore.GetAsync(Blocks, $"{otherUid}_{Me}") is not null;
 
+	/// <inheritdoc />
 	public async Task<HashSet<string>> TakeRemovedLinksAsync()
 	{
 		if (auth.CurrentUser is null) return [];

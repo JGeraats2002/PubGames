@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 and newer: the same as auto_backup_rules.xml, for backups to the cloud and
+     for moving to a new phone. The encrypted sign-in stays on this phone only. -->
+<data-extraction-rules>
+	<cloud-backup>
+		<include domain="file" path="." />
+		<include domain="sharedpref" path="." />
+		<exclude domain="sharedpref" path="com.pubgems.pubgames.microsoft.maui.essentials.preferences.xml" />
+	</cloud-backup>
+	<device-transfer>
+		<include domain="file" path="." />
+		<include domain="sharedpref" path="." />
+		<exclude domain="sharedpref" path="com.pubgems.pubgames.microsoft.maui.essentials.preferences.xml" />
+	</device-transfer>
+</data-extraction-rules>

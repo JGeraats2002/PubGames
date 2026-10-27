@@ -3,6 +3,10 @@ using PubGames.Models;
 
 namespace PubGames.Services;
 
+/// <summary>
+/// The user's public profile (name, nickname, picture, player code) and looking up other players by their
+/// code.
+/// </summary>
 public interface IProfileService
 {
 	/// <summary>The signed-in user's profile as last seen on this phone; null before the first load.</summary>
@@ -38,8 +42,10 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 
 	private string CacheKey => $"profile:{auth.AccountId}";
 
+	/// <inheritdoc />
 	public UserProfile? Mine { get; private set; }
 
+	/// <inheritdoc />
 	public async Task<UserProfile?> LoadMineAsync()
 	{
 		var user = auth.CurrentUser;
@@ -71,6 +77,7 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 		return Mine;
 	}
 
+	/// <inheritdoc />
 	public async Task SaveMineAsync(UserProfile profile)
 	{
 		await WriteAsync(profile);
@@ -78,14 +85,17 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 		WriteCache(profile);
 	}
 
+	/// <inheritdoc />
 	public Task<string?> PickPhotoAsync() => images.PickAndUploadProfilePhotoAsync();
 
+	/// <inheritdoc />
 	public async Task<UserProfile?> FindByCodeAsync(string code)
 	{
 		var claim = await firestore.GetAsync(Codes, code);
 		return claim?.GetValueOrDefault("uid") is string uid ? await GetAsync(uid) : null;
 	}
 
+	/// <inheritdoc />
 	public async Task<UserProfile?> GetAsync(string uid)
 	{
 		var f = await firestore.GetAsync(Profiles, uid);
@@ -97,6 +107,7 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 			f.GetValueOrDefault("photoRef") as string);
 	}
 
+	/// <summary>Saves a profile in the cloud (only the user's own: the security rules check that).</summary>
 	private Task WriteAsync(UserProfile p) =>
 		firestore.SetAsync(Profiles, p.Uid, new Dictionary<string, object?>
 		{
@@ -130,6 +141,7 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 		throw new InvalidOperationException("Couldn't make your personal code. Check that the latest firestore.rules are published.");
 	}
 
+	/// <summary>The profile as saved on this phone, for when there's no connection.</summary>
 	private UserProfile? ReadCache()
 	{
 		try
@@ -143,6 +155,7 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 		}
 	}
 
+	/// <summary>Saves the profile on this phone, for when there's no connection.</summary>
 	private void WriteCache(UserProfile profile) =>
 		Preferences.Default.Set(CacheKey, JsonSerializer.Serialize(profile));
 }

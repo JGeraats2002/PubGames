@@ -3,10 +3,16 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// One review request: what a moderator proposes, compared with the current game, to approve or reject.
+/// </summary>
 public partial class ReviewRequestPage : ContentPage
 {
 	private readonly ReviewRequestViewModel _vm;
 
+	/// <summary>
+	/// Sets up the page with its view model and the ⓘ help, and goes back once a decision is made.
+	/// </summary>
 	public ReviewRequestPage(ReviewRequestViewModel vm)
 	{
 		InitializeComponent();
@@ -20,8 +26,10 @@ public partial class ReviewRequestPage : ContentPage
 		};
 	}
 
+	/// <summary>Shows the game as it is now.</summary>
 	private void OnShowOriginalClicked(object? sender, EventArgs e) => _vm.ShowVersion(original: true);
 
+	/// <summary>Shows the game with the proposed changes.</summary>
 	private void OnShowChangedClicked(object? sender, EventArgs e) => _vm.ShowVersion(original: false);
 
 	/// <summary>A moderator who can't change this game for now gets in touch with the one who submitted the request.</summary>
@@ -35,6 +43,9 @@ public partial class ReviewRequestPage : ContentPage
 			await DisplayAlertAsync("Sent", $"Your message is in {_vm.SubmitterLabel}'s Inbox.", "OK");
 	}
 
+	/// <summary>
+	/// Approves the request after asking; the change happens and the moderator hears about it.
+	/// </summary>
 	private async void OnApproveClicked(object? sender, EventArgs e)
 	{
 		var confirmed = await DisplayAlertAsync($"{_vm.ApproveButtonText}?",

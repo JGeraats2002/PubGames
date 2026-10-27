@@ -29,6 +29,7 @@ public sealed class MessageTimer
 		set(text);
 	}
 
+	/// <summary>How long a message stays: 4 seconds, a little longer for longer texts, at most 10.</summary>
 	public static TimeSpan Duration(string text) =>
 		TimeSpan.FromSeconds(Math.Clamp(3 + text.Length / 25.0, 4, 10));
 }

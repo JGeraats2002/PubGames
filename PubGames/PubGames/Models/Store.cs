@@ -13,6 +13,7 @@ public static class Prices
 {
 	private static readonly CultureInfo Euro = CultureInfo.GetCultureInfo("nl-NL");
 
+	/// <summary>An amount in euros, the Dutch way: € 0,99.</summary>
 	public static string Format(decimal euros) => euros.ToString("C", Euro);
 
 	/// <summary>What an admin can choose for a game: free or one of the fixed prices.</summary>
@@ -41,8 +42,10 @@ public static class Prices
 /// <summary>A price an admin can give a game.</summary>
 public sealed record GamePriceOption(decimal Price, string Label)
 {
+	/// <summary>Whether this is a price (not Free).</summary>
 	public bool IsPaid => Price > 0;
 
+	/// <summary>The price's text, as the picker shows it.</summary>
 	public override string ToString() => Label;
 }
 
@@ -56,11 +59,13 @@ public sealed record PassPlan(string BasePlanId, string Name, decimal Price);
 /// </summary>
 public sealed record Entitlements(IReadOnlySet<string> Games, DateTime? PassUntil, string? PassPlan, bool PassRenews)
 {
+	/// <summary>An account that owns nothing.</summary>
 	public static Entitlements None { get; } = new(new HashSet<string>(), null, null, false);
 
 	/// <summary>Until when every game is unlocked.</summary>
 	public DateTime? PassRunsUntil => PassUntil;
 
+	/// <summary>Whether the pass runs now.</summary>
 	public bool HasPass => PassUntil is { } until && until > DateTime.UtcNow;
 
 	/// <summary>The pass runs and renews by itself (it wasn't cancelled).</summary>

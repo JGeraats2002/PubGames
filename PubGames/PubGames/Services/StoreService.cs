@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using PubGames.Models;
@@ -63,18 +62,17 @@ public interface IStoreService
 	Task<(string Code, DateTime ValidUntil)?> RenewFriendCodeAsync();
 }
 
-public partial class StoreService(FirestoreClient firestore, IAuthService auth) : IStoreService
+/// <inheritdoc />
+public partial class StoreService(FirestoreClient firestore, IAuthService auth, FunctionsClient functions) : IStoreService
 {
-	private const string FunctionsUrl = $"https://europe-west1-{AuthConfig.FirebaseProjectId}.cloudfunctions.net";
-
-	private readonly HttpClient _http = new();
-
+	/// <inheritdoc />
 	public Entitlements Current { get; private set; } = Entitlements.None;
 
 	private string? _loadedFor;
 
 	private string CacheKey => $"entitlements:{auth.AccountId}";
 
+	/// <inheritdoc />
 	public async Task<Entitlements> RefreshAsync()
 	{
 		if (auth.CurrentUser is not { } user) return Current = Entitlements.None;
@@ -102,6 +100,9 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 		return Current;
 	}
 
+	/// <summary>
+	/// What an account owns, read from its entitlements document (none when there isn't one yet).
+	/// </summary>
 	private static Entitlements Parse(Dictionary<string, object?>? fields)
 	{
 		if (fields is null) return Entitlements.None;
@@ -110,8 +111,10 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 			fields.GetValueOrDefault("passPlan") as string, fields.GetValueOrDefault("passRenews") as bool? ?? false);
 	}
 
+	/// <summary>What an account owns, as saved on the phone for offline use.</summary>
 	private sealed record Cached(List<string> Games, DateTime? PassUntil, string? PassPlan, bool PassRenews);
 
+	/// <summary>What the account owned when this phone last checked.</summary>
 	private Entitlements ReadCache()
 	{
 		try
@@ -126,38 +129,12 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 		}
 	}
 
+	/// <summary>Saves what the account owns on this phone, for offline use.</summary>
 	private void WriteCache(Entitlements e) =>
 		Preferences.Default.Set(CacheKey, JsonSerializer.Serialize(new Cached(e.Games.ToList(), e.PassUntil, e.PassPlan, e.PassRenews)));
 
-	/// <summary>
-	/// Calls one of the server's functions (a Firebase "callable"): signed in
-	/// as the user, so the server knows whose purchase it is.
-	/// </summary>
-	private async Task<JsonNode?> CallAsync(string function, JsonObject data)
-	{
-		var token = await auth.GetIdTokenAsync() ?? throw new StoreException("Sign in first.");
-		HttpResponseMessage? response = null;
-		// Very busy (every server spot taken): wait a moment and try once more.
-		for (var attempt = 0; attempt < 2; attempt++)
-		{
-			response?.Dispose();
-			using var request = new HttpRequestMessage(HttpMethod.Post, $"{FunctionsUrl}/{function}")
-			{
-				Content = JsonContent.Create(new JsonObject { ["data"] = data.DeepClone() })
-			};
-			request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-			response = await _http.SendAsync(request);
-			if (response.StatusCode is not (System.Net.HttpStatusCode.TooManyRequests or System.Net.HttpStatusCode.ServiceUnavailable)) break;
-			await Task.Delay(TimeSpan.FromSeconds(2));
-		}
-		using var _ = response;
-		var body = JsonNode.Parse(await response!.Content.ReadAsStringAsync());
-		if (body?["error"] is { } error)
-			throw new StoreException(error["message"]?.GetValue<string>() ?? "The purchase couldn't be checked.");
-		if (!response.IsSuccessStatusCode)
-			throw new StoreException("The purchase couldn't be checked right now.");
-		return body?["result"];
-	}
+	/// <summary>Calls a server function as the signed-in user (see FunctionsClient).</summary>
+	private Task<JsonNode?> CallAsync(string function, JsonObject data) => functions.CallAsync(function, data);
 
 	/// <summary>The server checks a purchase and records it; then this phone reads the result.</summary>
 	private async Task VerifyAsync(string kind, string purchaseToken, string? gameId)
@@ -167,6 +144,7 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 		await CallAsync("verifyPurchase", data);
 	}
 
+	/// <inheritdoc />
 	public async Task<string?> RedeemCodeAsync(string code, PubGame game)
 	{
 		var data = new JsonObject { ["code"] = code.Trim(), ["gameId"] = game.Id };
@@ -182,10 +160,16 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 		return null;
 	}
 
+	/// <inheritdoc />
 	public Task<(string Code, DateTime ValidUntil)?> FriendCodeAsync() => FriendCodeFromAsync("todaysCode");
 
+	/// <inheritdoc />
 	public Task<(string Code, DateTime ValidUntil)?> RenewFriendCodeAsync() => FriendCodeFromAsync("renewCode");
 
+	/// <summary>
+	/// The owner's friend code from the server function `function` (todaysCode or renewCode), with until when
+	/// it works.
+	/// </summary>
 	private async Task<(string Code, DateTime ValidUntil)?> FriendCodeFromAsync(string function)
 	{
 		try
@@ -203,6 +187,7 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 		}
 	}
 
+	/// <summary>A message the player understands for what went wrong with a purchase.</summary>
 	private static string Problem(Exception ex) => ex switch
 	{
 		HttpRequestException => "No connection - try again when you're online. Nothing was charged twice: Restore purchases picks it up later.",
@@ -211,17 +196,22 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth) 
 	};
 
 #if !ANDROID
+	/// <inheritdoc />
 	public Task<string> GamePriceAsync(PubGame game) => Task.FromResult(Prices.Format(game.Price));
 
+	/// <inheritdoc />
 	public Task<List<PassPlanPrice>> PassPricesAsync() =>
 		Task.FromResult(Prices.PassPlans.Select(p => new PassPlanPrice(p, Prices.Format(p.Price))).ToList());
 
+	/// <inheritdoc />
 	public Task<(PurchaseOutcome Outcome, string? Problem)> BuyGameAsync(PubGame game) =>
 		Task.FromResult<(PurchaseOutcome, string?)>((PurchaseOutcome.Failed, "Buying is only possible in the Android app."));
 
+	/// <inheritdoc />
 	public Task<(PurchaseOutcome Outcome, string? Problem)> BuyPassAsync(PassPlan plan) =>
 		Task.FromResult<(PurchaseOutcome, string?)>((PurchaseOutcome.Failed, "Buying is only possible in the Android app."));
 
+	/// <inheritdoc />
 	public Task<Entitlements> RestoreAsync(IEnumerable<PubGame> games) => RefreshAsync();
 #endif
 }

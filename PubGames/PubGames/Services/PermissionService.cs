@@ -2,6 +2,7 @@ using PubGames.Models;
 
 namespace PubGames.Services;
 
+/// <summary>What a team member may do: admins everything, moderators propose changes for review.</summary>
 public interface IPermissionService
 {
 	/// <summary>Publish, edit and delete games without a review. Everyone else submits review requests.</summary>
@@ -30,13 +31,18 @@ public interface IPermissionService
 /// </summary>
 public class PermissionService : IPermissionService
 {
+	/// <inheritdoc />
 	public bool CanChangeGamesDirectly(TeamMember member) => member.IsAdmin;
 
+	/// <inheritdoc />
 	public bool CanSubmitReviewRequests(TeamMember member) => true;
 
+	/// <inheritdoc />
 	public bool CanReviewRequests(TeamMember member) => member.IsAdmin;
 
+	/// <inheritdoc />
 	public bool CanManageTeam(TeamMember member) => member.IsAdmin;
 
+	/// <inheritdoc />
 	public bool CanManageAdmins(TeamMember member) => member.IsBuiltInAdmin;
 }

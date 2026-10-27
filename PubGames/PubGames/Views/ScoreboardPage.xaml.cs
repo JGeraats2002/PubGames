@@ -27,6 +27,10 @@ public partial class ScoreboardPage : ContentPage
 	/// <summary>False until the first load; after that, coming back to the page reloads the players.</summary>
 	private bool _loaded;
 
+	/// <summary>
+	/// Sets up the scoreboard: its view model, the buttons stay above the keyboard, and the cards are rebuilt
+	/// whenever the players, the screen size or the subgame change.
+	/// </summary>
 	public ScoreboardPage(ScoreboardViewModel vm, GameNight gameNight)
 	{
 		InitializeComponent();
@@ -120,8 +124,10 @@ public partial class ScoreboardPage : ContentPage
 			await _vm.LoadAsync(session.Id);
 	}
 
+	/// <summary>The game gets one subgame fewer.</summary>
 	private async void OnFewerSubgamesClicked(object? sender, EventArgs e) => await _vm.ChangeSubgameCountAsync(-1);
 
+	/// <summary>The game gets one subgame more.</summary>
 	private async void OnMoreSubgamesClicked(object? sender, EventArgs e) => await _vm.ChangeSubgameCountAsync(+1);
 
 	/// <summary>Note this subgame's result; the scores then start over for the next one.</summary>
@@ -168,6 +174,7 @@ public partial class ScoreboardPage : ContentPage
 		});
 	}
 
+	/// <summary>Ends the game after asking, and goes to the last subgame's result.</summary>
 	private async void OnFinishClicked(object? sender, EventArgs e)
 	{
 		if (_vm.Session is null) return;
@@ -195,12 +202,18 @@ public partial class ScoreboardPage : ContentPage
 		});
 	}
 
+	/// <summary>
+	/// Opens Change players: players join, leave, swap seats or are replaced during the game.
+	/// </summary>
 	private async void OnChangePlayersClicked(object? sender, EventArgs e)
 	{
 		if (_vm.Session is null) return;
 		await Shell.Current.GoToAsync(nameof(SessionPlayersPage), new Dictionary<string, object> { ["sessionId"] = _vm.Session.Id });
 	}
 
+	/// <summary>
+	/// Builds a card for every player so they all fit on the screen at once (two columns above 8 players).
+	/// </summary>
 	private void BuildBoard()
 	{
 		var rows = _vm.Rows;
@@ -243,16 +256,16 @@ public partial class ScoreboardPage : ContentPage
 		// With few players they'd be huge, so cap them at a comfortable size.
 		var cardHeight = Math.Min(140, (available - Board.RowSpacing * (rowsPerColumn - 1)) / rowsPerColumn);
 		var cardWidth = (width - Board.ColumnSpacing * (columns - 1)) / columns;
-		for (var c = 0; c < columns; c++)
+		for (var column = 0; column < columns; column++)
 			Board.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-		for (var r = 0; r < rowsPerColumn; r++)
+		for (var cardRow = 0; cardRow < rowsPerColumn; cardRow++)
 			Board.RowDefinitions.Add(new RowDefinition(new GridLength(cardHeight)));
 
-		for (var i = 0; i < rows.Count; i++)
+		for (var playerIndex = 0; playerIndex < rows.Count; playerIndex++)
 		{
-			var card = BuildCard(rows[i], new CardSize(cardWidth, cardHeight, Compact: columns > 1));
-			Grid.SetColumn(card, i / rowsPerColumn);
-			Grid.SetRow(card, i % rowsPerColumn);
+			var card = BuildCard(rows[playerIndex], new CardSize(cardWidth, cardHeight, Compact: columns > 1));
+			Grid.SetColumn(card, playerIndex / rowsPerColumn);
+			Grid.SetRow(card, playerIndex % rowsPerColumn);
 			Board.Children.Add(card);
 		}
 	}
@@ -267,13 +280,16 @@ public partial class ScoreboardPage : ContentPage
 	/// <summary>A card's outer size; Compact with two columns of cards.</summary>
 	private readonly record struct CardSize(double Width, double Height, bool Compact)
 	{
+		/// <summary>The space at the card's sides: less on small cards.</summary>
 		public double PaddingX => Compact ? 8 : 12;
 		public const double PaddingY = 4;
 
 		/// <summary>The room inside the border and padding.</summary>
 		public double InnerHeight => Height - PaddingY * 2 - 2;
+		/// <summary>The width inside the card, for its name, score and buttons.</summary>
 		public double InnerWidth => Width - PaddingX * 2 - 2;
 
+		/// <summary>The space between the card's parts: less on small cards.</summary>
 		public double Spacing => Compact ? 4 : 8;
 	}
 
@@ -284,6 +300,9 @@ public partial class ScoreboardPage : ContentPage
 	private double ScoreFontFor(double width, double height, double max) =>
 		Math.Clamp(Math.Min(Math.Min(height * 0.8, max), width / (_vm.Rules.ScoreLength * 0.62)), 12, max);
 
+	/// <summary>
+	/// One player's card: seat, name, score and the buttons to change it, laid out for the card's size.
+	/// </summary>
 	private View BuildCard(ParticipantRow row, CardSize size)
 	{
 		var rules = _vm.Rules;
@@ -322,6 +341,9 @@ public partial class ScoreboardPage : ContentPage
 		return card;
 	}
 
+	/// <summary>
+	/// The seat number on a card, which turns into "Your turn" for the player whose turn it is.
+	/// </summary>
 	private Label SeatLabel(double fontSize)
 	{
 		var seat = new Label { FontSize = fontSize, TextColor = Color("TextSecondary"), VerticalOptions = LayoutOptions.Center };
@@ -332,6 +354,7 @@ public partial class ScoreboardPage : ContentPage
 		return seat;
 	}
 
+	/// <summary>The player's name on a card, shortened when it doesn't fit.</summary>
 	private static Label NameLabel(ParticipantRow row, double fontSize)
 	{
 		var name = new Label
@@ -347,6 +370,7 @@ public partial class ScoreboardPage : ContentPage
 		return name;
 	}
 
+	/// <summary>The player's score on a card; tap it to type an amount.</summary>
 	private Label ScoreLabel(ParticipantRow row, double fontSize)
 	{
 		var score = new Label
@@ -540,6 +564,9 @@ public partial class ScoreboardPage : ContentPage
 		return trigger;
 	}
 
+	/// <summary>
+	/// A + or − button on a card that changes the score by `delta`; held down it keeps counting.
+	/// </summary>
 	private Button StepButton(string text, int delta, ParticipantRow row, double size, bool filled)
 	{
 		var button = new Button
@@ -673,20 +700,22 @@ public partial class ScoreboardPage : ContentPage
 		if (index < 0) return;
 		if (index >= _vm.Rows.Count)
 		{
-			foreach (var b in _amountBoxes.Values)
-				b.Unfocus();
+			foreach (var amountBox in _amountBoxes.Values)
+				amountBox.Unfocus();
 			return;
 		}
 		if (_amountBoxes.TryGetValue(_vm.Rows[index], out var next))
 			next.Focus();
 	}
 
+	/// <summary>Goes to the previous player's amount box.</summary>
 	private async void OnPreviousBoxClicked(object? sender, EventArgs e)
 	{
 		if (_typingRow is { } row)
 			await MoveToBoxAsync(row, -1, apply: false);
 	}
 
+	/// <summary>Adds what's typed and goes to the next player's amount box.</summary>
 	private async void OnNextBoxClicked(object? sender, EventArgs e)
 	{
 		if (_typingRow is { } row)
@@ -740,6 +769,7 @@ public partial class ScoreboardPage : ContentPage
 			await _vm.AdjustScoreAsync(row, amount);
 	}
 
+	/// <summary>A colour from the app's resources (App.xaml).</summary>
 	private static Color Color(string key) =>
 		Application.Current!.Resources.TryGetValue(key, out var value) && value is Color color ? color : Colors.Gray;
 }

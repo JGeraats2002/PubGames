@@ -30,12 +30,15 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	/// <summary>Saved players who aren't playing right now.</summary>
 	public ObservableCollection<Player> AvailablePlayers { get; } = new();
 
+	/// <summary>How many saved players could still join.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasAvailablePlayers))]
 	private int availableCount;
 
+	/// <summary>Whether saved players could still join: their list shows.</summary>
 	public bool HasAvailablePlayers => AvailableCount > 0;
 
+	/// <summary>The name of a new player, as typed.</summary>
 	[ObservableProperty]
 	private string newPlayerName = string.Empty;
 
@@ -43,6 +46,7 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	[ObservableProperty]
 	private bool saveNewPlayer = true;
 
+	/// <summary>What happened (a player joined, replaced) or why something can't.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -51,12 +55,17 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database and the sign-in - from the app (dependency
+	/// injection).
+	/// </summary>
 	public SessionPlayersViewModel(ILocalDatabaseService local, IAuthService auth)
 	{
 		_local = local;
 		_auth = auth;
 	}
 
+	/// <summary>Opened for a game night: shows who's playing.</summary>
 	public async void ApplyQueryAttributes(IDictionary<string, object> query)
 	{
 		if (query.TryGetValue("sessionId", out var id) && id is string sessionId)
@@ -69,6 +78,9 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 		}
 	}
 
+	/// <summary>
+	/// Shows the players of the game night in seat order, and the saved players who could join.
+	/// </summary>
 	private async Task LoadAsync()
 	{
 		_allParticipants = await _local.GetParticipantsAsync(_sessionId);
@@ -145,6 +157,7 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 		return player;
 	}
 
+	/// <summary>A new player joins the game by name, in the last seat.</summary>
 	public async Task AddNewPlayerAsync()
 	{
 		if (await CreatePlayerAsync(NewPlayerName) is not { } player) return;
@@ -193,11 +206,11 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	/// <summary>Writes each active player's seat from the current order (scores untouched).</summary>
 	private async Task SaveSeatsAsync()
 	{
-		for (var i = 0; i < Rows.Count; i++)
+		for (var seat = 0; seat < Rows.Count; seat++)
 		{
-			Rows[i].Participant.Position = i;
-			await _local.SaveParticipantAsync(Rows[i].Participant);
-			Rows[i].NotifyChanged();
+			Rows[seat].Participant.Position = seat;
+			await _local.SaveParticipantAsync(Rows[seat].Participant);
+			Rows[seat].NotifyChanged();
 		}
 	}
 }

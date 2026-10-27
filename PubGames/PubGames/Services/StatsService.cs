@@ -3,6 +3,10 @@ using PubGames.Models;
 
 namespace PubGames.Services;
 
+/// <summary>
+/// Players' stats: finished games go to the cloud for every player added by code, and the user's own played
+/// games come back from there.
+/// </summary>
 public interface IStatsService
 {
 	/// <summary>
@@ -27,6 +31,7 @@ public class StatsService(ILocalDatabaseService local, FirestoreClient firestore
 
 	private string CacheKey => $"stats:{auth.AccountId}";
 
+	/// <inheritdoc />
 	public async Task PublishFinishedGamesAsync()
 	{
 		if (!auth.IsSignedIn) return;
@@ -39,6 +44,9 @@ public class StatsService(ILocalDatabaseService local, FirestoreClient firestore
 		}
 	}
 
+	/// <summary>
+	/// Sends one finished game to the cloud: who played and how it ended for each linked player.
+	/// </summary>
 	private async Task PublishAsync(GameSession session)
 	{
 		var results = await local.GetRoundResultsAsync(session.Id);
@@ -72,6 +80,7 @@ public class StatsService(ILocalDatabaseService local, FirestoreClient firestore
 		});
 	}
 
+	/// <inheritdoc />
 	public async Task<(List<PlayedGame> Games, bool Offline)> GetMyGamesAsync()
 	{
 		var uid = auth.AccountId;
@@ -96,6 +105,9 @@ public class StatsService(ILocalDatabaseService local, FirestoreClient firestore
 		}
 	}
 
+	/// <summary>
+	/// Reads how a finished game ended for this player from its cloud document; null when they weren't in it.
+	/// </summary>
 	private static PlayedGame? ToPlayedGame(Dictionary<string, object?> f, string uid)
 	{
 		if (f.GetValueOrDefault("outcomes") is not IDictionary<string, object?> outcomes

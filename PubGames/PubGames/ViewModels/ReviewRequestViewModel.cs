@@ -38,12 +38,15 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	/// <summary>Raised after a decision so the page can navigate back. The text, if any, is shown first.</summary>
 	public event EventHandler<string?>? Finished;
 
+	/// <summary>What the request asks: "New game", "Changes to a game" ...</summary>
 	[ObservableProperty]
 	private string typeLabel = string.Empty;
 
+	/// <summary>What it's about: the game's or category's name.</summary>
 	[ObservableProperty]
 	private string headline = string.Empty;
 
+	/// <summary>Who sent it and when.</summary>
 	[ObservableProperty]
 	private string submittedLabel = string.Empty;
 
@@ -52,12 +55,14 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	[NotifyPropertyChangedFor(nameof(HasChanges))]
 	private List<string> changes = new();
 
+	/// <summary>Whether there's a list of changes (for changes to a game).</summary>
 	public bool HasChanges => Changes.Count > 0;
 
 	/// <summary>False for category requests, which have no game to show.</summary>
 	[ObservableProperty]
 	private bool hasGamePreview;
 
+	/// <summary>The name of the version that's shown.</summary>
 	[ObservableProperty]
 	private string previewTitle = string.Empty;
 
@@ -66,11 +71,14 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	[NotifyPropertyChangedFor(nameof(PreviewHasCover))]
 	private PubGame? preview;
 
+	/// <summary>Whether the version that's shown has a cover picture.</summary>
 	public bool PreviewHasCover => !string.IsNullOrEmpty(Preview?.CoverImageUrl);
 
+	/// <summary>The categories of the version that's shown.</summary>
 	[ObservableProperty]
 	private string previewCategories = string.Empty;
 
+	/// <summary>The rules of the version that's shown, in text and pictures.</summary>
 	[ObservableProperty]
 	private List<RulesBlock> previewRules = new();
 
@@ -82,6 +90,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	[NotifyPropertyChangedFor(nameof(CanDecide))]
 	private bool isReadOnly;
 
+	/// <summary>Whether Approve and Reject show (not after a decision).</summary>
 	public bool CanDecide => !IsReadOnly;
 
 	/// <summary>Changes to a game that still exists: the preview can switch between the game as it is and with the changes.</summary>
@@ -95,12 +104,15 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	/// <summary>The game with the proposed changes; what the preview switches back to.</summary>
 	private PubGame? _proposed;
 
+	/// <summary>The approve button's text, for what approving does.</summary>
 	[ObservableProperty]
 	private string approveButtonText = "Approve";
 
+	/// <summary>Whether it can be approved (e.g. not when the game no longer exists).</summary>
 	[ObservableProperty]
 	private bool canApprove;
 
+	/// <summary>What happened, or why it couldn't.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -109,8 +121,13 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>Who sent the request, for the confirmation questions.</summary>
 	public string SubmitterLabel => _request?.SubmitterLabel ?? "the moderator";
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, cloud sync, the permissions, the sign-in, the
+	/// team, the categories, the Inbox and the picture store - from the app (dependency injection).
+	/// </summary>
 	public ReviewRequestViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions,
 		IAuthService auth, ITeamService team, ICategoryService categories, IMessageService messages, IImageStore images)
 	{
@@ -124,6 +141,9 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		_messages = messages;
 	}
 
+	/// <summary>
+	/// Opened for a review request: shows what it proposes, and for changes what's different.
+	/// </summary>
 	public async void ApplyQueryAttributes(IDictionary<string, object> query)
 	{
 		if (!query.TryGetValue("requestId", out var id) || id is not string requestId) return;
@@ -154,6 +174,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		Show(_request);
 	}
 
+	/// <summary>Shows a review request: who sent it, what kind it is and what it proposes.</summary>
 	private void Show(ReviewRequest r)
 	{
 		OnPropertyChanged(nameof(SubmitterLabel));
@@ -313,6 +334,9 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		CanApprove = problem is null;
 	}
 
+	/// <summary>
+	/// What's different between the current game and the proposed one, one line per change.
+	/// </summary>
 	private List<string> DescribeChanges(PubGame before, PubGame after)
 	{
 		var changes = new List<string>();
@@ -346,6 +370,10 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		return changes;
 	}
 
+	/// <summary>
+	/// Approves the request: the change happens (game saved, deleted or categories changed) and the moderator
+	/// gets the decision in their Inbox.
+	/// </summary>
 	public async Task ApproveAsync()
 	{
 		if (_request is null || !IsAllowed()) return;
@@ -458,12 +486,14 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		Finished?.Invoke(this, informed.TrimStart());
 	}
 
+	/// <summary>Saves the approved game in the cloud and on the phone.</summary>
 	private async Task SaveGameAsync(PubGame game)
 	{
 		await _cloud.SaveGameAsync(game);
 		await _local.SaveGameAsync(game);
 	}
 
+	/// <summary>Saves the decision on the request and sends it to the moderator's Inbox.</summary>
 	private Task RecordDecisionAsync(ReviewStatus decision, string note)
 	{
 		_request!.Status = decision;
@@ -487,6 +517,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		}
 	}
 
+	/// <summary>Whether the user may decide on requests (admins); otherwise the page says why not.</summary>
 	private bool IsAllowed()
 	{
 		if (_team.Me is { } me && _permissions.CanReviewRequests(me)) return true;

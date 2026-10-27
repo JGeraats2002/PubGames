@@ -9,15 +9,18 @@ namespace PubGames.Models;
 /// </summary>
 public class GameSession
 {
+	/// <summary>The game night's unique id.</summary>
 	[PrimaryKey]
 	public string Id { get; set; } = Guid.NewGuid().ToString();
 
+	/// <summary>The game that's played.</summary>
 	[Indexed]
 	public string GameId { get; set; } = string.Empty;
 
 	/// <summary>The account that started/played this session (for "my history").</summary>
 	public string AccountId { get; set; } = string.Empty;
 
+	/// <summary>When it started (UTC).</summary>
 	public DateTime StartedAt { get; set; } = DateTime.UtcNow;
 
 	/// <summary>Set when the players finish the whole game; the final result is shown from then on.</summary>
@@ -58,15 +61,19 @@ public class GameSession
 /// </summary>
 public class SessionParticipant
 {
+	/// <summary>The row's number in the phone's database.</summary>
 	[PrimaryKey, AutoIncrement]
 	public int Id { get; set; }
 
+	/// <summary>The game night the player is at.</summary>
 	[Indexed]
 	public string SessionId { get; set; } = string.Empty;
 
+	/// <summary>The player.</summary>
 	[Indexed]
 	public string PlayerId { get; set; } = string.Empty;
 
+	/// <summary>The player's score in the subgame that's being played.</summary>
 	public int Score { get; set; }
 
 	/// <summary>Seat/display order, independent of score - safe to change freely mid-game.</summary>

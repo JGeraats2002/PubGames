@@ -11,12 +11,15 @@ namespace PubGames.Models;
 /// </summary>
 public partial record RulesBlock(string? Text, string? ImageRef)
 {
+	/// <summary>A piece of text.</summary>
 	public bool IsText => Text is not null;
+	/// <summary>A picture.</summary>
 	public bool IsImage => ImageRef is not null;
 
 	/// <summary>The tag inserted into the rules text for an uploaded image.</summary>
 	public static string RulesImageTag(string imageRef) => $"![image]({imageRef})";
 
+	/// <summary>Splits a game's rules into text and pictures, in their order, for showing them.</summary>
 	public static List<RulesBlock> Parse(string rules)
 	{
 		var blocks = new List<RulesBlock>();
@@ -38,6 +41,7 @@ public partial record RulesBlock(string? Text, string? ImageRef)
 		}
 	}
 
+	/// <summary>Finds a picture in the rules text: ![](reference).</summary>
 	[GeneratedRegex(@"!\[[^\]]*\]\(([^)\s]+)\)")]
 	private static partial Regex ImageTag();
 }
@@ -52,6 +56,7 @@ public partial record RulesBlock(string? Text, string? ImageRef)
 /// </summary>
 public partial class EditableRulesBlock : ObservableObject
 {
+	/// <summary>The text of this piece, as typed in the editor.</summary>
 	[ObservableProperty]
 	private string text = string.Empty;
 
@@ -64,15 +69,23 @@ public partial class EditableRulesBlock : ObservableObject
 	[ObservableProperty]
 	private string placeholder = string.Empty;
 
+	/// <summary>A piece of text.</summary>
 	public bool IsText => ImageRef is null;
+	/// <summary>A picture.</summary>
 	public bool IsImage => ImageRef is not null;
 
 	/// <summary>A place kept free for a picture that's still being chosen or made (see MakeRoom).</summary>
 	public bool IsWaiting => ImageRef is { Length: 0 };
 
+	/// <summary>A new piece of text for the rules editor.</summary>
 	private static EditableRulesBlock ForText(string text) => new() { Text = text };
+	/// <summary>A new picture for the rules editor.</summary>
 	private static EditableRulesBlock ForImage(string imageRef) => new() { ImageRef = imageRef };
 
+	/// <summary>
+	/// Splits a game's rules into pieces of text and pictures for the editor (always starting and ending with
+	/// text, so there's somewhere to type).
+	/// </summary>
 	public static ObservableCollection<EditableRulesBlock> FromRulesText(string rules)
 	{
 		var blocks = new ObservableCollection<EditableRulesBlock>();
@@ -200,12 +213,15 @@ public static partial class RulesImages
 			yield return tag.Groups[1].Value;
 	}
 
+	/// <summary>Finds a picture in the rules text: ![](reference).</summary>
 	[GeneratedRegex(@"!\[[^\]]*\]\(([^)\s]+)\)")]
 	private static partial Regex ImageTag();
 
+	/// <summary>Finds a picture with the spaces and empty lines in front of it.</summary>
 	[GeneratedRegex(@"[ \t\r\n]*(!\[[^\]]*\]\([^)\s]+\))")]
 	private static partial Regex LeadingSpace();
 
+	/// <summary>Finds a picture with the spaces and empty lines after it.</summary>
 	[GeneratedRegex(@"(!\[[^\]]*\]\([^)\s]+\))[ \t\r\n]*")]
 	private static partial Regex TrailingSpace();
 }

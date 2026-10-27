@@ -54,7 +54,7 @@
 			<VerticalStackLayout Spacing="12" IsVisible="{Binding HasGamePreview}">
 			<!-- Changes to a game: switch the preview between the game as it is and with the changes. -->
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,16,0,0" IsVisible="{Binding CanSwitch}">
-				<Button Text="Original" Clicked="OnShowOriginalClicked" HeightRequest="40"
+				<Button Text="Original" Clicked="OnShowOriginalClicked" HeightRequest="48"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1">
 					<Button.Triggers>
@@ -64,7 +64,7 @@
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
-				<Button Grid.Column="1" Text="With changes" Clicked="OnShowChangedClicked" HeightRequest="40"
+				<Button Grid.Column="1" Text="With changes" Clicked="OnShowChangedClicked" HeightRequest="48"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1">
 					<Button.Triggers>

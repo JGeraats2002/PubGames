@@ -57,12 +57,14 @@ public partial class CategoryClouds : ContentView
 	/// <summary>The choices being watched, so the closed dropdown always says what's selected.</summary>
 	private readonly List<CategoryChoice> _watched = new();
 
+	/// <summary>Shows the summary line straight away ("All categories" until some are chosen).</summary>
 	public CategoryClouds()
 	{
 		InitializeComponent();
 		ShowSummary();
 	}
 
+	/// <summary>Other categories to show: the old list is no longer watched, the new one is.</summary>
 	private void OnItemsChanged(IEnumerable? old, IEnumerable? items)
 	{
 		if (old is INotifyCollectionChanged oldList)
@@ -74,8 +76,10 @@ public partial class CategoryClouds : ContentView
 		Watch();
 	}
 
+	/// <summary>Categories were added or removed: they're all watched again.</summary>
 	private void OnListChanged(object? sender, NotifyCollectionChangedEventArgs e) => Watch();
 
+	/// <summary>Watches every category for being selected, so the summary line stays right.</summary>
 	private void Watch()
 	{
 		foreach (var choice in _watched)
@@ -87,6 +91,7 @@ public partial class CategoryClouds : ContentView
 		ShowSummary();
 	}
 
+	/// <summary>A category was selected or unselected: the summary line updates.</summary>
 	private void OnChoiceChanged(object? sender, PropertyChangedEventArgs e) => ShowSummary();
 
 	/// <summary>The selected categories on one line ("All" in a filter is not a category, so it isn't listed).</summary>
@@ -97,12 +102,14 @@ public partial class CategoryClouds : ContentView
 		Summary.FontAttributes = selected.Count == 0 ? FontAttributes.None : FontAttributes.Bold;
 	}
 
+	/// <summary>Opens or closes the list of categories.</summary>
 	private void OnHeaderTapped(object? sender, TappedEventArgs e)
 	{
 		Clouds.IsVisible = !Clouds.IsVisible;
 		Arrow.Text = Clouds.IsVisible ? "▴" : "▾";
 	}
 
+	/// <summary>Selects or unselects the tapped category.</summary>
 	private void OnCloudTapped(object? sender, TappedEventArgs e)
 	{
 		if (e.Parameter is CategoryChoice choice)

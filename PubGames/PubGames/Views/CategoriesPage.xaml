@@ -47,11 +47,11 @@
 						<Label Text="{Binding Name}" VerticalOptions="Center" />
 						<Label Grid.Column="1" Text="{Binding CountLabel}" FontSize="12"
 						       TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" Padding="0,0,6,0" />
-						<Button Grid.Column="2" Text="▲" Clicked="OnCategoryUpClicked" IsVisible="{Binding CanReorder}"
-						        WidthRequest="38" HeightRequest="34" Padding="0" FontSize="12"
+						<Button SemanticProperties.Description="Move up" Grid.Column="2" Text="▲" Clicked="OnCategoryUpClicked" IsVisible="{Binding CanReorder}"
+						        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="12"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-						<Button Grid.Column="3" Text="▼" Clicked="OnCategoryDownClicked" IsVisible="{Binding CanReorder}"
-						        WidthRequest="38" HeightRequest="34" Padding="0" FontSize="12"
+						<Button SemanticProperties.Description="Move down" Grid.Column="3" Text="▼" Clicked="OnCategoryDownClicked" IsVisible="{Binding CanReorder}"
+						        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="12"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 					</Grid>
 				</DataTemplate>

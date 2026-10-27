@@ -23,8 +23,10 @@ public partial class AdminTeamViewModel : ObservableObject
 		? (string.IsNullOrWhiteSpace(u.DisplayName) ? u.Email : u.DisplayName)
 		: "An admin";
 
+	/// <summary>The admins and moderators.</summary>
 	public ObservableCollection<TeamMember> Members { get; } = new();
 
+	/// <summary>What happened, or why it couldn't.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -33,14 +35,20 @@ public partial class AdminTeamViewModel : ObservableObject
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>The email of the moderator to add, as typed.</summary>
 	[ObservableProperty]
 	[NotifyCanExecuteChangedFor(nameof(AddModeratorCommand))]
 	private string newModeratorEmail = string.Empty;
 
+	/// <summary>A change is being saved: the buttons wait.</summary>
 	[ObservableProperty]
 	[NotifyCanExecuteChangedFor(nameof(AddModeratorCommand))]
 	private bool isBusy;
 
+	/// <summary>
+	/// Gets the services it works with - the permissions, the sign-in, the team and email - from the app
+	/// (dependency injection).
+	/// </summary>
 	public AdminTeamViewModel(IPermissionService permissions, IAuthService auth, ITeamService team, IEmailSender email)
 	{
 		_auth = auth;
@@ -49,6 +57,7 @@ public partial class AdminTeamViewModel : ObservableObject
 		_email = email;
 	}
 
+	/// <summary>Shows the team as saved on the phone, then refreshes it from the cloud.</summary>
 	public async Task LoadAsync()
 	{
 		await _auth.InitializeAsync();
@@ -69,19 +78,23 @@ public partial class AdminTeamViewModel : ObservableObject
 
 	private bool IAmOwner => _team.Me is { } me && _permissions.CanManageAdmins(me);
 
+	/// <summary>
+	/// Shows the team, with the buttons each member may get from the user (only the owner changes admins).
+	/// </summary>
 	private void ShowMembers(IEnumerable<TeamMember> members)
 	{
 		var owner = IAmOwner;
 		Members.Clear();
-		foreach (var m in members)
+		foreach (var member in members)
 		{
-			m.CanPromote = owner && !m.IsAdmin;
-			m.CanDemote = owner && m.IsAdmin && !m.IsBuiltInAdmin;
-			m.CanRemove = !m.IsBuiltInAdmin && (owner || !m.IsAdmin);
-			Members.Add(m);
+			member.CanPromote = owner && !member.IsAdmin;
+			member.CanDemote = owner && member.IsAdmin && !member.IsBuiltInAdmin;
+			member.CanRemove = !member.IsBuiltInAdmin && (owner || !member.IsAdmin);
+			Members.Add(member);
 		}
 	}
 
+	/// <summary>A moderator can be added once an email is typed and nothing else is busy.</summary>
 	private bool CanAddModerator() => !IsBusy && !string.IsNullOrWhiteSpace(NewModeratorEmail);
 
 	/// <summary>Adds the person to the team in the cloud, then emails them what a moderator does and how the app works.</summary>
@@ -150,6 +163,9 @@ public partial class AdminTeamViewModel : ObservableObject
 		await SendEmailAsync(member.Email, subject, body, $"{member.Email} is no longer {member.RoleName.ToLowerInvariant()}.");
 	}
 
+	/// <summary>
+	/// Opens an email to `to` (or sends it, when the app sends automatically), then shows `done`.
+	/// </summary>
 	private async Task SendEmailAsync(string to, string subject, string body, string done)
 	{
 		try
@@ -173,6 +189,7 @@ public partial class AdminTeamViewModel : ObservableObject
 	[RelayCommand]
 	private Task MakeModeratorAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Moderator, $"{member.Label} is now a moderator.");
 
+	/// <summary>The owner makes a moderator admin or an admin moderator, in the cloud.</summary>
 	private async Task ChangeRoleAsync(TeamMember member, TeamRole role, string done)
 	{
 		if (!IsAllowedToManageAdmins() || member.IsBuiltInAdmin) return;
@@ -193,6 +210,7 @@ public partial class AdminTeamViewModel : ObservableObject
 		ShowMembers(await _team.GetCachedMembersAsync());
 	}
 
+	/// <summary>Whether the user may change the team; otherwise the page says why not.</summary>
 	private bool IsAllowedToManageTeam()
 	{
 		if (_team.Me is { } me && _permissions.CanManageTeam(me)) return true;
@@ -201,6 +219,9 @@ public partial class AdminTeamViewModel : ObservableObject
 		return false;
 	}
 
+	/// <summary>
+	/// Whether the user may change admins (only the owner); otherwise the page says why not.
+	/// </summary>
 	private bool IsAllowedToManageAdmins()
 	{
 		if (IAmOwner) return true;
@@ -209,6 +230,7 @@ public partial class AdminTeamViewModel : ObservableObject
 		return false;
 	}
 
+	/// <summary>Whether the text is a whole email address (with a dot in the domain).</summary>
 	private static bool IsValidEmail(string email) =>
 		MailAddress.TryCreate(email, out var parsed) && parsed.Address == email && email.Contains('.', StringComparison.Ordinal);
 }

@@ -14,6 +14,10 @@ public interface IGoogleSignInProvider
 	Task SignOutAsync();
 }
 
+/// <summary>
+/// The signed-in account: signing in with Google, staying signed in (also offline), signing out, and the
+/// short-lived token that proves to the cloud who's asking.
+/// </summary>
 public interface IAuthService
 {
 	AppUser? CurrentUser { get; }
@@ -56,21 +60,32 @@ public class AuthService : IAuthService
 	private string? _idToken;
 	private DateTime _idTokenExpiresAt;
 
+	/// <summary>
+	/// Gets the services it works with - Google sign-in - from the app (dependency injection).
+	/// </summary>
 	public AuthService(IGoogleSignInProvider google)
 	{
 		_google = google;
 	}
 
+	/// <summary>The signed-in user, or null when nobody is signed in.</summary>
 	public AppUser? CurrentUser { get; private set; }
+	/// <summary>Whether someone is signed in.</summary>
 	public bool IsSignedIn => CurrentUser is not null;
+	/// <inheritdoc />
 	public string AccountId => CurrentUser?.Uid ?? GuestAccountId;
 
 	public event EventHandler? SignedInChanged;
 
 	private Task<bool>? _restore;
 
+	/// <inheritdoc />
 	public Task<bool> InitializeAsync() => _restore ??= RestoreAsync();
 
+	/// <summary>
+	/// Starting the app: signs in again with the saved session, if there is one. Offline the saved identity
+	/// is used; a revoked session means signing in again.
+	/// </summary>
 	private async Task<bool> RestoreAsync()
 	{
 		var refreshToken = await SecureStorage.Default.GetAsync(RefreshTokenKey);
@@ -104,6 +119,10 @@ public class AuthService : IAuthService
 		return true;
 	}
 
+	/// <summary>
+	/// Signs in with the Google account the user picks: its Google token is exchanged with Firebase for a
+	/// session, which is saved securely on the phone.
+	/// </summary>
 	public async Task SignInWithGoogleAsync()
 	{
 		if (!AuthConfig.IsConfigured)
@@ -132,6 +151,9 @@ public class AuthService : IAuthService
 		SignedInChanged?.Invoke(this, EventArgs.Empty);
 	}
 
+	/// <summary>
+	/// Signs out: the saved session is removed from the phone and the Google account is forgotten.
+	/// </summary>
 	public async Task SignOutAsync()
 	{
 		ClearSession();
@@ -139,6 +161,7 @@ public class AuthService : IAuthService
 		SignedInChanged?.Invoke(this, EventArgs.Empty);
 	}
 
+	/// <inheritdoc />
 	public async Task<string?> GetIdTokenAsync()
 	{
 		if (CurrentUser is null) return null;
@@ -151,6 +174,10 @@ public class AuthService : IAuthService
 		return _idToken;
 	}
 
+	/// <summary>
+	/// Gets a fresh ID token (valid for an hour) with the saved refresh token; throws AuthException when the
+	/// session is no longer valid.
+	/// </summary>
 	private async Task RefreshIdTokenAsync(string refreshToken)
 	{
 		var response = await _http.PostAsync(
@@ -167,6 +194,9 @@ public class AuthService : IAuthService
 			await SecureStorage.Default.SetAsync(RefreshTokenKey, body.RefreshToken);
 	}
 
+	/// <summary>
+	/// Removes the saved session from the phone's secure storage and forgets the signed-in user.
+	/// </summary>
 	private void ClearSession()
 	{
 		SecureStorage.Default.Remove(RefreshTokenKey);
@@ -175,6 +205,9 @@ public class AuthService : IAuthService
 		_idToken = null;
 	}
 
+	/// <summary>
+	/// Keeps the ID token and when it expires (a minute early, so it's never used just as it runs out).
+	/// </summary>
 	private void SetIdToken(string idToken, string expiresInSeconds)
 	{
 		_idToken = idToken;
@@ -182,6 +215,7 @@ public class AuthService : IAuthService
 		_idTokenExpiresAt = DateTime.UtcNow.AddSeconds(int.Parse(expiresInSeconds) - 60);
 	}
 
+	/// <summary>Whether this email is one of the app's built-in admins (AuthConfig.AdminEmails).</summary>
 	private static bool IsAdminEmail(string email) =>
 		AuthConfig.AdminEmails.Any(a => a.Equals(email, StringComparison.OrdinalIgnoreCase));
 
@@ -195,6 +229,7 @@ public class AuthService : IAuthService
 		return (await response.Content.ReadFromJsonAsync<T>())!;
 	}
 
+	/// <summary>Firebase's answer to signing in with a Google token.</summary>
 	private record SignInWithIdpResponse(
 		[property: JsonPropertyName("localId")] string LocalId,
 		[property: JsonPropertyName("email")] string? Email,
@@ -203,10 +238,12 @@ public class AuthService : IAuthService
 		[property: JsonPropertyName("refreshToken")] string RefreshToken,
 		[property: JsonPropertyName("expiresIn")] string ExpiresIn);
 
+	/// <summary>Firebase's answer to refreshing the ID token.</summary>
 	private record RefreshResponse(
 		[property: JsonPropertyName("id_token")] string IdToken,
 		[property: JsonPropertyName("refresh_token")] string RefreshToken,
 		[property: JsonPropertyName("expires_in")] string ExpiresIn);
 }
 
+/// <summary>Signing in failed or the session is no longer valid, with a message for the user.</summary>
 public class AuthException(string message) : Exception(message);

@@ -4,6 +4,9 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
+/// <summary>
+/// The sign-in page: signing in with Google, or straight on when a saved session is restored.
+/// </summary>
 public partial class LoginViewModel : ObservableObject
 {
 	private readonly IAuthService _auth;
@@ -13,11 +16,13 @@ public partial class LoginViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(ShowSignIn))]
 	private bool isRestoring = true;
 
+	/// <summary>Signing in: the sign-in button hides and a spinner shows.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(ShowSignIn))]
 	[NotifyCanExecuteChangedFor(nameof(SignInCommand))]
 	private bool isBusy;
 
+	/// <summary>Why signing in didn't work.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -26,8 +31,12 @@ public partial class LoginViewModel : ObservableObject
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>The sign-in button shows when nothing is being restored or signed in.</summary>
 	public bool ShowSignIn => !IsRestoring && !IsBusy;
 
+	/// <summary>
+	/// Gets the services it works with - the sign-in - from the app (dependency injection).
+	/// </summary>
 	public LoginViewModel(IAuthService auth)
 	{
 		_auth = auth;
@@ -44,8 +53,12 @@ public partial class LoginViewModel : ObservableObject
 		IsRestoring = _auth.IsSignedIn;
 	}
 
+	/// <summary>Signing in can start when nothing is busy.</summary>
 	private bool CanSignIn() => !IsBusy;
 
+	/// <summary>
+	/// Signs in with the Google account the user picks; the app then shows the main screens.
+	/// </summary>
 	[RelayCommand(CanExecute = nameof(CanSignIn))]
 	private async Task SignInAsync()
 	{

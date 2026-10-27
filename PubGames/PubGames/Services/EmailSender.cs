@@ -20,8 +20,10 @@ public interface IEmailSender
 /// </summary>
 public class ComposeEmailSender : IEmailSender
 {
+	/// <inheritdoc />
 	public bool SendsAutomatically => false;
 
+	/// <inheritdoc />
 	public async Task SendAsync(string to, string subject, string body, string replyTo)
 	{
 		if (!Email.Default.IsComposeSupported)
@@ -49,13 +51,16 @@ public class FirestoreEmailSender : IEmailSender
 {
 	private readonly FirestoreClient _firestore;
 
+	/// <summary>Gets the services it works with - the cloud - from the app (dependency injection).</summary>
 	public FirestoreEmailSender(FirestoreClient firestore)
 	{
 		_firestore = firestore;
 	}
 
+	/// <inheritdoc />
 	public bool SendsAutomatically => true;
 
+	/// <inheritdoc />
 	public Task SendAsync(string to, string subject, string body, string replyTo) =>
 		_firestore.SetAsync("mail", Guid.NewGuid().ToString("N"), new Dictionary<string, object?>
 		{

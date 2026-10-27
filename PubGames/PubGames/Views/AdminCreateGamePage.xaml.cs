@@ -4,6 +4,10 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// The game form for admins and moderators: a new game, changes to a game, or a moderator's review request -
+/// on three pages: General, Scoring and Rules.
+/// </summary>
 public partial class AdminCreateGamePage : ContentPage
 {
 	private readonly AdminCreateGameViewModel _vm;
@@ -14,6 +18,10 @@ public partial class AdminCreateGamePage : ContentPage
 	/// <summary>The picture being moved, until Place here or Cancel.</summary>
 	private EditableRulesBlock? _movingImage;
 
+	/// <summary>
+	/// Sets up the game form: its view model, the ⓘ help, what happens once it's saved or deleted, and asking
+	/// before leaving with unsaved changes.
+	/// </summary>
 	public AdminCreateGamePage(AdminCreateGameViewModel vm)
 	{
 		InitializeComponent();
@@ -68,18 +76,26 @@ public partial class AdminCreateGamePage : ContentPage
 		await Shell.Current.GoToAsync("..");
 	}
 
+	/// <summary>Every time the page shows: the categories to choose from are loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
 		await _vm.LoadCategoriesAsync();
 	}
 
+	/// <summary>Selects a category for the game, or unselects it.</summary>
 	private void OnCategoryTapped(object? sender, CategoryChoice choice) => choice.IsSelected = !choice.IsSelected;
 
+	/// <summary>Shows the General page of the form.</summary>
 	private void OnGeneralTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.GeneralPage);
+	/// <summary>Shows the Scoring page of the form.</summary>
 	private void OnScoringTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.ScoringPage);
+	/// <summary>Shows the Rules page of the form.</summary>
 	private void OnRulesTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.RulesPage);
 
+	/// <summary>
+	/// Switches to a page of the form, scrolled to the top (a picture being moved is put down first).
+	/// </summary>
 	private async void ShowPage(int page)
 	{
 		if (_vm.CurrentPage == page) return;
@@ -99,6 +115,9 @@ public partial class AdminCreateGamePage : ContentPage
 			_vm.AddSection(picked.Section);
 	}
 
+	/// <summary>
+	/// Fills in the duel's rules with the game's (after asking, when the duel already has rules of its own).
+	/// </summary>
 	private async void OnCopyGameRulesClicked(object? sender, EventArgs e)
 	{
 		if (_vm.DuelScoring.IsChosen
@@ -146,6 +165,9 @@ public partial class AdminCreateGamePage : ContentPage
 		}
 	}
 
+	/// <summary>
+	/// Chooses the cover: upload, take a photo, create an image, change the created image, or remove it.
+	/// </summary>
 	private async void OnCoverClicked(object? sender, EventArgs e)
 	{
 		var drawing = await _vm.GetDrawingAsync(_vm.CoverImageUrl);
@@ -153,6 +175,7 @@ public partial class AdminCreateGamePage : ContentPage
 			await _vm.SetCoverAsync(picture.Source, picture.Drawing);
 	}
 
+	/// <summary>Deletes the game (admins) or asks an admin to (moderators), after asking.</summary>
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
 		var confirmed = _vm.IsModerator
@@ -164,6 +187,7 @@ public partial class AdminCreateGamePage : ContentPage
 			await _vm.DeleteAsync();
 	}
 
+	/// <summary>Takes back the moderator's request that's still waiting for review, after asking.</summary>
 	private async void OnWithdrawClicked(object? sender, EventArgs e)
 	{
 		var confirmed = await DisplayAlertAsync("Withdraw request?",
@@ -172,6 +196,9 @@ public partial class AdminCreateGamePage : ContentPage
 			await _vm.WithdrawAsync();
 	}
 
+	/// <summary>
+	/// Remembers the piece of rules text the cursor is in, so a picture can be added there.
+	/// </summary>
 	private void OnRulesEditorFocused(object? sender, FocusEventArgs e) => _lastRulesEditor = sender as Editor;
 
 	/// <summary>
@@ -256,6 +283,7 @@ public partial class AdminCreateGamePage : ContentPage
 		}
 	}
 
+	/// <summary>Puts the picture that's being moved at the cursor in the rules text.</summary>
 	private async void OnPlaceHereClicked(object? sender, EventArgs e)
 	{
 		if (_movingImage is not { } image) return;
@@ -271,8 +299,10 @@ public partial class AdminCreateGamePage : ContentPage
 		_lastRulesEditor = null;
 	}
 
+	/// <summary>Stops moving a picture; it stays where it was.</summary>
 	private void OnCancelMoveClicked(object? sender, EventArgs e) => StopMoving();
 
+	/// <summary>Hides the bar for moving a picture and forgets which picture it was.</summary>
 	private void StopMoving()
 	{
 		_movingImage = null;

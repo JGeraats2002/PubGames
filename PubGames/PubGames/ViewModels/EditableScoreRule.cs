@@ -10,6 +10,7 @@ namespace PubGames.ViewModels;
 /// </summary>
 public partial class EditableScoreRule : ObservableObject
 {
+	/// <summary>Every kind of rule, for the picker.</summary>
 	public List<ScoreRuleKindOption> KindOptions { get; } = ScoreRuleKindOption.All;
 
 	/// <summary>Null until chosen in the dropdown ("Choose rule").</summary>
@@ -35,16 +36,23 @@ public partial class EditableScoreRule : ObservableObject
 	[NotifyPropertyChangedFor(nameof(HasJoiner))]
 	private bool isFirst;
 
+	/// <summary>Whether the rule shows AND / OR (every rule but the first).</summary>
 	public bool HasJoiner => !IsFirst;
 
+	/// <summary>"AND" or "OR": how the rule links to the one above it.</summary>
 	public string JoinerText => OrWithPrevious ? "OR" : "AND";
 
+	/// <summary>Switches how this rule links to the one above it: AND or OR.</summary>
 	public void ToggleJoiner() => OrWithPrevious = !OrWithPrevious;
 
+	/// <summary>Whether the rule needs a number.</summary>
 	public bool NeedsValue => Kind is not null && new ScoreRule(Kind.Kind).NeedsValue;
+	/// <summary>A "between" rule: it needs two numbers.</summary>
 	public bool IsBetween => Kind?.Kind == ScoreRuleKind.Between;
+	/// <summary>The grey hint in the number box: "from" for between, otherwise "number".</summary>
 	public string ValuePlaceholder => IsBetween ? "from" : "number";
 
+	/// <summary>A rule from a saved game, ready to change in the editor.</summary>
 	public static EditableScoreRule From(ScoreRule rule) => new()
 	{
 		Kind = ScoreRuleKindOption.All.First(o => o.Kind == rule.Kind),

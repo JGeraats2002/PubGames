@@ -11,6 +11,7 @@ public partial class FilterPage : ContentPage
 {
 	private readonly CategoryFilterSet _filters;
 
+	/// <summary>Shows the filters as they're set now.</summary>
 	private FilterPage(CategoryFilterSet filters)
 	{
 		InitializeComponent();
@@ -32,13 +33,16 @@ public partial class FilterPage : ContentPage
 			PlayersSlider.Value = players;
 	}
 
+	/// <summary>Turns a category filter on or off.</summary>
 	private void OnCategoryTapped(object? sender, CategoryChoice choice) => _filters.Toggle(choice);
 
+	/// <summary>Clears every filter.</summary>
 	private void OnClearClicked(object? sender, EventArgs e)
 	{
 		_filters.Clear();
 		PlayersSlider.Value = 0;
 	}
 
+	/// <summary>Closes the filters; the list shows what fits.</summary>
 	private async void OnDoneClicked(object? sender, EventArgs e) => await Navigation.PopModalAsync();
 }

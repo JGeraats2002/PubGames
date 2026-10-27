@@ -8,8 +8,10 @@ namespace PubGames.ViewModels;
 /// <summary>One game with a tick box: is it in the category?</summary>
 public partial class GameChoice : ObservableObject
 {
+	/// <summary>The game.</summary>
 	public required PubGame Game { get; init; }
 
+	/// <summary>Whether the game is in the category.</summary>
 	[ObservableProperty]
 	private bool isSelected;
 }
@@ -38,6 +40,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 	/// <summary>The games matching the search.</summary>
 	public ObservableCollection<GameChoice> VisibleGames { get; } = new();
 
+	/// <summary>The search text: only games with it in their name show.</summary>
 	[ObservableProperty]
 	private string searchText = string.Empty;
 
@@ -46,6 +49,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 
 	partial void OnSearchTextChanged(string value) => ApplySearch();
 
+	/// <summary>Shows the games whose name contains the search text.</summary>
 	private void ApplySearch()
 	{
 		var text = SearchText.Trim();
@@ -56,18 +60,23 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 			VisibleGames.Add(choice);
 	}
 
+	/// <summary>Ticks or unticks a game for this category.</summary>
 	public void Toggle(GameChoice choice) => choice.IsSelected = !choice.IsSelected;
 
+	/// <summary>The page's title: the category's name.</summary>
 	[ObservableProperty]
 	private string title = "Games in category";
 
 
+	/// <summary>Saving: the save button waits.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(CanSave))]
 	private bool isBusy;
 
+	/// <summary>Whether the games can be saved: not busy, and the category exists.</summary>
 	public bool CanSave => !IsBusy && _category is not null;
 
+	/// <summary>What happened, or why it couldn't.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -76,6 +85,10 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, cloud sync, the categories and the sign-in -
+	/// from the app (dependency injection).
+	/// </summary>
 	public CategoryGamesViewModel(ILocalDatabaseService local, ICloudSyncService cloud, ICategoryService categories, IAuthService auth)
 	{
 		_local = local;
@@ -85,6 +98,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		Filters.Changed += (_, _) => ApplySearch();
 	}
 
+	/// <summary>Opened for a category: shows every game, with the ones in the category ticked.</summary>
 	public async void ApplyQueryAttributes(IDictionary<string, object> query)
 	{
 		string? categoryId = null;

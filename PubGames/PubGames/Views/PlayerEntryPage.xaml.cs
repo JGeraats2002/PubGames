@@ -3,10 +3,15 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// Players tab &gt; Who's playing?: the start of a game night - choose the players in seat order, then a
+/// game.
+/// </summary>
 public partial class PlayerEntryPage : ContentPage
 {
 	private readonly PlayerEntryViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public PlayerEntryPage(PlayerEntryViewModel vm)
 	{
 		InitializeComponent();
@@ -14,6 +19,7 @@ public partial class PlayerEntryPage : ContentPage
 		InfoButton.Attach(this, () => Help.Players);
 	}
 
+	/// <summary>Every time the page shows: the saved players are loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
@@ -78,18 +84,21 @@ public partial class PlayerEntryPage : ContentPage
 			await _vm.RenameAsync(player, name);
 	}
 
+	/// <summary>Moves a player one seat up.</summary>
 	private void OnMoveUpClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: Player player })
 			_vm.Move(player, -1);
 	}
 
+	/// <summary>Moves a player one seat down.</summary>
 	private void OnMoveDownClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: Player player })
 			_vm.Move(player, +1);
 	}
 
+	/// <summary>Goes on to choosing a game with these players (at least one is needed).</summary>
 	private async void OnChooseGameClicked(object? sender, EventArgs e)
 	{
 		if (_vm.SelectedPlayers.Count == 0)

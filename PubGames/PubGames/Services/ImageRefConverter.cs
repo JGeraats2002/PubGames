@@ -12,11 +12,13 @@ public class ImageRefConverter : IValueConverter
 	private static IImageStore Store =>
 		IPlatformApplication.Current!.Services.GetRequiredService<IImageStore>();
 
+	/// <summary>Turns an image reference into something an Image can show (see ImageRef).</summary>
 	public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
 		value is string reference && !string.IsNullOrWhiteSpace(reference)
 			? ImageSource.FromStream(ct => Store.OpenAsync(reference, ct))
 			: null;
 
+	/// <summary>Not used: images are only shown, never edited through a binding.</summary>
 	public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
 		throw new NotSupportedException();
 }

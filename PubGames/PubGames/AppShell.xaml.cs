@@ -3,6 +3,9 @@ using PubGames.Views;
 
 namespace PubGames;
 
+/// <summary>
+/// The main screens: the tab bar (Players, Admin, Account) and the routes to every page opened from them.
+/// </summary>
 public partial class AppShell : Shell
 {
 	/// <summary>Admin tab > Requests page, from anywhere (tab bar / tab / page routes in AppShell.xaml).</summary>

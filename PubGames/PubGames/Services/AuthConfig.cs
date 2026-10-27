@@ -30,6 +30,7 @@ public static class AuthConfig
 		"jjh.geraats@gmail.com",
 	];
 
+	/// <summary>Whether the Firebase settings are filled in (not the PASTE_ placeholders).</summary>
 	public static bool IsConfigured =>
 		!FirebaseApiKey.StartsWith("PASTE_") && !GoogleWebClientId.StartsWith("PASTE_");
 }

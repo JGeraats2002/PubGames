@@ -14,6 +14,7 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 	/// <summary>Who's playing - handed over from PlayerEntryPage and passed on to the rules page.</summary>
 	public List<Player> Players { get; private set; } = new();
 
+	/// <summary>Opened with the players of the game night: keeps them for when a game is chosen.</summary>
 	public void ApplyQueryAttributes(IDictionary<string, object> query)
 	{
 		// Single-use parameters: absent when navigating back here, so keep what we had.
@@ -36,13 +37,19 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 
 	private string CurrentAccountId => _auth.AccountId;
 
+	/// <summary>The games that match the search and filters.</summary>
 	public ObservableCollection<PubGame> VisibleGames { get; } = new();
 
+	/// <summary>The search text: only games with it in their name show.</summary>
 	[ObservableProperty]
 	private string searchText = string.Empty;
 
 	private readonly IStoreService _store;
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, the sign-in, cloud sync, the categories and
+	/// the store - from the app (dependency injection).
+	/// </summary>
 	public GameLibraryViewModel(ILocalDatabaseService local, IAuthService auth, ICloudSyncService cloud, ICategoryService categories, IStoreService store)
 	{
 		_store = store;
@@ -53,6 +60,10 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		Filters.Changed += (_, _) => ApplyFilters();
 	}
 
+	/// <summary>
+	/// Shows the games as saved on the phone straight away, with locks on what isn't owned, then refreshes
+	/// games and categories from the cloud.
+	/// </summary>
 	public async Task LoadAsync()
 	{
 		await _auth.InitializeAsync();
@@ -82,6 +93,10 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		await ShowLocalAsync();
 	}
 
+	/// <summary>
+	/// Shows the games on the phone with their categories, and fills the filters with the categories that
+	/// have games.
+	/// </summary>
 	private async Task ShowLocalAsync()
 	{
 		_allGames = (await _local.GetGamesAsync()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -99,6 +114,7 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 
 	partial void OnSearchTextChanged(string value) => ApplyFilters();
 
+	/// <summary>Shows the games that match the search and every filter.</summary>
 	private void ApplyFilters()
 	{
 		VisibleGames.Clear();
@@ -116,6 +132,7 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		}
 	}
 
+	/// <summary>Whether the account may play this game: free, bought, or unlocked by the pass.</summary>
 	public bool IsOwned(PubGame game) => _store.Owns(game);
 
 	/// <summary>The lock and price right of every game the account doesn't own yet.</summary>

@@ -5,8 +5,13 @@ using PubGames.Views;
 
 namespace PubGames;
 
+/// <summary>
+/// Builds the app: registers every service, view model and page, so each page gets what it needs handed in
+/// (dependency injection).
+/// </summary>
 public static class MauiProgram
 {
+	/// <summary>Builds the app with its services, view models and pages.</summary>
 	public static MauiApp CreateMauiApp()
 	{
 		var builder = MauiApp.CreateBuilder();
@@ -35,6 +40,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IMessageService, MessageService>();
 		builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
 		builder.Services.AddSingleton<IPlayerLinkService, PlayerLinkService>();
+		builder.Services.AddSingleton<FunctionsClient>();
 		builder.Services.AddSingleton<IStoreService, StoreService>();
 		// Opens the admin's mail app prefilled. For fully automatic emails, switch to FirestoreEmailSender (see its comments).
 		builder.Services.AddSingleton<IEmailSender, ComposeEmailSender>();

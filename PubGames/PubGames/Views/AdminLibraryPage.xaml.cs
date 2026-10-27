@@ -3,10 +3,15 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// Admin tab &gt; Library: every game, to add, change or delete (moderators: to propose), with requests and
+/// messages waiting at the top.
+/// </summary>
 public partial class AdminLibraryPage : ContentPage
 {
 	private readonly AdminLibraryViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public AdminLibraryPage(AdminLibraryViewModel vm)
 	{
 		InitializeComponent();
@@ -21,11 +26,17 @@ public partial class AdminLibraryPage : ContentPage
 		await _vm.LoadAsync();
 	}
 
+	/// <summary>Opens the filters (number of players, categories).</summary>
 	private async void OnFilterClicked(object? sender, EventArgs e) => await FilterPage.ShowAsync(Navigation, _vm.Filters);
 
+	/// <summary>Opens an empty game form for a new game.</summary>
 	private async void OnNewGameClicked(object? sender, EventArgs e) =>
 		await Shell.Current.GoToAsync(nameof(AdminCreateGamePage));
 
+	/// <summary>
+	/// Opens a game in the form to change it; a moderator's own waiting request for it opens instead, so they
+	/// change that.
+	/// </summary>
 	private async void OnGameTapped(object? sender, TappedEventArgs e)
 	{
 		if (e.Parameter is not PubGame game) return;
@@ -39,9 +50,11 @@ public partial class AdminLibraryPage : ContentPage
 		await Shell.Current.GoToAsync(nameof(AdminCreateGamePage), new Dictionary<string, object> { ["gameId"] = game.Id });
 	}
 
+	/// <summary>Opens the requests waiting for review.</summary>
 	private async void OnRequestsToReviewTapped(object? sender, TappedEventArgs e) =>
 		await Shell.Current.GoToAsync(AppShell.RequestsRoute);
 
+	/// <summary>Opens the Inbox.</summary>
 	private async void OnUnreadMessagesTapped(object? sender, TappedEventArgs e) =>
 		await Shell.Current.GoToAsync(AppShell.InboxRoute);
 

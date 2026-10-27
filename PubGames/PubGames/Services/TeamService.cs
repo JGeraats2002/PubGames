@@ -39,6 +39,10 @@ public interface ITeamService
 	Task UpdateMyNameAsync(string name);
 }
 
+/// <summary>
+/// The team of admins and moderators: from the cloud, cached on the phone, and changed by admins on the Team
+/// page.
+/// </summary>
 public class TeamService : ITeamService
 {
 	private const string Collection = "team";
@@ -50,6 +54,10 @@ public class TeamService : ITeamService
 	private readonly ILocalDatabaseService _local;
 	private readonly FirestoreClient _firestore;
 
+	/// <summary>
+	/// Gets the services it works with - the sign-in, the phone's database and the cloud - from the app
+	/// (dependency injection).
+	/// </summary>
 	public TeamService(IAuthService auth, ILocalDatabaseService local, FirestoreClient firestore)
 	{
 		_auth = auth;
@@ -57,8 +65,10 @@ public class TeamService : ITeamService
 		_firestore = firestore;
 	}
 
+	/// <inheritdoc />
 	public TeamMember? Me { get; private set; }
 
+	/// <inheritdoc />
 	public async Task<TeamMember?> RefreshMyMembershipAsync()
 	{
 		var user = _auth.CurrentUser;
@@ -89,9 +99,11 @@ public class TeamService : ITeamService
 		return Me;
 	}
 
+	/// <inheritdoc />
 	public async Task<List<TeamMember>> GetCachedMembersAsync() =>
 		WithBuiltInAdmins(await _local.GetTeamMembersAsync(CurrentTeamId));
 
+	/// <inheritdoc />
 	public async Task<List<TeamMember>> PullMembersAsync()
 	{
 		var docs = await _firestore.GetAllAsync(Collection);
@@ -107,6 +119,7 @@ public class TeamService : ITeamService
 		return WithBuiltInAdmins(members);
 	}
 
+	/// <inheritdoc />
 	public async Task SaveMemberAsync(TeamMember member)
 	{
 		member.Email = TeamMember.NormalizeEmail(member.Email);
@@ -122,6 +135,7 @@ public class TeamService : ITeamService
 		await _local.SaveTeamMemberAsync(member);
 	}
 
+	/// <inheritdoc />
 	public async Task UpdateMyNameAsync(string name)
 	{
 		name = name.Trim();
@@ -133,6 +147,7 @@ public class TeamService : ITeamService
 		await _local.SaveTeamMemberAsync(me);
 	}
 
+	/// <inheritdoc />
 	public async Task RemoveMemberAsync(TeamMember member)
 	{
 		if (member.IsBuiltInAdmin)
@@ -142,6 +157,9 @@ public class TeamService : ITeamService
 		await _local.DeleteTeamMemberAsync(member.Email);
 	}
 
+	/// <summary>
+	/// The team as stored, plus the built-in admins (AuthConfig.AdminEmails), who are always on it.
+	/// </summary>
 	private List<TeamMember> WithBuiltInAdmins(IEnumerable<TeamMember> members)
 	{
 		var builtIn = AuthConfig.AdminEmails
@@ -157,6 +175,7 @@ public class TeamService : ITeamService
 			.ToList();
 	}
 
+	/// <summary>A built-in admin as a team member.</summary>
 	private static TeamMember BuiltInAdmin(string email, string displayName) => new()
 	{
 		Email = TeamMember.NormalizeEmail(email),
@@ -166,6 +185,7 @@ public class TeamService : ITeamService
 		IsBuiltInAdmin = true
 	};
 
+	/// <summary>Reads a team member from their cloud document.</summary>
 	private static TeamMember ToMember(Dictionary<string, object?> f) => new()
 	{
 		Email = TeamMember.NormalizeEmail(f.GetValueOrDefault("email") as string ?? string.Empty),

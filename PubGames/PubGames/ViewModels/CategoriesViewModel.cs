@@ -9,15 +9,20 @@ namespace PubGames.ViewModels;
 /// <param name="CanReorder">Admins move it up and down with the arrows on its row.</param>
 public record CategoryRow(GameCategory Category, int GameCount, bool CanReorder)
 {
+	/// <summary>The category's name.</summary>
 	public string Name => Category.Name;
+	/// <summary>"1 game" or "4 games": how many games are in it.</summary>
 	public string CountLabel => GameCount == 1 ? "1 game" : $"{GameCount} games";
 }
 
 /// <summary>A main category with its categories; Group is null for the categories that aren't filed under one yet.</summary>
 public class CategorySection(CategoryGroup? group, IEnumerable<CategoryRow> rows) : List<CategoryRow>(rows)
 {
+	/// <summary>The main category, or null for categories without one.</summary>
 	public CategoryGroup? Group { get; } = group;
+	/// <summary>The main category's name.</summary>
 	public string Name => Group?.Name ?? "No main category yet";
+	/// <summary>Whether the main category has no categories yet.</summary>
 	public bool IsEmpty => Count == 0;
 
 	/// <summary>Tapping a main category changes it (admins) or proposes a change (moderators).</summary>
@@ -44,6 +49,7 @@ public partial class CategoriesViewModel : ObservableObject
 	// TODO: replace with the team the user picked once multiple teams exist.
 	private const string CurrentTeamId = AuthService.DefaultTeamId;
 
+	/// <summary>The main categories with their categories.</summary>
 	public ObservableCollection<CategorySection> Sections { get; } = new();
 
 	/// <summary>The main categories a category can be filed under, in their order.</summary>
@@ -51,14 +57,18 @@ public partial class CategoriesViewModel : ObservableObject
 
 	private List<GameCategory> _allCategories = new();
 
+	/// <summary>The user is an admin: changes happen directly instead of as requests.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(AddButtonText), nameof(AddGroupButtonText))]
 	private bool isAdmin;
 
+	/// <summary>"+ New category" for admins, "+ Propose a new category" for moderators.</summary>
 	public string AddButtonText => IsAdmin ? "+ New category" : "+ Propose a new category";
 
+	/// <summary>"+ New main category" for admins, "+ Propose a new main category" for moderators.</summary>
 	public string AddGroupButtonText => IsAdmin ? "+ New main category" : "+ Propose a new main category";
 
+	/// <summary>What happened, or why it couldn't.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -67,6 +77,10 @@ public partial class CategoriesViewModel : ObservableObject
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, cloud sync, the categories, the permissions,
+	/// the team and the sign-in - from the app (dependency injection).
+	/// </summary>
 	public CategoriesViewModel(ILocalDatabaseService local, ICloudSyncService cloud, ICategoryService categories,
 		IPermissionService permissions, ITeamService team, IAuthService auth)
 	{
@@ -78,6 +92,7 @@ public partial class CategoriesViewModel : ObservableObject
 		_auth = auth;
 	}
 
+	/// <summary>Shows the categories as saved on the phone, then refreshes them from the cloud.</summary>
 	public async Task LoadAsync()
 	{
 		IsAdmin = _team.Me is { } me && _permissions.CanChangeGamesDirectly(me);
@@ -99,6 +114,7 @@ public partial class CategoriesViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Shows the main categories with their categories, as saved on the phone.</summary>
 	private async Task ShowCachedAsync()
 	{
 		_allCategories = await _categories.GetCachedAsync();
@@ -356,6 +372,7 @@ public partial class CategoriesViewModel : ObservableObject
 		return null;
 	}
 
+	/// <summary>Moderators: sends a change of the categories to an admin as a review request.</summary>
 	private Task SubmitAsync(ReviewRequest request)
 	{
 		var user = _auth.CurrentUser!;

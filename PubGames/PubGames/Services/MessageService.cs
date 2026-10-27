@@ -24,6 +24,7 @@ public interface IMessageService
 	Task DeleteAsync(InboxMessage message);
 }
 
+/// <summary>The Inbox in the cloud "messages" collection, with a copy on the phone.</summary>
 public class MessageService : IMessageService
 {
 	private const string Collection = "messages";
@@ -33,6 +34,10 @@ public class MessageService : IMessageService
 	private readonly IAuthService _auth;
 	private readonly ITeamService _team;
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, the cloud, the sign-in and the team - from the
+	/// app (dependency injection).
+	/// </summary>
 	public MessageService(ILocalDatabaseService local, FirestoreClient firestore, IAuthService auth, ITeamService team)
 	{
 		_local = local;
@@ -47,8 +52,10 @@ public class MessageService : IMessageService
 	private List<string> MyRecipientAddresses() =>
 		_team.Me?.IsAdmin == true ? [MyEmail, InboxMessage.AllAdmins] : [MyEmail];
 
+	/// <inheritdoc />
 	public Task<List<InboxMessage>> GetCachedInboxAsync() => _local.GetMessagesToAsync(MyRecipientAddresses());
 
+	/// <inheritdoc />
 	public async Task<List<InboxMessage>> PullInboxAsync()
 	{
 		var recipients = MyRecipientAddresses();
@@ -66,6 +73,7 @@ public class MessageService : IMessageService
 		return messages.OrderByDescending(m => m.SentAt).ToList();
 	}
 
+	/// <inheritdoc />
 	public async Task SendAsync(string toEmail, string text, MessageKind kind = MessageKind.Message, string? reviewRequestId = null, bool offersResubmit = false)
 	{
 		text = text.Trim();
@@ -88,6 +96,7 @@ public class MessageService : IMessageService
 		await SaveAsync(message);
 	}
 
+	/// <inheritdoc />
 	public async Task MarkReadAsync(InboxMessage message)
 	{
 		if (message.IsRead) return;
@@ -103,12 +112,14 @@ public class MessageService : IMessageService
 		}
 	}
 
+	/// <inheritdoc />
 	public async Task DeleteAsync(InboxMessage message)
 	{
 		await _firestore.DeleteAsync(Collection, message.Id);
 		await _local.DeleteMessageAsync(message.Id);
 	}
 
+	/// <summary>Saves a message in the cloud and on the phone.</summary>
 	private async Task SaveAsync(InboxMessage m)
 	{
 		await _firestore.SetAsync(Collection, m.Id, new Dictionary<string, object?>
@@ -127,6 +138,7 @@ public class MessageService : IMessageService
 		await _local.SaveMessageAsync(m);
 	}
 
+	/// <summary>Reads a message from its cloud document; null when it isn't one.</summary>
 	private static InboxMessage? ToMessage(Dictionary<string, object?> f)
 	{
 		if (f.GetValueOrDefault("id") is not string id) return null;

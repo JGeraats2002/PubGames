@@ -22,6 +22,7 @@ public static class TeamEmails
 
 	public const string OtherReason = "Other reason...";
 
+	/// <summary>The email to a new moderator: what they can do in the app and how to get started.</summary>
 	public static (string Subject, string Body) ModeratorAdded(TeamMember member, string adminName)
 	{
 		const string yes = "  [YES] ";
@@ -133,6 +134,7 @@ public static class TeamEmails
 		return ("You're now a moderator on Pub Games", b.ToString());
 	}
 
+	/// <summary>The email to a team member who was removed, with the reason.</summary>
 	public static (string Subject, string Body) MemberRemoved(TeamMember member, string reason, string adminName)
 	{
 		var role = member.RoleName.ToLowerInvariant();

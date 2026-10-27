@@ -22,11 +22,11 @@
 				<VerticalStackLayout Spacing="6">
 					<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
 						<Label Text="Play" VerticalOptions="Center" />
-						<Button Grid.Column="1" Text="−" Clicked="OnFewerSubgamesClicked" WidthRequest="40" HeightRequest="40" Padding="0" FontSize="18"
+						<Button SemanticProperties.Description="One subgame fewer" Grid.Column="1" Text="−" Clicked="OnFewerSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 						<Label Grid.Column="2" Text="{Binding SubgameCountText}" FontAttributes="Bold" WidthRequest="100"
 						       HorizontalTextAlignment="Center" VerticalOptions="Center" />
-						<Button Grid.Column="3" Text="+" Clicked="OnMoreSubgamesClicked" WidthRequest="40" HeightRequest="40" Padding="0" FontSize="18"
+						<Button SemanticProperties.Description="One subgame more" Grid.Column="3" Text="+" Clicked="OnMoreSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 					</Grid>
 				</VerticalStackLayout>

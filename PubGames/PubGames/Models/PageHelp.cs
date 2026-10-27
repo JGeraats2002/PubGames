@@ -10,6 +10,7 @@ public sealed record HelpSection(string Heading, string Text);
 /// </summary>
 public sealed record PageHelp(string Title, IReadOnlyList<HelpSection> Sections, IReadOnlyList<RulesBlock>? RulesBlocks = null)
 {
+	/// <summary>Whether the help carries a game's own "How to play" text and pictures.</summary>
 	public bool HasRules => RulesBlocks is { Count: > 0 };
 }
 
@@ -20,12 +21,15 @@ public sealed record PageHelp(string Title, IReadOnlyList<HelpSection> Sections,
 /// </summary>
 public static class Help
 {
+	/// <summary>The sign-in page's help.</summary>
 	public static PageHelp Login { get; } = new("Signing in",
 	[
 		new("Why sign in", "Sign in with your Google account. Your players, scores and unlocked games are saved to your account, so they're there on every phone you use."),
-		new("Admins and moderators", "If an admin has added your Google account to the team, you get the Admin tab after signing in.")
+		new("Admins and moderators", "If an admin has added your Google account to the team, you get the Admin tab after signing in."),
+		new("18 and older", "Many games in Pub Games involve alcohol, so the app is for adults (18+). The first time you sign in you're asked to confirm your age. Drink responsibly and never drink and drive.")
 	]);
 
+	/// <summary>The help of Who's playing?, the start of a game night.</summary>
 	public static PageHelp Players { get; } = new("Who's playing?",
 	[
 		new("Add a new player", "Type a name and tap Add. The player is added to this game and saved for next time."),
@@ -40,6 +44,7 @@ public static class Help
 		new("Saved games", "A game is saved on this phone as soon as someone has a score. Saved games (top right) shows them: tap an unfinished game to continue where you left off.")
 	]);
 
+	/// <summary>The help of Saved games.</summary>
 	public static PageHelp SavedGames { get; } = new("Saved games",
 	[
 		new("Your games", "Every game played on this phone in which someone has a score, newest first. On two pages: Unfinished and Finished. Tap an unfinished game to continue it, or a finished one to see the scoreboard and the final result."),
@@ -47,6 +52,7 @@ public static class Help
 		new("Keep saved games", "Each page has its own time for how long its games are kept: 1 week, 1 month (unless you change it), 6 months, 1 year, never delete, or don't save them at all - for example keep unfinished games but not finished ones. The time counts from the last score. Games are only kept on this phone; a finished game's result in the stats stays.")
 	]);
 
+	/// <summary>The help of Choose a game.</summary>
 	public static PageHelp GameLibrary { get; } = new("Choose a game",
 	[
 		new("Find a game", "Search by name, or tap Filter: set the number of players (all the way left: any number) and tap the categories you're looking for, per main category. Nothing there is required; the button shows how many filters are set and Clear filters shows everything again."),
@@ -54,6 +60,7 @@ public static class Help
 		new("Paid games", "A paid game shows 🔒 and its price. Tap it to read its rules first; then Unlock to play lets you buy it once - it's yours on your account, to play with everyone at the table - use a code you were given (for that game only), or take the Pub Games Pass for every paid game. Going back costs nothing. Bought games and the pass also work on another phone where you sign in with the same account (Account > Pub Games Pass > Restore purchases).")
 	]);
 
+	/// <summary>The help of a game's rules page, before starting.</summary>
 	public static PageHelp GameStart { get; } = new("Rules and start",
 	[
 		new("Read the rules", "The rules of the game are on this page, with pictures where the game has them. Under the name you see how many players the game is for: Any, or for example 2-6 or 2+."),
@@ -61,6 +68,7 @@ public static class Help
 		new("Start", "Skip rules and Start game both start the game with the chosen players and number of subgames.")
 	]);
 
+	/// <summary>The scoreboard's help: how to keep score with this game's scoring type and rules.</summary>
 	public static PageHelp Scoreboard(ScoringType type, ScoringSettings settings) => new("Scoreboard",
 	[
 		new("Keeping score", type switch
@@ -91,6 +99,7 @@ public static class Help
 		new("Change players", "Move players to another seat, replace someone, add a player or take someone out - see the ⓘ on that page.")
 	]);
 
+	/// <summary>The help of Change players, during a game.</summary>
 	public static PageHelp SessionPlayers { get; } = new("Change players",
 	[
 		new("Seat order", "▲ and ▼ move a player to another seat. The seat order is the order on the scoreboard. Nobody's score changes."),
@@ -99,6 +108,7 @@ public static class Help
 		new("Add a player", "Tap a saved player to add them at the last seat, or type a new name and tap Add. Tick the box to also save a new player for next time.")
 	]);
 
+	/// <summary>The subgame result's help, for how this game notes results and breaks ties.</summary>
 	public static PageHelp RoundResult(ResultMode mode, bool lowestWins, ScoringSettings settings) => new("Subgame result",
 	[
 		new("Filled in for you", mode switch
@@ -133,6 +143,7 @@ public static class Help
 			+ "After a duel for a subgame its outcome is filled in on the result right away: change it there if needed, then confirm.";
 	}
 
+	/// <summary>The help of the standings: during a game, or the final result.</summary>
 	public static PageHelp Standings(bool isFinal) => isFinal
 		? new("Final result",
 		[
@@ -145,6 +156,7 @@ public static class Help
 			new("Back", "Tap Back to the game to continue.")
 		]);
 
+	/// <summary>The library's help, for an admin or a moderator.</summary>
 	public static PageHelp AdminLibrary(bool isModerator) => new("Library",
 	[
 		new(isModerator ? "Propose a game" : "New game", isModerator
@@ -160,6 +172,9 @@ public static class Help
 			: "A banner at the top shows requests waiting for your review and new messages; tap it to go there.")
 	]);
 
+	/// <summary>
+	/// The game form's help, for an admin or a moderator, with the scoring type that's chosen.
+	/// </summary>
 	public static PageHelp CreateGame(bool isModerator, ScoringType type)
 	{
 		var sections = new List<HelpSection>
@@ -190,6 +205,9 @@ public static class Help
 		return new("New or edit game", sections);
 	}
 
+	/// <summary>
+	/// The image editor's help, for a cover (with background colours) or a picture in the rules.
+	/// </summary>
 	public static PageHelp ImageEditor(bool cover) => new("Create image",
 	[
 		new("Add things", "The buttons at the top add something to the image: arrows, text, cards, dice, hands, drinks and more. A table goes under everything else, to show where the game is played."),
@@ -206,6 +224,7 @@ public static class Help
 		new("Done", "Use this image puts it in the game. You can change it again later: it opens here just as you left it.")
 	]);
 
+	/// <summary>The categories page's help, for an admin or a moderator.</summary>
 	public static PageHelp Categories(bool isAdmin) => new("Categories",
 	[
 		new("What categories are for", "Categories are listed under main categories, like Play style or Duration. Every game has at least one category from each main category; players filter games by category."),
@@ -217,12 +236,14 @@ public static class Help
 			: new("Main categories", "+ Propose a new main category sends it to an admin for review. Tap a main category to propose a category in it, another name, or its deletion. Nothing changes until an admin approves; the decision arrives in your Inbox.")
 	]);
 
+	/// <summary>The help of My stats per game.</summary>
 	public static PageHelp MyStats { get; } = new("My stats per game",
 	[
 		new("Find a game", "Every game you finished at least once. Search by name, or tap Filter: set the number of players (all the way left: any number) and tap the categories you're looking for, per main category. Nothing there is required; the button shows how many filters are set and Clear filters shows everything again."),
 		new("Its stats", "Tap a game to see how often you played, won, lost and tied it, and every time you played it.")
 	]);
 
+	/// <summary>The help of one game's stats.</summary>
 	public static PageHelp GameStats { get; } = new("Stats of a game",
 	[
 		new("The numbers", "How many times you finished this game, and how often you won, lost or tied, with percentages."),
@@ -230,6 +251,7 @@ public static class Help
 		new("History", "Below the numbers you see every time you played it, newest first, with how it ended.")
 	]);
 
+	/// <summary>The help of a category's games page.</summary>
 	public static PageHelp CategoryGames { get; } = new("Games in a category",
 	[
 		new("Choose games", "Tick every game that belongs in this category - tap the tick box or the game - then tap Save games in category. Players can then find these games by choosing this category."),
@@ -246,6 +268,7 @@ public static class Help
 		new("Best of", "In a best-of duel each round's best player wins that round, and every round starts again from the starting score. Under each name you see the rounds won.")
 	]);
 
+	/// <summary>The help of the Pub Games Pass page.</summary>
 	public static PageHelp Subscription { get; } = new("Pub Games Pass",
 	[
 		new("What it is", "The Pub Games Pass unlocks every paid game for as long as it runs. Choose a week, a month or a year; each longer plan is cheaper per week. It renews by itself until you cancel it."),
@@ -255,6 +278,7 @@ public static class Help
 		new("Restore purchases", "On a new phone, or when a purchase didn't show up: checks everything you bought with Google Play on this account again and unlocks it.")
 	]);
 
+	/// <summary>The help of Profile.</summary>
 	public static PageHelp Profile { get; } = new("Profile",
 	[
 		new("Your picture and name", "Tap your picture or Change picture to choose a profile picture. Fill in your name and nickname and tap Save profile. Other players see your picture and nickname when they add you."),
@@ -262,18 +286,21 @@ public static class Help
 		new("Friend code", "Only the owner sees this. A friend who gets it can unlock one paid game for free: on the game's rules, Unlock to play > I have a code. Not the Pub Games Pass. A code works for 15 minutes; below it you see until when, and when it runs out the next one appears by itself. New code makes a new one right away that works for 30 minutes - so a friend has time to type it in - and the old code stops working at once. There's only ever one code that works.")
 	]);
 
+	/// <summary>The help of sending feedback.</summary>
 	public static PageHelp Feedback { get; } = new("Feedback",
 	[
 		new("Sending feedback", "First choose what it's about: a bug, a typo, a mistake in a game's rules, scoring that doesn't add up, an idea, or something else. Then say whether it's about a game and choose which. Last, explain it - that's required, at least a few words, so the admins know what to look at. Send feedback sends it to the admins."),
 		new("Your feedback", "Below the form you see your earlier feedback, with where the admins are: New, Being worked on, Resolved or Won't be changed - and their reply if they wrote one.")
 	]);
 
+	/// <summary>The help of Blocked players.</summary>
 	public static PageHelp BlockedPlayers { get; } = new("Blocked players",
 	[
 		new("Who's here", "Players you blocked when deleting them from your saved players (hold a player added by code on Who's playing?). They can't add you by your code, and you're not in their saved players."),
 		new("Unblock", "Unblock lets them add you by your code again. They don't come back in your saved players by themselves: add them again by their code if you want.")
 	]);
 
+	/// <summary>The help of handling feedback (admins).</summary>
 	public static PageHelp AdminFeedback { get; } = new("Feedback",
 	[
 		new("What arrives here", "Feedback from players: what it's about, which game (if any), who sent it and their explanation. Only admins see it."),
@@ -283,6 +310,7 @@ public static class Help
 		new("Delete", "Removes the feedback for everyone, also for the sender.")
 	]);
 
+	/// <summary>The Inbox's help.</summary>
 	public static PageHelp Inbox { get; } = new("Inbox",
 	[
 		new("What arrives here", "Decisions on review requests and messages from your team."),
@@ -290,23 +318,27 @@ public static class Help
 		new("New message", "+ New message writes to anyone on the team - the owner, an admin or a moderator - or to all admins. Search by name or email to find them.")
 	]);
 
+	/// <summary>The help of choosing who to message.</summary>
 	public static PageHelp ChooseRecipient { get; } = new("Send a message to",
 	[
 		new("Find someone", "Search by name or email, then tap who the message is for. All admins sends it to everyone with admin rights.")
 	]);
 
+	/// <summary>The help of the requests waiting for review.</summary>
 	public static PageHelp ReviewRequests { get; } = new("Requests",
 	[
 		new("What's here", "Moderators' new games, changes and deletions, and what they propose for categories and main categories: new ones, another name, another main category or deletion. Nothing changes for players until you approve. New categories also appear here, so you can add games to them."),
 		new("Review", "Tap a request to see what would change and approve or reject it.")
 	]);
 
+	/// <summary>The help of reviewing one request.</summary>
 	public static PageHelp ReviewRequest { get; } = new("Review a request",
 	[
 		new("What changes", "For changes to a game, the list shows exactly what would change. Below it is a preview laid out like the page players see: Original shows the game as it is now, With changes how it would become. For a new category you see which main category it's proposed for."),
 		new("Decide", "Approve makes it live for players. Reject asks for a reason, which goes to the moderator's Inbox so they can fix it and submit again. Moderators looking at someone else's request can't decide: they see what's waiting and can send that moderator a message.")
 	]);
 
+	/// <summary>The Team page's help.</summary>
 	public static PageHelp Team { get; } = new("Team",
 	[
 		new("Add a moderator", "Fill in their Google account email and tap Add moderator. They get an email explaining how it works, and get the Admin tab when they sign in with that account."),
@@ -315,6 +347,7 @@ public static class Help
 		new("Remove", "Remove takes someone off the team. You pick a reason first, which they receive by email.")
 	]);
 
+	/// <summary>The Settings page's help, with what the user's role means.</summary>
 	public static PageHelp Account(TeamMember? me) => new("Account",
 	[
 		new("Settings", "Your account's main page, with a row per subject: tap one to open it."),
@@ -323,6 +356,7 @@ public static class Help
 		new("Blocked players", "Who you blocked when deleting a player added by code. They can't add you by your code; unblock them here."),
 		new("Feedback", "Tell the admins about a bug, a typo, a mistake in a game's rules or an idea, and see what they did with your earlier feedback."),
 		new("Signing out", "Sign out to switch Google accounts. The app asks first."),
+		new("Delete account", "Deletes your account for good: your profile, player code, stats, bought games, feedback, blocks and the players and games on this phone. First you see what goes, then you type DELETE to confirm. A running Pub Games Pass is billed by Google Play: cancel it there first."),
 		.. me switch
 		{
 			null => Array.Empty<HelpSection>(),

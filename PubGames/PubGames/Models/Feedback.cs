@@ -25,10 +25,13 @@ public enum FeedbackStatus
 /// <summary>A choice in the feedback category picker.</summary>
 public sealed record FeedbackCategoryOption(FeedbackCategory Category)
 {
+	/// <summary>The subject's name, as the picker shows it.</summary>
 	public string Label => Feedback.CategoryLabel(Category);
 
+	/// <summary>The subject's name, as the picker shows it.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Every subject, in the order the picker shows them.</summary>
 	public static List<FeedbackCategoryOption> All { get; } =
 		Enum.GetValues<FeedbackCategory>().Select(c => new FeedbackCategoryOption(c)).ToList();
 }
@@ -48,25 +51,34 @@ public sealed class Feedback
 
 	public const int MaxReplyLength = 500;
 
+	/// <summary>The feedback's unique id.</summary>
 	public string Id { get; set; } = Guid.NewGuid().ToString("N");
 
+	/// <summary>The account of the player who sent it.</summary>
 	public string FromUid { get; set; } = string.Empty;
 
+	/// <summary>The sender's email, for the admins to see who it is.</summary>
 	public string FromEmail { get; set; } = string.Empty;
 
+	/// <summary>The sender's name.</summary>
 	public string FromName { get; set; } = string.Empty;
 
+	/// <summary>What it's about: a bug, a typo, a mistake in the rules ...</summary>
 	public FeedbackCategory Category { get; set; }
 
 	/// <summary>The game it's about; null when it's not about a game.</summary>
 	public string? GameId { get; set; }
 
+	/// <summary>The name of the game it's about, as it was when sent.</summary>
 	public string? GameName { get; set; }
 
+	/// <summary>The sender's explanation.</summary>
 	public string Text { get; set; } = string.Empty;
 
+	/// <summary>When it was sent (UTC).</summary>
 	public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
+	/// <summary>Where the admins are with it.</summary>
 	public FeedbackStatus Status { get; set; } = FeedbackStatus.New;
 
 	/// <summary>The admin's answer, shown to the sender.</summary>
@@ -75,8 +87,10 @@ public sealed class Feedback
 	/// <summary>The admin who last changed the status or reply.</summary>
 	public string? HandledBy { get; set; }
 
+	/// <summary>When an admin last changed its status or reply (UTC).</summary>
 	public DateTime? UpdatedAt { get; set; }
 
+	/// <summary>What a subject is called in the app.</summary>
 	public static string CategoryLabel(FeedbackCategory category) => category switch
 	{
 		FeedbackCategory.Bug => "Bug - something doesn't work",
@@ -87,6 +101,7 @@ public sealed class Feedback
 		_ => "Other"
 	};
 
+	/// <summary>What a status is called in the app.</summary>
 	public static string StatusLabel(FeedbackStatus status) => status switch
 	{
 		FeedbackStatus.InProgress => "Being worked on",
@@ -95,19 +110,27 @@ public sealed class Feedback
 		_ => "New"
 	};
 
+	/// <summary>The subject, as the app shows it.</summary>
 	public string CategoryText => CategoryLabel(Category);
 
+	/// <summary>The status, as the app shows it.</summary>
 	public string StatusText => StatusLabel(Status);
 
+	/// <summary>Still to be handled: new, or being worked on.</summary>
 	public bool IsOpen => Status is FeedbackStatus.New or FeedbackStatus.InProgress;
 
+	/// <summary>Whether it's about a game.</summary>
 	public bool HasGame => !string.IsNullOrEmpty(GameId);
 
+	/// <summary>"Game: Kings cup" or "Not about a game".</summary>
 	public string GameText => HasGame ? $"Game: {GameName}" : "Not about a game";
 
+	/// <summary>Whether an admin wrote a reply.</summary>
 	public bool HasReply => !string.IsNullOrWhiteSpace(Reply);
 
+	/// <summary>"Jan · jan@example.com": who sent it.</summary>
 	public string FromLabel => string.IsNullOrWhiteSpace(FromName) ? FromEmail : $"{FromName} · {FromEmail}";
 
+	/// <summary>When it was sent, in the phone's time: "27 Oct 2026, 14:05".</summary>
 	public string SentLabel => SentAt.ToLocalTime().ToString("d MMM yyyy, HH:mm", CultureInfo.CurrentCulture);
 }

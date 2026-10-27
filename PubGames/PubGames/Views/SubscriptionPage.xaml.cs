@@ -8,6 +8,7 @@ public partial class SubscriptionPage : ContentPage
 {
 	private readonly SubscriptionViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public SubscriptionPage(SubscriptionViewModel vm)
 	{
 		InitializeComponent();
@@ -15,6 +16,7 @@ public partial class SubscriptionPage : ContentPage
 		InfoButton.Attach(this, () => Help.Subscription);
 	}
 
+	/// <summary>Every time the page shows: the pass's status and prices are loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
@@ -28,6 +30,7 @@ public partial class SubscriptionPage : ContentPage
 			await _vm.BuyAsync(row);
 	}
 
+	/// <summary>Checks every purchase of this account with Google Play again.</summary>
 	private async void OnRestoreClicked(object? sender, EventArgs e) => await _vm.RestoreAsync();
 
 	/// <summary>Cancelling or changing the pass happens in Google Play's own subscription page.</summary>

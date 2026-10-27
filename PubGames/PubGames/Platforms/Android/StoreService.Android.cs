@@ -17,12 +17,21 @@ public partial class StoreService
 	/// <summary>The purchase screen that's open: its outcome arrives in OnPurchasesUpdated.</summary>
 	private TaskCompletionSource<(BillingResult Result, IList<PlayPurchase>? Purchases)>? _flow;
 
+	/// <summary>
+	/// Receives Google Play's answer when the purchase screen closes, and hands it to the purchase that's
+	/// waiting for it.
+	/// </summary>
 	private sealed class PurchasesListener(StoreService store) : Java.Lang.Object, IPurchasesUpdatedListener
 	{
+		/// <summary>The purchase screen closed: bought, cancelled or failed.</summary>
 		public void OnPurchasesUpdated(BillingResult result, IList<PlayPurchase>? purchases) =>
 			store._flow?.TrySetResult((result, purchases));
 	}
 
+	/// <summary>
+	/// Connects to Google Play Billing (once; it reconnects by itself). Throws with a readable message when
+	/// Play payments aren't available.
+	/// </summary>
 	private async Task<BillingClient> ConnectAsync()
 	{
 		if (_client is { IsReady: true } ready) return ready;
@@ -39,6 +48,10 @@ public partial class StoreService
 		return _client;
 	}
 
+	/// <summary>
+	/// A product's details from Google Play - its price in the player's currency and what's needed to buy it
+	/// - or null when Play doesn't know it.
+	/// </summary>
 	private async Task<ProductDetails?> DetailsAsync(string productId, string type)
 	{
 		var client = await ConnectAsync();
@@ -49,6 +62,7 @@ public partial class StoreService
 		return result.ProductDetails?.FirstOrDefault();
 	}
 
+	/// <inheritdoc />
 	public async Task<string> GamePriceAsync(PubGame game)
 	{
 		try
@@ -64,6 +78,7 @@ public partial class StoreService
 		return Prices.Format(game.Price);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<PassPlanPrice>> PassPricesAsync()
 	{
 		IList<ProductDetails.SubscriptionOfferDetails>? offers = null;
@@ -82,6 +97,7 @@ public partial class StoreService
 		}).ToList();
 	}
 
+	/// <inheritdoc />
 	public async Task<(PurchaseOutcome Outcome, string? Problem)> BuyGameAsync(PubGame game)
 	{
 		try
@@ -100,6 +116,7 @@ public partial class StoreService
 		}
 	}
 
+	/// <inheritdoc />
 	public async Task<(PurchaseOutcome Outcome, string? Problem)> BuyPassAsync(PassPlan plan)
 	{
 		try
@@ -157,6 +174,7 @@ public partial class StoreService
 		return (PurchaseOutcome.Bought, null);
 	}
 
+	/// <inheritdoc />
 	public async Task<Entitlements> RestoreAsync(IEnumerable<PubGame> games)
 	{
 		var byProduct = games.Where(g => g.IsPaid).ToDictionary(g => Prices.ProductIdFor(g.Id), g => g.Id);

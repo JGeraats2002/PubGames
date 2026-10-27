@@ -3,10 +3,18 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// The result of a subgame: filled in from the scores, to check and change, with a duel for ties when the
+/// game wants that.
+/// </summary>
 public partial class RoundResultPage : ContentPage
 {
 	private readonly RoundResultViewModel _vm;
 
+	/// <summary>
+	/// Sets up the result page: its view model, the ⓘ help, and the questions it may ask (extra subgame,
+	/// duel) and where it goes once saved.
+	/// </summary>
 	public RoundResultPage(RoundResultViewModel vm)
 	{
 		InitializeComponent();
@@ -33,6 +41,7 @@ public partial class RoundResultPage : ContentPage
 		};
 	}
 
+	/// <summary>Marks the tapped player as winner or loser, or takes the mark off.</summary>
 	private void OnRowTapped(object? sender, TappedEventArgs e)
 	{
 		if (e.Parameter is ResultRow { IsPicking: true } row)
@@ -46,11 +55,13 @@ public partial class RoundResultPage : ContentPage
 			_vm.ChangePlace(row, -1);
 	}
 
+	/// <summary>Moves a player one place down.</summary>
 	private void OnWorsePlaceClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: ResultRow row })
 			_vm.ChangePlace(row, +1);
 	}
 
+	/// <summary>Saves the result and goes on.</summary>
 	private async void OnConfirmClicked(object? sender, EventArgs e) => await _vm.ConfirmAsync();
 }

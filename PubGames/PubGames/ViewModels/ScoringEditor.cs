@@ -18,6 +18,10 @@ public partial class ScoringEditor : ObservableObject
 	/// <summary>Put in front of every message, e.g. "Duel scoring: ".</summary>
 	private readonly string _messagePrefix;
 
+	/// <summary>
+	/// An editor for a scoring type and its numbers: with these types to choose from, this prompt in the
+	/// picker, and `messagePrefix` in front of its problems (e.g. "Duel: ").
+	/// </summary>
 	public ScoringEditor(List<ScoringTypeOption> options, string prompt, string messagePrefix = "")
 	{
 		ScoringTypeOptions = options;
@@ -32,12 +36,14 @@ public partial class ScoringEditor : ObservableObject
 	/// <summary>The Picker's text while nothing is chosen.</summary>
 	public string ScoringTypePrompt { get; }
 
+	/// <summary>The chosen scoring type.</summary>
 	[ObservableProperty]
 	private ScoringType scoringType = ScoringType.PlusMinus;
 
 	// A new game starts with nothing chosen ("Choose ..."); an existing game shows its choice.
 	private bool _chosen;
 
+	/// <summary>Whether a scoring type is chosen yet.</summary>
 	public bool IsChosen => _chosen;
 
 	/// <summary>Plus / minus: a fixed step per tap.</summary>
@@ -61,6 +67,7 @@ public partial class ScoringEditor : ObservableObject
 		}
 	}
 
+	/// <summary>The scoring type changed: the fields that belong to it show or hide.</summary>
 	private void NotifyTypeChanged()
 	{
 		OnPropertyChanged(nameof(SelectedScoringOption));
@@ -73,10 +80,13 @@ public partial class ScoringEditor : ObservableObject
 	/// <summary>Manual plus / minus: the rules for typed amounts, linked with AND / OR.</summary>
 	public ObservableCollection<EditableScoreRule> AmountRules { get; } = new();
 
+	/// <summary>Adds an empty rule for entered amounts.</summary>
 	public void AddAmountRule() => AmountRules.Add(new EditableScoreRule());
 
+	/// <summary>Removes a rule for entered amounts.</summary>
 	public void RemoveAmountRule(EditableScoreRule rule) => AmountRules.Remove(rule);
 
+	/// <summary>Switches how a rule links to the one above it: AND or OR.</summary>
 	public void ToggleJoiner(EditableScoreRule rule) => rule.ToggleJoiner();
 
 	/// <summary>The rules as one sentence with brackets, so it's clear how AND and OR combine.</summary>
@@ -94,17 +104,22 @@ public partial class ScoringEditor : ObservableObject
 		}
 	}
 
+	/// <summary>
+	/// A rule was added or removed: the preview follows changes in every rule, and only the first rule has no
+	/// AND / OR.
+	/// </summary>
 	private void OnAmountRulesChanged(object? sender, NotifyCollectionChangedEventArgs e)
 	{
 		foreach (EditableScoreRule rule in e.NewItems ?? Array.Empty<EditableScoreRule>())
 			rule.PropertyChanged += OnAmountRuleChanged;
 		foreach (EditableScoreRule rule in e.OldItems ?? Array.Empty<EditableScoreRule>())
 			rule.PropertyChanged -= OnAmountRuleChanged;
-		for (var i = 0; i < AmountRules.Count; i++)
-			AmountRules[i].IsFirst = i == 0;
+		for (var ruleIndex = 0; ruleIndex < AmountRules.Count; ruleIndex++)
+			AmountRules[ruleIndex].IsFirst = ruleIndex == 0;
 		OnPropertyChanged(nameof(AmountRulesPreview));
 	}
 
+	/// <summary>A rule changed: the preview of what's allowed updates.</summary>
 	private void OnAmountRuleChanged(object? sender, PropertyChangedEventArgs e) =>
 		OnPropertyChanged(nameof(AmountRulesPreview));
 
@@ -113,24 +128,31 @@ public partial class ScoringEditor : ObservableObject
 	[ObservableProperty]
 	private string scoreStep = "1";
 
+	/// <summary>The starting score, as typed.</summary>
 	[ObservableProperty]
 	private string startScore = "0";
 
+	/// <summary>Whether scores have a maximum.</summary>
 	[ObservableProperty]
 	private bool hasMaxScore;
 
+	/// <summary>The maximum score, as typed.</summary>
 	[ObservableProperty]
 	private string maxScore = string.Empty;
 
+	/// <summary>Whether scores have a minimum.</summary>
 	[ObservableProperty]
 	private bool hasMinScore;
 
+	/// <summary>The minimum score, as typed.</summary>
 	[ObservableProperty]
 	private string minScore = string.Empty;
 
+	/// <summary>Whether there's a warning score.</summary>
 	[ObservableProperty]
 	private bool hasWarningScore;
 
+	/// <summary>The warning score, as typed.</summary>
 	[ObservableProperty]
 	private string warningScore = string.Empty;
 

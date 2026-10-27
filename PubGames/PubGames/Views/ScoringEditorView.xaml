@@ -57,7 +57,7 @@
 							<DataTemplate x:DataType="vm:EditableScoreRule">
 								<VerticalStackLayout Spacing="4">
 								<Button Text="{Binding JoinerText}" Clicked="OnJoinerClicked" IsVisible="{Binding HasJoiner}"
-								        HorizontalOptions="Start" HeightRequest="30" Padding="14,0" FontSize="12" FontAttributes="Bold"
+								        HorizontalOptions="Start" HeightRequest="48" Padding="14,0" FontSize="12" FontAttributes="Bold"
 								        BackgroundColor="{StaticResource PrimaryDark}" TextColor="White" />
 								<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
 									<Picker Title="Choose rule" ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" VerticalOptions="Center" />
@@ -65,7 +65,7 @@
 									       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding NeedsValue}" />
 									<Entry Grid.Column="2" Text="{Binding Value2}" Placeholder="to" Keyboard="Telephone"
 									       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding IsBetween}" />
-									<Button Grid.Column="3" Text="✕" Clicked="OnRemoveAmountRuleClicked" WidthRequest="36" HeightRequest="36"
+									<Button SemanticProperties.Description="Remove rule" Grid.Column="3" Text="✕" Clicked="OnRemoveAmountRuleClicked" WidthRequest="48" HeightRequest="48"
 									        Padding="0" FontSize="14" VerticalOptions="Center"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</Grid>
@@ -75,7 +75,7 @@
 					</VerticalStackLayout>
 					<Label Text="{Binding AmountRulesPreview}" FontSize="12" FontAttributes="Bold" />
 					<Button Text="+ Add rule" Clicked="OnAddAmountRuleClicked" HorizontalOptions="Start"
-					        HeightRequest="36" Padding="14,0" FontSize="13"
+					        HeightRequest="48" Padding="14,0" FontSize="13"
 					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
 				</VerticalStackLayout>
 			</VerticalStackLayout>

@@ -2,6 +2,7 @@ using PubGames.Models;
 
 namespace PubGames.Services;
 
+/// <summary>Moves games and review requests between the cloud (Firestore) and the phone.</summary>
 public interface ICloudSyncService
 {
 	/// <summary>Pull anything the account owns (players, purchases, sessions) from the cloud into local storage.</summary>
@@ -59,12 +60,17 @@ public class CloudSyncService : ICloudSyncService
 	private readonly ILocalDatabaseService _local;
 	private readonly FirestoreClient _firestore;
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database and the cloud - from the app (dependency
+	/// injection).
+	/// </summary>
 	public CloudSyncService(ILocalDatabaseService local, FirestoreClient firestore)
 	{
 		_local = local;
 		_firestore = firestore;
 	}
 
+	/// <inheritdoc />
 	public Task SaveGameAsync(PubGame game) =>
 		_firestore.SetAsync(GamesCollection, game.Id, new Dictionary<string, object?>
 		{
@@ -87,6 +93,7 @@ public class CloudSyncService : ICloudSyncService
 			["publishedAt"] = game.PublishedAt
 		});
 
+	/// <inheritdoc />
 	public async Task PullPublishedGamesAsync()
 	{
 		var docs = await _firestore.WhereEqualAsync(GamesCollection, "status", nameof(GameStatus.Published));
@@ -104,6 +111,7 @@ public class CloudSyncService : ICloudSyncService
 		}
 	}
 
+	/// <inheritdoc />
 	public async Task PullAllGamesAsync()
 	{
 		var docs = await _firestore.GetAllAsync(GamesCollection);
@@ -111,6 +119,7 @@ public class CloudSyncService : ICloudSyncService
 			await _local.SaveGameAsync(game!);
 	}
 
+	/// <inheritdoc />
 	public async Task<PubGame?> PullGameAsync(string gameId)
 	{
 		var doc = await _firestore.GetAsync(GamesCollection, gameId);
@@ -120,6 +129,7 @@ public class CloudSyncService : ICloudSyncService
 		return game;
 	}
 
+	/// <summary>Reads a game from its cloud document; null when the document isn't a game.</summary>
 	private static PubGame? ToGame(Dictionary<string, object?> f)
 	{
 		if (f.GetValueOrDefault("id") is not string id) return null;
@@ -146,6 +156,7 @@ public class CloudSyncService : ICloudSyncService
 		};
 	}
 
+	/// <inheritdoc />
 	public Task PullAccountDataAsync(string accountId)
 	{
 		// TODO: GET /accounts/{accountId}/players, /purchases, /sessions
@@ -153,6 +164,7 @@ public class CloudSyncService : ICloudSyncService
 		return Task.CompletedTask;
 	}
 
+	/// <inheritdoc />
 	public Task PushPendingSessionsAsync()
 	{
 		// TODO: query local sessions where IsSynced == false, POST each to
@@ -160,6 +172,7 @@ public class CloudSyncService : ICloudSyncService
 		return Task.CompletedTask;
 	}
 
+	/// <inheritdoc />
 	public async Task SaveReviewRequestAsync(ReviewRequest r)
 	{
 		// TODO: push a notification to every admin on the team when a request
@@ -195,12 +208,14 @@ public class CloudSyncService : ICloudSyncService
 		await _local.SaveReviewRequestAsync(r);
 	}
 
+	/// <inheritdoc />
 	public async Task WithdrawReviewRequestAsync(ReviewRequest request)
 	{
 		await _firestore.DeleteAsync(ReviewRequestsCollection, request.Id);
 		await _local.DeleteReviewRequestAsync(request.Id);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<ReviewRequest>> PullRequestsWaitingForReviewAsync(string teamId)
 	{
 		var docs = await _firestore.WhereEqualAsync(ReviewRequestsCollection, "status", nameof(ReviewStatus.WaitingForReview));
@@ -220,6 +235,7 @@ public class CloudSyncService : ICloudSyncService
 		return waiting;
 	}
 
+	/// <inheritdoc />
 	public async Task<List<ReviewRequest>> PullRequestsSubmittedByAsync(string email)
 	{
 		var docs = await _firestore.WhereEqualAsync(ReviewRequestsCollection, "submittedByEmail", email);
@@ -238,6 +254,7 @@ public class CloudSyncService : ICloudSyncService
 		return mine;
 	}
 
+	/// <summary>Reads a review request from its cloud document; null when the document isn't one.</summary>
 	private static ReviewRequest? ToReviewRequest(Dictionary<string, object?> f)
 	{
 		if (f.GetValueOrDefault("id") is not string id) return null;

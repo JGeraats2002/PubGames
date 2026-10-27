@@ -3,10 +3,12 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>Admin tab &gt; Inbox: messages from the team and review decisions.</summary>
 public partial class InboxPage : ContentPage
 {
 	private readonly InboxViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public InboxPage(InboxViewModel vm)
 	{
 		InitializeComponent();
@@ -14,12 +16,14 @@ public partial class InboxPage : ContentPage
 		InfoButton.Attach(this, () => Help.Inbox);
 	}
 
+	/// <summary>Every time the page shows: the messages are loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
 		await _vm.LoadAsync();
 	}
 
+	/// <summary>Chooses someone on the team (or all admins) and writes them a message.</summary>
 	private async void OnNewMessageClicked(object? sender, EventArgs e)
 	{
 		var recipients = await _vm.GetRecipientsAsync();
@@ -27,12 +31,14 @@ public partial class InboxPage : ContentPage
 			await WriteAndSendAsync(to.Email, to.Label);
 	}
 
+	/// <summary>Writes a message back to the sender.</summary>
 	private async void OnReplyClicked(object? sender, EventArgs e)
 	{
 		if (sender is Button { BindingContext: InboxMessage message })
 			await WriteAndSendAsync(message.FromEmail, message.FromLabel);
 	}
 
+	/// <summary>Asks for the message's text and sends it.</summary>
 	private async Task WriteAndSendAsync(string toEmail, string toLabel)
 	{
 		var text = await DisplayPromptAsync($"Message to {toLabel}",

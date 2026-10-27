@@ -10,6 +10,9 @@ public partial class InfoPage : ContentPage
 {
 	private readonly bool _modal;
 
+	/// <summary>
+	/// Shows this help; `modal` when it was opened over another window (the sign-in page, a popup).
+	/// </summary>
 	public InfoPage(PageHelp help, bool modal = false)
 	{
 		InitializeComponent();
@@ -17,6 +20,7 @@ public partial class InfoPage : ContentPage
 		_modal = modal;
 	}
 
+	/// <summary>Closes the help and goes back to the page it's about.</summary>
 	private async void OnCloseClicked(object? sender, EventArgs e)
 	{
 		if (_modal)
@@ -34,19 +38,19 @@ public static class InfoButton
 	/// when tapped, so it can depend on what the page shows at that moment.
 	/// </summary>
 	public static void Attach(ContentPage page, Func<PageHelp> help) =>
-		page.ToolbarItems.Add(new ToolbarItem
+		page.ToolbarItems.Add(Described(new ToolbarItem
 		{
 			Text = "ⓘ",
 			Order = ToolbarItemOrder.Primary,
 			Command = new Command(async () => await ShowAsync(page, help()))
-		});
+		}));
 
 	/// <summary>
 	/// While playing: the ⓘ offers how to use this page or the rules of the
 	/// game, which are separate pages.
 	/// </summary>
 	public static void AttachWithRules(ContentPage page, Func<PageHelp> help, Func<PageHelp?> rules) =>
-		page.ToolbarItems.Add(new ToolbarItem
+		page.ToolbarItems.Add(Described(new ToolbarItem
 		{
 			Text = "ⓘ",
 			Order = ToolbarItemOrder.Primary,
@@ -60,7 +64,14 @@ public static class InfoButton
 				else if (choice == gameRules && rules() is { } r)
 					await ShowAsync(page, r);
 			})
-		});
+		}));
+
+	/// <summary>Screen readers (TalkBack) read "Help" for the ⓘ instead of the symbol.</summary>
+	private static ToolbarItem Described(ToolbarItem item)
+	{
+		SemanticProperties.SetDescription(item, "Help");
+		return item;
+	}
 
 	/// <summary>
 	/// Pushed on the page's own stack. Pages outside the shell (sign-in) and

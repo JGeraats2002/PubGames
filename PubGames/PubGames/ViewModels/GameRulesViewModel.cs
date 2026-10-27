@@ -23,26 +23,32 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	[NotifyPropertyChangedFor(nameof(IsUnlocked))]
 	private bool isLocked;
 
+	/// <summary>The game may be played: Start game and Skip rules show.</summary>
 	public bool IsUnlocked => !IsLocked;
 
+	/// <summary>The game whose rules are shown.</summary>
 	public PubGame? Game => _game;
 
 	private PubGame? _game;
 	private List<Player> _players = new();
 
+	/// <summary>The game's name.</summary>
 	[ObservableProperty]
 	private string gameName = string.Empty;
 
+	/// <summary>The game's cover picture, or null.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasCover))]
 	private string? coverImageRef;
 
+	/// <summary>Whether the game has a cover picture.</summary>
 	public bool HasCover => !string.IsNullOrEmpty(CoverImageRef);
 
 	/// <summary>The rules split into text and images, in order.</summary>
 	[ObservableProperty]
 	private List<RulesBlock> rulesBlocks = new();
 
+	/// <summary>"Playing: Jan, Sanne, Piet".</summary>
 	[ObservableProperty]
 	private string playersSummary = string.Empty;
 
@@ -55,13 +61,19 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	[NotifyPropertyChangedFor(nameof(SubgameCountText))]
 	private int subgameCount = 1;
 
+	/// <summary>"1 game" or "3 subgames".</summary>
 	public string SubgameCountText => SubgameCount == 1 ? "1 game" : $"{SubgameCount} subgames";
 
+	/// <summary>One subgame more (+1) or fewer (-1); at least 1.</summary>
 	public void ChangeSubgameCount(int delta) => SubgameCount = Math.Clamp(SubgameCount + delta, 1, 99);
 
 	/// <summary>Raised with the new session id once it's saved, so the page can open the scoreboard.</summary>
 	public event EventHandler<string>? SessionStarted;
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, the sign-in, the game night and the store -
+	/// from the app (dependency injection).
+	/// </summary>
 	public GameRulesViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IStoreService store)
 	{
 		_store = store;
@@ -70,6 +82,10 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 		_gameNight = gameNight;
 	}
 
+	/// <summary>
+	/// Opened with a game and its players (and, for Play again, the number of subgames): shows its rules and
+	/// whether it's unlocked.
+	/// </summary>
 	public void ApplyQueryAttributes(IDictionary<string, object> query)
 	{
 		if (query.TryGetValue("game", out var g) && g is PubGame game)
@@ -102,8 +118,10 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 			IsLocked = !_store.Owns(_game);
 	}
 
+	/// <summary>The game's price as Google Play shows it.</summary>
 	public Task<string> PriceAsync() => _game is null ? Task.FromResult(string.Empty) : _store.GamePriceAsync(_game);
 
+	/// <summary>Buys the game with Google Play; afterwards the page shows whether it's unlocked.</summary>
 	public async Task<(PurchaseOutcome Outcome, string? Problem)> BuyAsync()
 	{
 		if (_game is null) return (PurchaseOutcome.Cancelled, null);
@@ -121,6 +139,9 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 		return problem;
 	}
 
+	/// <summary>
+	/// Starts the game night with these players and number of subgames, and opens the scoreboard.
+	/// </summary>
 	[RelayCommand]
 	private async Task StartGameAsync()
 	{

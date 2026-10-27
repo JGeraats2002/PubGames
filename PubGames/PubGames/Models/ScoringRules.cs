@@ -33,6 +33,10 @@ public record ScoringRules(
 		? For(ScoringType.Custom)
 		: For(game.ScoringType, game.ScoringSettings);
 
+	/// <summary>
+	/// How scores are kept with this scoring type and these settings: starting score, steps, limits and the
+	/// explanation.
+	/// </summary>
 	public static ScoringRules For(ScoringType type, ScoringSettings? settings = null) => type switch
 	{
 		ScoringType.PlusMinus => PlusMinus(settings ?? ScoringSettings.Default),
@@ -102,7 +106,9 @@ public record ScoringRules(
 			ManualAmounts: s);
 	}
 
+	/// <summary>The text on the − button: "−" for a typed amount, or the step, like "−5".</summary>
 	public string MinusLabel => ManualAmounts is not null ? "−" : MinusStep is { } m ? m.ToString("+0;−0") : string.Empty;
+	/// <summary>The text on the + button: "+" for a typed amount, or the step, like "+5".</summary>
 	public string PlusLabel => ManualAmounts is not null ? "+" : PlusStep.ToString("+0;−0");
 
 	/// <summary>A score kept within the min and max.</summary>

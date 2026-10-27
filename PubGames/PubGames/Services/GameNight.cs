@@ -33,13 +33,13 @@ public class GameNight(ILocalDatabaseService local)
 		await local.SaveSessionAsync(session);
 
 		var startScore = ScoringRules.For(game).StartScore;
-		for (var i = 0; i < players.Count; i++)
+		for (var seat = 0; seat < players.Count; seat++)
 		{
 			await local.SaveParticipantAsync(new SessionParticipant
 			{
 				SessionId = session.Id,
-				PlayerId = players[i].Id,
-				Position = i,
+				PlayerId = players[seat].Id,
+				Position = seat,
 				Score = startScore
 			});
 		}

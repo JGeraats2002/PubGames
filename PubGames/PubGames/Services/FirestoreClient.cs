@@ -18,6 +18,9 @@ public class FirestoreClient
 	private readonly IAuthService _auth;
 	private readonly HttpClient _http = new();
 
+	/// <summary>
+	/// Gets the services it works with - the sign-in - from the app (dependency injection).
+	/// </summary>
 	public FirestoreClient(IAuthService auth)
 	{
 		_auth = auth;
@@ -93,6 +96,9 @@ public class FirestoreClient
 	/// <summary>Every document in a collection. The rules must allow reading all of them, or the whole query is refused.</summary>
 	public Task<List<Dictionary<string, object?>>> GetAllAsync(string collection) => QueryAsync(collection, where: null);
 
+	/// <summary>
+	/// Runs a query on a collection (all documents, or those matching `where`) and returns their fields.
+	/// </summary>
 	private async Task<List<Dictionary<string, object?>>> QueryAsync(string collection, JsonObject? where)
 	{
 		var structuredQuery = new JsonObject
@@ -116,6 +122,9 @@ public class FirestoreClient
 			.ToList();
 	}
 
+	/// <summary>
+	/// A request to the cloud signed with the user's ID token, so the security rules know who's asking.
+	/// </summary>
 	private async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string url)
 	{
 		var token = await _auth.GetIdTokenAsync()
@@ -125,6 +134,7 @@ public class FirestoreClient
 		return request;
 	}
 
+	/// <summary>Sends a request; a refusal becomes a CloudException with a readable message.</summary>
 	private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
 	{
 		var response = await _http.SendAsync(request);
@@ -136,6 +146,7 @@ public class FirestoreClient
 		return response;
 	}
 
+	/// <summary>Plain values as Firestore's typed fields.</summary>
 	private static JsonObject ToFields(IDictionary<string, object?> fields)
 	{
 		var result = new JsonObject();
@@ -144,6 +155,9 @@ public class FirestoreClient
 		return result;
 	}
 
+	/// <summary>
+	/// One plain value (text, number, yes/no, date, list, map, bytes, nothing) as a Firestore typed value.
+	/// </summary>
 	private static JsonObject ToValue(object? value) => value switch
 	{
 		null => new JsonObject { ["nullValue"] = null },
@@ -165,6 +179,7 @@ public class FirestoreClient
 	public static List<string> AsStringList(object? value) =>
 		value is List<object?> items ? items.OfType<string>().ToList() : [];
 
+	/// <summary>One Firestore typed value back as a plain value.</summary>
 	private static object? FromValue(JsonNode value)
 	{
 		var obj = value.AsObject();
@@ -185,10 +200,15 @@ public class FirestoreClient
 	}
 }
 
+/// <summary>
+/// The cloud refused a request, with a message the user can understand (no permission, not found, or the
+/// cloud's own message).
+/// </summary>
 public class CloudException(int statusCode, string details)
 	: Exception(statusCode == 403
 		? "The cloud refused this change - you don't have permission for it. Ask an admin to check your rights on the Team page."
 		: $"Cloud request failed ({statusCode}): {details}")
 {
+	/// <summary>The HTTP status the cloud answered with (403: no permission, 404: not found ...).</summary>
 	public int StatusCode { get; } = statusCode;
 }

@@ -32,6 +32,7 @@ public class RulesImage : ContentView
 	/// <summary>The picture's height divided by its width; 0 until it's known.</summary>
 	private double _shape;
 
+	/// <summary>A cream frame that will hold the picture.</summary>
 	public RulesImage()
 	{
 		HorizontalOptions = LayoutOptions.Fill;
@@ -46,6 +47,7 @@ public class RulesImage : ContentView
 		SizeChanged += (_, _) => Fit();
 	}
 
+	/// <summary>Loads the picture from its reference and shows it at the right size.</summary>
 	private async void Load()
 	{
 		_shape = 0;
@@ -81,6 +83,9 @@ public class RulesImage : ContentView
 		}
 	}
 
+	/// <summary>
+	/// Sizes the picture to the width it has, keeping its shape - also making small pictures wider.
+	/// </summary>
 	private void Fit()
 	{
 		var width = Width - 2 * FrameWidth;

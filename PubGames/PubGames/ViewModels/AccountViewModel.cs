@@ -20,6 +20,8 @@ public partial class AccountViewModel : ObservableObject
 	private readonly IProfileService _profiles;
 	private readonly IStatsService _stats;
 	private readonly IStoreService _store;
+	private readonly FunctionsClient _functions;
+	private readonly ILocalDatabaseService _local;
 
 	/// <summary>The owner of the app (a built-in admin): sees today's friend code.</summary>
 	[ObservableProperty]
@@ -36,6 +38,9 @@ public partial class AccountViewModel : ObservableObject
 	/// <summary>When the code shown runs out (UTC); the page fetches the next one then.</summary>
 	public DateTime? FriendCodeValidUntil { get; private set; }
 
+	/// <summary>
+	/// The owner only: fetches the friend code that works now and shows it with until when.
+	/// </summary>
 	public async Task LoadFriendCodeAsync() => ShowFriendCode(IsOwner ? await _store.FriendCodeAsync() : null);
 
 	/// <summary>New code: the old one stops working, the new one works for 30 minutes.</summary>
@@ -46,6 +51,9 @@ public partial class AccountViewModel : ObservableObject
 		ProfileMessage = FriendCodeValidUntil is null ? "Couldn't make a new code - check your connection." : "New code: the old one no longer works.";
 	}
 
+	/// <summary>
+	/// Shows a friend code and until when it works, or that it can't be fetched (offline).
+	/// </summary>
 	private void ShowFriendCode((string Code, DateTime ValidUntil)? current)
 	{
 		if (!IsOwner) return;
@@ -63,15 +71,18 @@ public partial class AccountViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Whether the user is an admin or moderator: their role shows on the profile.</summary>
 	[ObservableProperty]
 	private bool isTeamMember;
 
+	/// <summary>"Owner", "Admin" or "Moderator", shown on the profile.</summary>
 	[ObservableProperty]
 	private string roleName = string.Empty;
 
 	/// <summary>The user's team membership, for the ⓘ explanation of their role; null for players.</summary>
 	public TeamMember? Me { get; private set; }
 
+	/// <summary>The email of the signed-in account.</summary>
 	[ObservableProperty]
 	private string email = string.Empty;
 
@@ -80,15 +91,20 @@ public partial class AccountViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(HasPhoto), nameof(HasNoPhoto))]
 	private string? photoRef;
 
+	/// <summary>Whether the profile has a picture.</summary>
 	public bool HasPhoto => !string.IsNullOrEmpty(PhotoRef);
+	/// <summary>No picture: the initials show instead.</summary>
 	public bool HasNoPhoto => !HasPhoto;
 
+	/// <summary>The name, as typed on the Profile page.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(Initials))]
 	private string profileName = string.Empty;
 
+	/// <summary>The initials of the name, shown without a picture.</summary>
 	public string Initials => Player.InitialsFrom(ProfileName);
 
+	/// <summary>The nickname other players see, as typed on the Profile page.</summary>
 	[ObservableProperty]
 	private string nickname = string.Empty;
 
@@ -96,6 +112,7 @@ public partial class AccountViewModel : ObservableObject
 	[ObservableProperty]
 	private string code = "····-····";
 
+	/// <summary>A short message about the profile: saved, copied, or what went wrong.</summary>
 	[ObservableProperty]
 	private string profileMessage = string.Empty;
 
@@ -104,6 +121,7 @@ public partial class AccountViewModel : ObservableObject
 
 	partial void OnProfileMessageChanged(string value) => _profileMessageTimer.Shown(value, () => ProfileMessage, v => ProfileMessage = v);
 
+	/// <summary>A picture is uploading: a spinner shows.</summary>
 	[ObservableProperty]
 	private bool isBusy;
 
@@ -111,14 +129,23 @@ public partial class AccountViewModel : ObservableObject
 	[ObservableProperty]
 	private GameStats totals = GameStats.From("All games", []);
 
+	/// <summary>About the stats: offline, or no finished games yet.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasStatsMessage))]
 	private string statsMessage = string.Empty;
 
+	/// <summary>Whether there's something to say about the stats.</summary>
 	public bool HasStatsMessage => StatsMessage.Length > 0;
 
-	public AccountViewModel(IAuthService auth, ITeamService team, IProfileService profiles, IStatsService stats, IStoreService store)
+	/// <summary>
+	/// Gets the services it works with - the sign-in, the team, profiles, stats, the store, the server
+	/// functions and the phone's database - from the app (dependency injection).
+	/// </summary>
+	public AccountViewModel(IAuthService auth, ITeamService team, IProfileService profiles, IStatsService stats, IStoreService store,
+		FunctionsClient functions, ILocalDatabaseService local)
 	{
+		_functions = functions;
+		_local = local;
 		_store = store;
 		_auth = auth;
 		_team = team;
@@ -158,6 +185,7 @@ public partial class AccountViewModel : ObservableObject
 			await LoadFriendCodeAsync();
 	}
 
+	/// <summary>Puts the friend code on the clipboard, to paste in a message to a friend.</summary>
 	[RelayCommand]
 	private async Task CopyFriendCodeAsync()
 	{
@@ -166,6 +194,7 @@ public partial class AccountViewModel : ObservableObject
 		ProfileMessage = "Friend code copied.";
 	}
 
+	/// <summary>Fills the page with a profile: picture, name, nickname and player code.</summary>
 	private void Show(UserProfile profile)
 	{
 		PhotoRef = profile.PhotoRef;
@@ -174,6 +203,10 @@ public partial class AccountViewModel : ObservableObject
 		Code = UserProfile.FormatCode(profile.Code);
 	}
 
+	/// <summary>
+	/// Sends games finished offline first, then shows the user's stats over all finished games (or the copy
+	/// on the phone when offline).
+	/// </summary>
 	private async Task LoadStatsAsync()
 	{
 		try
@@ -193,6 +226,7 @@ public partial class AccountViewModel : ObservableObject
 			: games.Count == 0 ? "No finished games yet." : string.Empty;
 	}
 
+	/// <summary>Lets the user pick a new profile picture, uploads it and saves the profile.</summary>
 	[RelayCommand]
 	private async Task ChangePhotoAsync()
 	{
@@ -218,6 +252,7 @@ public partial class AccountViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Saves the name and nickname; a name is required.</summary>
 	[RelayCommand]
 	private async Task SaveProfileAsync()
 	{
@@ -229,6 +264,10 @@ public partial class AccountViewModel : ObservableObject
 		await SaveAsync("Profile saved.");
 	}
 
+	/// <summary>
+	/// Saves the profile in the cloud (and the name on the team list for admins and moderators), then shows
+	/// `done`.
+	/// </summary>
 	private async Task SaveAsync(string done)
 	{
 		if (_profiles.Mine is not { } current)
@@ -254,11 +293,36 @@ public partial class AccountViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Puts the player code on the clipboard, to share it.</summary>
 	[RelayCommand]
 	private async Task CopyCodeAsync()
 	{
 		await Clipboard.Default.SetTextAsync(Code);
 		ProfileMessage = "Code copied.";
+	}
+
+	/// <summary>
+	/// Deletes the account for good: in the cloud (profile, code, purchases,
+	/// feedback, blocks, its place in game results and the sign-in itself -
+	/// see deleteAccount in functions/index.js), then its data on this phone,
+	/// then signs out. Null when it worked, otherwise why not.
+	/// </summary>
+	public async Task<string?> DeleteAccountAsync()
+	{
+		var accountId = _auth.AccountId;
+		try
+		{
+			await _functions.CallAsync("deleteAccount", new System.Text.Json.Nodes.JsonObject());
+		}
+		catch (Exception ex) when (ex is StoreException or HttpRequestException or TaskCanceledException)
+		{
+			return ex is StoreException ? ex.Message : "No connection - deleting your account needs internet.";
+		}
+		await _local.DeleteAccountDataAsync(accountId);
+		// Cached profile, purchases and settings of this phone.
+		Preferences.Default.Clear();
+		await _auth.SignOutAsync();
+		return null;
 	}
 
 	/// <summary>App reacts to the sign-out and returns to LoginPage.</summary>

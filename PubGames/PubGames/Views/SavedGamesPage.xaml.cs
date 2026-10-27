@@ -3,10 +3,14 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// Players tab &gt; Saved games: unfinished and finished games on this phone, to continue, look at or delete.
+/// </summary>
 public partial class SavedGamesPage : ContentPage
 {
 	private readonly SavedGamesViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public SavedGamesPage(SavedGamesViewModel vm)
 	{
 		InitializeComponent();
@@ -14,6 +18,7 @@ public partial class SavedGamesPage : ContentPage
 		InfoButton.Attach(this, () => Help.SavedGames);
 	}
 
+	/// <summary>Every time the page shows: the saved games are loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
@@ -32,16 +37,22 @@ public partial class SavedGamesPage : ContentPage
 		await Shell.Current.GoToAsync(nameof(ScoreboardPage), new Dictionary<string, object> { ["sessionId"] = row.Game.Session.Id });
 	}
 
+	/// <summary>Shows the unfinished games.</summary>
 	private void OnUnfinishedTabClicked(object? sender, EventArgs e) => _vm.ShowsFinished = false;
 
+	/// <summary>Shows the finished games.</summary>
 	private void OnFinishedTabClicked(object? sender, EventArgs e) => _vm.ShowsFinished = true;
 
+	/// <summary>Starts or stops choosing games to delete.</summary>
 	private void OnSelectClicked(object? sender, EventArgs e) => _vm.ToggleSelecting();
 
+	/// <summary>Selects every game on the page.</summary>
 	private void OnSelectAllClicked(object? sender, EventArgs e) => _vm.SelectAll(true);
 
+	/// <summary>Selects no game.</summary>
 	private void OnDeselectAllClicked(object? sender, EventArgs e) => _vm.SelectAll(false);
 
+	/// <summary>Deletes the selected games, after asking.</summary>
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
 		var count = _vm.SelectedCount;

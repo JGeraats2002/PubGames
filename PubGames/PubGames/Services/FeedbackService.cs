@@ -24,10 +24,15 @@ public interface IFeedbackService
 	Task DeleteAsync(Feedback feedback);
 }
 
+/// <summary>
+/// Feedback in the cloud "feedback" collection: sending, reading your own or (admins) everyone's, and
+/// handling it.
+/// </summary>
 public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProfileService profiles) : IFeedbackService
 {
 	private const string Collection = "feedback";
 
+	/// <inheritdoc />
 	public async Task SendAsync(FeedbackCategory category, PubGame? game, string text)
 	{
 		text = text.Trim();
@@ -50,6 +55,7 @@ public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProf
 		await firestore.SetAsync(Collection, feedback.Id, Fields(feedback));
 	}
 
+	/// <inheritdoc />
 	public async Task<List<Feedback>> GetMineAsync()
 	{
 		if (auth.CurrentUser is not { } user) return [];
@@ -58,11 +64,13 @@ public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProf
 			.OrderByDescending(f => f.SentAt).ToList();
 	}
 
+	/// <inheritdoc />
 	public async Task<List<Feedback>> GetAllAsync() =>
 		(await firestore.GetAllAsync(Collection))
 			.Select(ToFeedback).OfType<Feedback>()
 			.OrderByDescending(f => f.SentAt).ToList();
 
+	/// <inheritdoc />
 	public async Task UpdateAsync(Feedback feedback, FeedbackStatus status, string? reply)
 	{
 		reply = string.IsNullOrWhiteSpace(reply) ? null : reply.Trim();
@@ -83,8 +91,10 @@ public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProf
 		feedback.UpdatedAt = now;
 	}
 
+	/// <inheritdoc />
 	public Task DeleteAsync(Feedback feedback) => firestore.DeleteAsync(Collection, feedback.Id);
 
+	/// <summary>A piece of feedback as the fields of its cloud document.</summary>
 	private static Dictionary<string, object?> Fields(Feedback f) => new()
 	{
 		["id"] = f.Id,
@@ -102,6 +112,7 @@ public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProf
 		["updatedAt"] = f.UpdatedAt
 	};
 
+	/// <summary>Reads a piece of feedback from its cloud document; null when it isn't one.</summary>
 	private static Feedback? ToFeedback(Dictionary<string, object?> f)
 	{
 		if (f.GetValueOrDefault("id") is not string id) return null;

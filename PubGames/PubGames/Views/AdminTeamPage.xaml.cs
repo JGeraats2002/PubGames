@@ -4,10 +4,15 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>
+/// Admin tab &gt; Team: the admins and moderators, adding moderators, and (the owner) changing roles and
+/// removing members.
+/// </summary>
 public partial class AdminTeamPage : ContentPage
 {
 	private readonly AdminTeamViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public AdminTeamPage(AdminTeamViewModel vm)
 	{
 		InitializeComponent();
@@ -15,12 +20,14 @@ public partial class AdminTeamPage : ContentPage
 		InfoButton.Attach(this, () => Help.Team);
 	}
 
+	/// <summary>Every time the page shows: the team is loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
 		await _vm.LoadAsync();
 	}
 
+	/// <summary>The owner makes a moderator admin, after asking.</summary>
 	private async void OnMakeAdminClicked(object? sender, EventArgs e)
 	{
 		if (sender is not Button { BindingContext: TeamMember member }) return;
@@ -32,6 +39,7 @@ public partial class AdminTeamPage : ContentPage
 			_vm.MakeAdminCommand.Execute(member);
 	}
 
+	/// <summary>The owner makes an admin moderator, after asking.</summary>
 	private async void OnMakeModeratorClicked(object? sender, EventArgs e)
 	{
 		if (sender is not Button { BindingContext: TeamMember member }) return;

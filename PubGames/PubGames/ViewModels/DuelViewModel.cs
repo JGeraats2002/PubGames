@@ -17,8 +17,10 @@ public sealed record DuelSetup(string Reason, IReadOnlyList<Player> Players, Sco
 /// <summary>One player in a duel.</summary>
 public partial class DuelRow : ObservableObject
 {
+	/// <summary>The player.</summary>
 	public required Player Player { get; init; }
 
+	/// <summary>The player's duel score.</summary>
 	[ObservableProperty]
 	private int score;
 
@@ -35,6 +37,7 @@ public partial class DuelRow : ObservableObject
 	[NotifyPropertyChangedFor(nameof(RoundsWonText))]
 	private int roundsWon;
 
+	/// <summary>"1 round won" or "2 rounds won" (best of).</summary>
 	public string RoundsWonText => RoundsWon == 1 ? "1 round won" : $"{RoundsWon} rounds won";
 }
 
@@ -57,6 +60,7 @@ public partial class DuelViewModel : ObservableObject
 	/// <summary>Everything that changes during the duel, to go back to with Undo.</summary>
 	private sealed record State(int[] Scores, int[] RoundsWon, int Turn, int Round)
 	{
+		/// <summary>Whether the duel is the same now as at this moment (scores, rounds, turn).</summary>
 		public bool SameAs(State other) => Turn == other.Turn && Round == other.Round
 			&& Scores.SequenceEqual(other.Scores) && RoundsWon.SequenceEqual(other.RoundsWon);
 	}
@@ -70,6 +74,9 @@ public partial class DuelViewModel : ObservableObject
 	/// <summary>Which row's turn it is.</summary>
 	private int _turn;
 
+	/// <summary>
+	/// Sets up a duel: every tied player with the starting score, and the first player's turn.
+	/// </summary>
 	public DuelViewModel(DuelSetup setup)
 	{
 		Setup = setup;
@@ -80,14 +87,18 @@ public partial class DuelViewModel : ObservableObject
 		_turnStart = Now();
 	}
 
+	/// <summary>What the duel is for, who plays it, and how it's scored and ends.</summary>
 	public DuelSetup Setup { get; }
 
+	/// <summary>How scores are kept in the duel.</summary>
 	public ScoringRules Rules { get; }
 
 	private ScoringSettings Settings => Setup.Settings;
 
+	/// <summary>Every player in the duel, in turn order.</summary>
 	public ObservableCollection<DuelRow> Rows { get; } = new();
 
+	/// <summary>Why there's a duel: who's tied for what.</summary>
 	public string Reason => Setup.Reason;
 
 	/// <summary>Type in the score: a box for the points of the turn, no + and −.</summary>
@@ -96,6 +107,7 @@ public partial class DuelViewModel : ObservableObject
 	/// <summary>Manual plus / minus: an amount box next to + and −.</summary>
 	public bool IsManual => Rules.ManualAmounts is not null;
 
+	/// <summary>Whether the rows have + and − (not when points are typed in).</summary>
 	public bool HasButtons => !IsTyped;
 
 	/// <summary>A box to type in: the turn's points, or the amount for + or −.</summary>
@@ -104,6 +116,7 @@ public partial class DuelViewModel : ObservableObject
 	/// <summary>Plus / minus and Type in the score end a turn with Turn done; a typed amount ends it by itself.</summary>
 	public bool HasTurnDone => !IsManual;
 
+	/// <summary>Whether the duel is best of a number of rounds: rounds won show.</summary>
 	public bool IsBestOf => Settings.EffectiveDuelEnd == DuelEnd.BestOf;
 
 	private int Margin => Math.Max(1, Settings.DuelMargin ?? 1);
@@ -113,12 +126,16 @@ public partial class DuelViewModel : ObservableObject
 		$"{Rules.Explanation} The {(Settings.LowestWins ? "lowest" : "highest")} score wins. Take turns in the order below. "
 		+ char.ToUpperInvariant(Settings.DuelEndSummary[0]) + Settings.DuelEndSummary[1..] + ".";
 
+	/// <summary>The text on the − buttons.</summary>
 	public string MinusLabel => Rules.MinusLabel;
 
+	/// <summary>The text on the + buttons.</summary>
 	public string PlusLabel => Rules.PlusLabel;
 
+	/// <summary>The grey 0 in an empty amount box.</summary>
 	public string AmountPlaceholder => "0";
 
+	/// <summary>What just happened (a round won, another turn) or why something can't.</summary>
 	[ObservableProperty]
 	private string message = string.Empty;
 
@@ -131,9 +148,11 @@ public partial class DuelViewModel : ObservableObject
 	[ObservableProperty]
 	private string status = string.Empty;
 
+	/// <summary>The turn or round that's being played.</summary>
 	[ObservableProperty]
 	private int round = 1;
 
+	/// <summary>Whether there's something to take back.</summary>
 	[ObservableProperty]
 	private bool canUndo;
 
@@ -281,25 +300,28 @@ public partial class DuelViewModel : ObservableObject
 		CanUndo = _history.Count > 0;
 	}
 
+	/// <summary>The duel as it is now, to go back to with Undo.</summary>
 	private State Now() => new(Rows.Select(r => r.Score).ToArray(), Rows.Select(r => r.RoundsWon).ToArray(), _turn, Round);
 
+	/// <summary>Puts the duel back as it was at an earlier moment.</summary>
 	private void Restore(State state)
 	{
-		for (var i = 0; i < Rows.Count; i++)
+		for (var rowIndex = 0; rowIndex < Rows.Count; rowIndex++)
 		{
-			Rows[i].Score = state.Scores[i];
-			Rows[i].RoundsWon = state.RoundsWon[i];
-			Rows[i].Typed = string.Empty;
+			Rows[rowIndex].Score = state.Scores[rowIndex];
+			Rows[rowIndex].RoundsWon = state.RoundsWon[rowIndex];
+			Rows[rowIndex].Typed = string.Empty;
 		}
 		_turn = state.Turn;
 		Round = state.Round;
 		ShowTurn();
 	}
 
+	/// <summary>Shows whose turn it is (thick border) and the turn or round at the top.</summary>
 	private void ShowTurn()
 	{
-		for (var i = 0; i < Rows.Count; i++)
-			Rows[i].IsTurn = i == _turn;
+		for (var rowIndex = 0; rowIndex < Rows.Count; rowIndex++)
+			Rows[rowIndex].IsTurn = rowIndex == _turn;
 		var round = Settings.EffectiveDuelEnd switch
 		{
 			DuelEnd.Turns when Round <= Settings.DuelTurns => $"Turn {Round} of {Settings.DuelTurns}",
@@ -321,6 +343,7 @@ public partial class DuelViewModel : ObservableObject
 	/// <summary>"Jan: 3\nPiet: 1" (or rounds won), for checking the result.</summary>
 	public string ScoreLines => string.Join("\n", Rows.Select(r => $"{r.Player.Name}: {(IsBestOf ? r.RoundsWonText : r.Score.ToString(CultureInfo.CurrentCulture))}"));
 
+	/// <summary>A typed whole number, also with a real minus sign; null when it isn't one.</summary>
 	private static int? ReadNumber(string text) =>
 		// Some keyboards type a real minus sign (−) instead of a hyphen.
 		int.TryParse(text.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var value) ? value : null;

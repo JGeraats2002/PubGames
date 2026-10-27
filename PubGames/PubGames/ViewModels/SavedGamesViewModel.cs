@@ -7,8 +7,10 @@ namespace PubGames.ViewModels;
 /// <summary>A saved game in the list, with a tick while choosing games to delete.</summary>
 public partial class SavedGameRow : ObservableObject
 {
+	/// <summary>The saved game.</summary>
 	public required SavedGame Game { get; init; }
 
+	/// <summary>Whether it's selected to delete.</summary>
 	[ObservableProperty]
 	private bool isSelected;
 }
@@ -26,6 +28,9 @@ public partial class SavedGamesViewModel : ObservableObject
 	/// <summary>Every saved game, finished or not; Rows shows the ones of the open page.</summary>
 	private List<SavedGameRow> _all = new();
 
+	/// <summary>
+	/// Gets the services it works with - saved games - from the app (dependency injection).
+	/// </summary>
 	public SavedGamesViewModel(SavedGames savedGames)
 	{
 		_savedGames = savedGames;
@@ -39,6 +44,7 @@ public partial class SavedGamesViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(ShowsUnfinished), nameof(SelectedRetention), nameof(RetentionTitle), nameof(EmptyText))]
 	private bool showsFinished;
 
+	/// <summary>The Unfinished page is open.</summary>
 	public bool ShowsUnfinished => !ShowsFinished;
 
 	partial void OnShowsFinishedChanged(bool value)
@@ -48,7 +54,9 @@ public partial class SavedGamesViewModel : ObservableObject
 		ShowRows();
 	}
 
+	/// <summary>"Unfinished (3)".</summary>
 	public string UnfinishedTabText => $"Unfinished ({_all.Count(r => !r.Game.IsFinished)})";
+	/// <summary>"Finished (5)".</summary>
 	public string FinishedTabText => $"Finished ({_all.Count(r => r.Game.IsFinished)})";
 
 	/// <summary>Choosing games to delete: rows show a tick box and tapping one ticks it.</summary>
@@ -56,30 +64,40 @@ public partial class SavedGamesViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(SelectButtonText), nameof(IsBrowsing))]
 	private bool isSelecting;
 
+	/// <summary>Not choosing games to delete: tapping a game opens it.</summary>
 	public bool IsBrowsing => !IsSelecting;
 
+	/// <summary>"Select", or "Cancel" while choosing.</summary>
 	public string SelectButtonText => IsSelecting ? "Cancel" : "Select";
 
+	/// <summary>How many games are selected.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(DeleteButtonText), nameof(HasSelection))]
 	private int selectedCount;
 
+	/// <summary>Whether any game is selected: Delete can be tapped.</summary>
 	public bool HasSelection => SelectedCount > 0;
 
+	/// <summary>"Delete 1 game" or "Delete 3 games".</summary>
 	public string DeleteButtonText => SelectedCount == 1 ? "Delete 1 game" : $"Delete {SelectedCount} games";
 
+	/// <summary>The games are loaded (so an empty list really is empty).</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(IsEmpty))]
 	private bool isLoaded;
 
+	/// <summary>Loaded and no games on this page: the empty text shows.</summary>
 	public bool IsEmpty => IsLoaded && Rows.Count == 0;
 
+	/// <summary>What the empty page says.</summary>
 	public string EmptyText => ShowsFinished
 		? "No finished games saved."
 		: "No unfinished games. A game is saved once someone has a score.";
 
+	/// <summary>Every choice of how long games are kept, for the picker.</summary>
 	public List<SavedGamesRetentionOption> RetentionOptions { get; } = SavedGamesRetentionOption.All;
 
+	/// <summary>"Keep unfinished games" or "Keep finished games".</summary>
 	public string RetentionTitle => ShowsFinished ? "Keep finished games" : "Keep unfinished games";
 
 	private SavedGamesRetention Retention
@@ -106,6 +124,9 @@ public partial class SavedGamesViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>
+	/// Shows the saved games of the page that's open (unfinished or finished), newest first.
+	/// </summary>
 	public async Task LoadAsync()
 	{
 		var games = await _savedGames.GetAsync();
@@ -135,6 +156,7 @@ public partial class SavedGamesViewModel : ObservableObject
 		OnPropertyChanged(nameof(IsEmpty));
 	}
 
+	/// <summary>Starts or stops choosing games to delete.</summary>
 	public void ToggleSelecting()
 	{
 		IsSelecting = !IsSelecting;
@@ -142,12 +164,14 @@ public partial class SavedGamesViewModel : ObservableObject
 			SelectAll(false);
 	}
 
+	/// <summary>Selects every game on the page, or none.</summary>
 	public void SelectAll(bool selected)
 	{
 		foreach (var row in Rows)
 			row.IsSelected = selected;
 	}
 
+	/// <summary>Deletes the selected games from the phone.</summary>
 	public async Task DeleteSelectedAsync()
 	{
 		var selected = Rows.Where(r => r.IsSelected).ToList();

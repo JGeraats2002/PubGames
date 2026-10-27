@@ -19,7 +19,7 @@
 						<Border Stroke="{StaticResource Border}" Padding="14,10" StrokeShape="RoundRectangle 10">
 							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
 								<Label Text="{Binding Name}" FontSize="17" FontAttributes="Bold" VerticalOptions="Center" />
-								<Button Grid.Column="1" Text="{Binding ButtonText}" Clicked="OnPlanClicked" Padding="14,0" HeightRequest="40" FontSize="13">
+								<Button Grid.Column="1" Text="{Binding ButtonText}" Clicked="OnPlanClicked" Padding="14,0" HeightRequest="48" FontSize="13">
 									<Button.Triggers>
 										<DataTrigger TargetType="Button" Binding="{Binding IsCurrent}" Value="True">
 											<Setter Property="BackgroundColor" Value="Transparent" />

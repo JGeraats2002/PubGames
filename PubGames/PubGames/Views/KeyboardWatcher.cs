@@ -81,8 +81,12 @@ public static class KeyboardWatcher
 	}
 
 #if ANDROID
+	/// <summary>
+	/// Calls back every time Android lays out the screen - also when the keyboard opens or closes.
+	/// </summary>
 	private sealed class LayoutListener(Action changed) : Java.Lang.Object, Android.Views.ViewTreeObserver.IOnGlobalLayoutListener
 	{
+		/// <summary>The screen was laid out: measure the keyboard again.</summary>
 		public void OnGlobalLayout() => changed();
 	}
 #endif

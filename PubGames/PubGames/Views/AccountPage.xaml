@@ -100,6 +100,10 @@
 			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 
+			<!-- Deleting the account and its data for good (required by Google Play for apps with accounts). -->
+			<Button Text="Delete account" Clicked="OnDeleteAccountClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderWidth="0" FontSize="13" />
+
 		</VerticalStackLayout>
 	</ScrollView>
 

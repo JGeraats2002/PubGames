@@ -37,14 +37,17 @@ public partial class AdminLibraryViewModel : ObservableObject
 	/// <summary>Category clouds: "All" plus every category; several can be selected.</summary>
 	public CategoryFilterSet Filters { get; } = new();
 
+	/// <summary>"3 of 12 games" while searching or filtering.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasResultsText))]
 	private string resultsText = string.Empty;
 
+	/// <summary>Whether the number of results shows.</summary>
 	public bool HasResultsText => ResultsText.Length > 0;
 
 	partial void OnSearchTextChanged(string value) => ApplyFilter();
 
+	/// <summary>Shows the games whose name contains the search text.</summary>
 	private void ApplyFilter()
 	{
 		var text = SearchText.Trim();
@@ -68,27 +71,34 @@ public partial class AdminLibraryViewModel : ObservableObject
 	/// </summary>
 	public ObservableCollection<ReviewRequest> MyRequests { get; } = new();
 
+	/// <summary>How many Inbox messages haven't been read.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasUnreadMessages), nameof(UnreadMessagesText))]
 	private int unreadMessageCount;
 
+	/// <summary>Whether there are unread messages: a line shows at the top.</summary>
 	public bool HasUnreadMessages => UnreadMessageCount > 0;
 
+	/// <summary>"1 new message" or "3 new messages".</summary>
 	public string UnreadMessagesText => UnreadMessageCount == 1
 		? "You have 1 new message in your Inbox ›"
 		: $"You have {UnreadMessageCount} new messages in your Inbox ›";
 
+	/// <summary>About refreshing from the cloud: offline, or what went wrong.</summary>
 	[ObservableProperty]
 	private string syncMessage = string.Empty;
 
+	/// <summary>The user is a moderator: they propose instead of changing directly.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(NewGameButtonText))]
 	private bool isModerator;
 
+	/// <summary>How many of the moderator's own requests are waiting.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasMyRequests))]
 	private int myRequestCount;
 
+	/// <summary>Whether the moderator has requests waiting: they're listed at the top.</summary>
 	public bool HasMyRequests => MyRequestCount > 0;
 
 	/// <summary>Admins only: shown as a shortcut to the Requests page.</summary>
@@ -96,14 +106,21 @@ public partial class AdminLibraryViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(HasRequestsToReview), nameof(RequestsToReviewText))]
 	private int requestsToReviewCount;
 
+	/// <summary>Whether requests are waiting for this admin: a line shows at the top.</summary>
 	public bool HasRequestsToReview => RequestsToReviewCount > 0;
 
+	/// <summary>"1 request to review" or "3 requests to review".</summary>
 	public string RequestsToReviewText => RequestsToReviewCount == 1
 		? "1 request is waiting for your review ›"
 		: $"{RequestsToReviewCount} requests are waiting for your review ›";
 
+	/// <summary>"+ New game" for admins, "+ Propose a new game" for moderators.</summary>
 	public string NewGameButtonText => IsModerator ? "+ Propose a new game" : "+ New game";
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, cloud sync, the team, the permissions, the
+	/// sign-in, the categories and the Inbox - from the app (dependency injection).
+	/// </summary>
 	public AdminLibraryViewModel(ILocalDatabaseService local, ICloudSyncService cloud, ITeamService team,
 		IPermissionService permissions, IAuthService auth, ICategoryService categories, IMessageService messages)
 	{
@@ -119,6 +136,9 @@ public partial class AdminLibraryViewModel : ObservableObject
 
 	private string MyEmail => TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
 
+	/// <summary>
+	/// Shows the games as saved on the phone, then refreshes them (and the requests) from the cloud.
+	/// </summary>
 	public async Task LoadAsync()
 	{
 		var me = _team.Me;
@@ -176,6 +196,9 @@ public partial class AdminLibraryViewModel : ObservableObject
 		await ShowLocalAsync(canReview);
 	}
 
+	/// <summary>
+	/// Shows every game on the phone with its categories, and which ones have changes waiting for review.
+	/// </summary>
 	private async Task ShowLocalAsync(bool canReview)
 	{
 		var categories = await _categories.GetCachedAsync();

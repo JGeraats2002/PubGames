@@ -3,10 +3,14 @@ using PubGames.ViewModels;
 
 namespace PubGames.Views;
 
+/// <summary>The games of a category: tick the games that belong in it.</summary>
 public partial class CategoryGamesPage : ContentPage
 {
 	private readonly CategoryGamesViewModel _vm;
 
+	/// <summary>
+	/// Sets up the page with its view model and the ⓘ help, and goes back once the games are saved.
+	/// </summary>
 	public CategoryGamesPage(CategoryGamesViewModel vm)
 	{
 		InitializeComponent();
@@ -19,10 +23,13 @@ public partial class CategoryGamesPage : ContentPage
 		};
 	}
 
+	/// <summary>Saves which games are in the category.</summary>
 	private async void OnSaveClicked(object? sender, EventArgs e) => await _vm.SaveAsync();
 
+	/// <summary>Opens the filters (number of players, categories).</summary>
 	private async void OnFilterClicked(object? sender, EventArgs e) => await FilterPage.ShowAsync(Navigation, _vm.Filters);
 
+	/// <summary>Ticks or unticks the tapped game.</summary>
 	private void OnGameTapped(object? sender, TappedEventArgs e)
 	{
 		if (e.Parameter is GameChoice choice)

@@ -56,11 +56,11 @@
 
 								<!-- Ranking mode: − place + -->
 								<HorizontalStackLayout Grid.Column="1" IsVisible="{Binding IsRanking}" Spacing="6" VerticalOptions="Center">
-									<Button Text="−" Clicked="OnBetterPlaceClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="18"
+									<Button SemanticProperties.Description="Better place" Text="−" Clicked="OnBetterPlaceClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 									<Label Text="{Binding PlaceLabel}" FontSize="20" FontAttributes="Bold" WidthRequest="56"
 									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
-									<Button Text="+" Clicked="OnWorsePlaceClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="18"
+									<Button SemanticProperties.Description="Worse place" Text="+" Clicked="OnWorsePlaceClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</HorizontalStackLayout>
 							</Grid>

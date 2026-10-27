@@ -31,9 +31,11 @@ public partial class PlayerEntryViewModel : ObservableObject
 	/// <summary>Every saved player of the account, playing or not.</summary>
 	private List<Player> _allSaved = new();
 
+	/// <summary>Whether there are saved players left to choose from.</summary>
 	[ObservableProperty]
 	private bool hasSavedPlayers;
 
+	/// <summary>The name of a new player, as typed.</summary>
 	[ObservableProperty]
 	private string newPlayerName = string.Empty;
 
@@ -41,6 +43,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 	[ObservableProperty]
 	private string playerCode = string.Empty;
 
+	/// <summary>What happened (a player removed or blocked) or why something can't.</summary>
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(HasStatusMessage))]
 	private string statusMessage = string.Empty;
@@ -50,6 +53,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>Whether there's a message to show.</summary>
 	public bool HasStatusMessage => StatusMessage.Length > 0;
 
 	private readonly SavedGames _savedGames;
@@ -59,8 +63,13 @@ public partial class PlayerEntryViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(SavedGamesButtonText))]
 	private int savedGameCount;
 
+	/// <summary>"Saved games ›", with how many there are.</summary>
 	public string SavedGamesButtonText => SavedGameCount == 0 ? "Saved games ›" : $"Saved games ({SavedGameCount}) ›";
 
+	/// <summary>
+	/// Gets the services it works with - the phone's database, the sign-in, the game night, profiles, saved
+	/// games and player links - from the app (dependency injection).
+	/// </summary>
 	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IProfileService profiles, SavedGames savedGames, IPlayerLinkService links)
 	{
 		_links = links;
@@ -71,6 +80,10 @@ public partial class PlayerEntryViewModel : ObservableObject
 		_profiles = profiles;
 	}
 
+	/// <summary>
+	/// Shows the saved players, then (online) brings linked players' names and pictures up to date and takes
+	/// away players who removed the link or blocked the user.
+	/// </summary>
 	public async Task LoadAsync()
 	{
 		await _auth.InitializeAsync();
@@ -84,8 +97,8 @@ public partial class PlayerEntryViewModel : ObservableObject
 		{
 			_gameNight.NextLineup = null;
 			SelectedPlayers.Clear();
-			foreach (var p in lineup)
-				SelectedPlayers.Add(p);
+			foreach (var player in lineup)
+				SelectedPlayers.Add(player);
 		}
 		ShowSavedPlayers();
 
@@ -148,8 +161,8 @@ public partial class PlayerEntryViewModel : ObservableObject
 		var byId = _allSaved.ToDictionary(p => p.Id);
 		var selected = SelectedPlayers.Select(p => byId.GetValueOrDefault(p.Id) ?? p).ToList();
 		SelectedPlayers.Clear();
-		foreach (var p in selected)
-			SelectedPlayers.Add(p);
+		foreach (var player in selected)
+			SelectedPlayers.Add(player);
 		ShowSavedPlayers();
 	}
 
@@ -284,11 +297,12 @@ public partial class PlayerEntryViewModel : ObservableObject
 	{
 		var playing = SelectedPlayers.Select(p => p.Id).ToHashSet();
 		SavedPlayers.Clear();
-		foreach (var p in _allSaved.Where(p => !playing.Contains(p.Id)).OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
-			SavedPlayers.Add(p);
+		foreach (var player in _allSaved.Where(saved => !playing.Contains(saved.Id)).OrderBy(saved => saved.Name, StringComparer.CurrentCultureIgnoreCase))
+			SavedPlayers.Add(player);
 		HasSavedPlayers = SavedPlayers.Count > 0;
 	}
 
+	/// <summary>Adds a saved player to this game.</summary>
 	[RelayCommand]
 	private void AddSavedPlayer(Player player)
 	{
@@ -297,6 +311,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 		ShowSavedPlayers();
 	}
 
+	/// <summary>Adds a new player by name: to this game and to the saved players.</summary>
 	[RelayCommand]
 	private async Task AddNewPlayerAsync()
 	{

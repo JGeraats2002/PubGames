@@ -21,13 +21,16 @@ public enum StartRotation
 /// <summary>A start rotation as the dropdown shows it.</summary>
 public sealed record StartRotationOption(StartRotation Rotation)
 {
+	/// <summary>This choice of who starts, as the app calls it.</summary>
 	public string Label => LabelFor(Rotation);
 
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Every choice of who starts the next subgame, as the picker shows them.</summary>
 	public static List<StartRotationOption> All { get; } = Enum.GetValues<StartRotation>().Select(r => new StartRotationOption(r)).ToList();
 
+	/// <summary>What a choice of who starts the next subgame is called in the app.</summary>
 	public static string LabelFor(StartRotation rotation) => rotation switch
 	{
 		StartRotation.NextPlayer => "The next player (one seat on)",
@@ -51,14 +54,17 @@ public enum EndMode
 /// <summary>An end mode as the dropdown shows it.</summary>
 public sealed record EndModeOption(EndMode Mode)
 {
+	/// <summary>How a subgame ends at its end score, as the picker shows it.</summary>
 	public string Label => Mode == EndMode.Automatic ? "Automatically" : "The players end it themselves";
 
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Both ways a subgame can end at its end score, as the picker shows them.</summary>
 	public static List<EndModeOption> All { get; } = [new(EndMode.Automatic), new(EndMode.Manual)];
 }
 
+/// <summary>Works out who starts the next subgame from the subgame's winners and losers.</summary>
 public static class SeatRotation
 {
 	/// <summary>
@@ -71,8 +77,8 @@ public static class SeatRotation
 		if (players < 2) return null;
 		int? First(IReadOnlyList<bool> flags)
 		{
-			for (var i = 0; i < flags.Count; i++)
-				if (flags[i]) return i;
+			for (var seat = 0; seat < flags.Count; seat++)
+				if (flags[seat]) return seat;
 			return null;
 		}
 		int Wrap(int seat) => ((seat % players) + players) % players;

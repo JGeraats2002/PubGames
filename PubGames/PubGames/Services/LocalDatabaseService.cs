@@ -3,6 +3,10 @@ using SQLite;
 
 namespace PubGames.Services;
 
+/// <summary>
+/// Everything the app keeps on the phone (SQLite): players, games, categories, game nights and their results,
+/// the team, review requests and messages.
+/// </summary>
 public interface ILocalDatabaseService
 {
 	Task InitAsync();
@@ -71,6 +75,9 @@ public interface ILocalDatabaseService
 	Task<List<InboxMessage>> GetMessagesToAsync(IEnumerable<string> recipients);
 	Task SaveMessageAsync(InboxMessage message);
 	Task DeleteMessageAsync(string messageId);
+
+	/// <summary>Removes everything of this account on this phone: its saved players and its games.</summary>
+	Task DeleteAccountDataAsync(string accountId);
 }
 
 /// <summary>
@@ -82,6 +89,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 {
 	private SQLiteAsyncConnection? _db;
 
+	/// <summary>The database connection, opened (and its tables made) the first time it's needed.</summary>
 	private async Task<SQLiteAsyncConnection> DbAsync()
 	{
 		if (_db is not null) return _db;
@@ -104,8 +112,10 @@ public class LocalDatabaseService : ILocalDatabaseService
 		return _db;
 	}
 
+	/// <summary>Opens the database early, so the first page doesn't wait for it.</summary>
 	public async Task InitAsync() => await DbAsync();
 
+	/// <inheritdoc />
 	public async Task<List<Player>> GetPlayersAsync(string accountId)
 	{
 		var db = await DbAsync();
@@ -115,6 +125,10 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.ToListAsync();
 	}
 
+	/// <summary>
+	/// The players with these ids, also the ones taken off the saved list (earlier games still show their
+	/// names).
+	/// </summary>
 	public async Task<List<Player>> GetPlayersByIdsAsync(IEnumerable<string> playerIds)
 	{
 		var ids = playerIds.ToList();
@@ -122,72 +136,84 @@ public class LocalDatabaseService : ILocalDatabaseService
 		return await db.Table<Player>().Where(p => ids.Contains(p.Id)).ToListAsync();
 	}
 
+	/// <summary>Saves a player (new or changed).</summary>
 	public async Task SavePlayerAsync(Player player)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(player);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<PubGame>> GetGamesAsync()
 	{
 		var db = await DbAsync();
 		return await db.Table<PubGame>().Where(g => g.Status == GameStatus.Published).ToListAsync();
 	}
 
+	/// <inheritdoc />
 	public async Task<List<PubGame>> GetManageableGamesAsync()
 	{
 		var db = await DbAsync();
 		return await db.Table<PubGame>().Where(g => g.Status != GameStatus.Deleted).OrderBy(g => g.Name).ToListAsync();
 	}
 
+	/// <summary>One game by its id, or null.</summary>
 	public async Task<PubGame?> GetGameAsync(string gameId)
 	{
 		var db = await DbAsync();
 		return await db.Table<PubGame>().Where(g => g.Id == gameId).FirstOrDefaultAsync();
 	}
 
+	/// <summary>Saves a game (new or changed).</summary>
 	public async Task SaveGameAsync(PubGame game)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(game);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<GameCategory>> GetCategoriesAsync()
 	{
 		var db = await DbAsync();
 		return await db.Table<GameCategory>().OrderBy(c => c.Name).ToListAsync();
 	}
 
+	/// <summary>Saves a category (new or changed).</summary>
 	public async Task SaveCategoryAsync(GameCategory category)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(category);
 	}
 
+	/// <summary>Removes a category from the phone.</summary>
 	public async Task DeleteCategoryAsync(string categoryId)
 	{
 		var db = await DbAsync();
 		await db.DeleteAsync<GameCategory>(categoryId);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<CategoryGroup>> GetCategoryGroupsAsync()
 	{
 		var db = await DbAsync();
 		return await db.Table<CategoryGroup>().OrderBy(g => g.CreatedAt).ToListAsync();
 	}
 
+	/// <summary>Saves a main category (new or changed).</summary>
 	public async Task SaveCategoryGroupAsync(CategoryGroup group)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(group);
 	}
 
+	/// <summary>Removes a main category from the phone.</summary>
 	public async Task DeleteCategoryGroupAsync(string groupId)
 	{
 		var db = await DbAsync();
 		await db.DeleteAsync<CategoryGroup>(groupId);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<InboxMessage>> GetMessagesToAsync(IEnumerable<string> recipients)
 	{
 		var to = recipients.ToList();
@@ -198,30 +224,35 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.ToListAsync();
 	}
 
+	/// <summary>Saves an Inbox message (new or changed).</summary>
 	public async Task SaveMessageAsync(InboxMessage message)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(message);
 	}
 
+	/// <summary>Removes an Inbox message from the phone.</summary>
 	public async Task DeleteMessageAsync(string messageId)
 	{
 		var db = await DbAsync();
 		await db.DeleteAsync<InboxMessage>(messageId);
 	}
 
+	/// <summary>One game night by its id, or null.</summary>
 	public async Task<GameSession?> GetSessionAsync(string sessionId)
 	{
 		var db = await DbAsync();
 		return await db.Table<GameSession>().Where(s => s.Id == sessionId).FirstOrDefaultAsync();
 	}
 
+	/// <summary>Saves a game night (new or changed).</summary>
 	public async Task SaveSessionAsync(GameSession session)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(session);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<GameSession>> GetUnpublishedFinishedSessionsAsync(string accountId)
 	{
 		var db = await DbAsync();
@@ -230,12 +261,14 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.ToListAsync();
 	}
 
+	/// <inheritdoc />
 	public async Task<List<GameSession>> GetSessionsAsync(string accountId)
 	{
 		var db = await DbAsync();
 		return await db.Table<GameSession>().Where(s => s.AccountId == accountId).ToListAsync();
 	}
 
+	/// <inheritdoc />
 	public async Task DeleteSessionsAsync(IEnumerable<string> sessionIds)
 	{
 		var ids = sessionIds.ToList();
@@ -252,6 +285,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 		});
 	}
 
+	/// <summary>Everyone at a game night, in seat order.</summary>
 	public async Task<List<SessionParticipant>> GetParticipantsAsync(string sessionId)
 	{
 		var db = await DbAsync();
@@ -275,6 +309,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 			await db.UpdateAsync(participant);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<RoundResult>> GetRoundResultsAsync(string sessionId)
 	{
 		var db = await DbAsync();
@@ -284,6 +319,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.ToListAsync();
 	}
 
+	/// <inheritdoc />
 	public async Task SaveRoundResultsAsync(string sessionId, int round, IEnumerable<RoundResult> results)
 	{
 		var db = await DbAsync();
@@ -291,11 +327,12 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await db.RunInTransactionAsync(tx =>
 		{
 			tx.Execute($"DELETE FROM {nameof(RoundResult)} WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.Round)} = ?", sessionId, round);
-			foreach (var r in list)
-				tx.Insert(r);
+			foreach (var roundResult in list)
+				tx.Insert(roundResult);
 		});
 	}
 
+	/// <inheritdoc />
 	public async Task TransferRoundResultsAsync(string sessionId, string fromPlayerId, string toPlayerId)
 	{
 		var db = await DbAsync();
@@ -307,48 +344,56 @@ public class LocalDatabaseService : ILocalDatabaseService
 			toPlayerId, sessionId, fromPlayerId, sessionId, toPlayerId);
 	}
 
+	/// <summary>The admins and moderators of a team, as last seen.</summary>
 	public async Task<List<TeamMember>> GetTeamMembersAsync(string teamId)
 	{
 		var db = await DbAsync();
 		return await db.Table<TeamMember>().Where(m => m.TeamId == teamId).ToListAsync();
 	}
 
+	/// <summary>One team member by email, or null.</summary>
 	public async Task<TeamMember?> GetTeamMemberAsync(string email)
 	{
 		var db = await DbAsync();
 		return await db.FindAsync<TeamMember>(email);
 	}
 
+	/// <summary>Saves a team member (new or changed).</summary>
 	public async Task SaveTeamMemberAsync(TeamMember member)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(member);
 	}
 
+	/// <summary>Removes a team member from the phone.</summary>
 	public async Task DeleteTeamMemberAsync(string email)
 	{
 		var db = await DbAsync();
 		await db.DeleteAsync<TeamMember>(email);
 	}
 
+	/// <summary>One review request by its id, or null.</summary>
 	public async Task<ReviewRequest?> GetReviewRequestAsync(string requestId)
 	{
 		var db = await DbAsync();
 		return await db.FindAsync<ReviewRequest>(requestId);
 	}
 
+	/// <summary>Saves a review request (new or changed).</summary>
 	public async Task SaveReviewRequestAsync(ReviewRequest request)
 	{
 		var db = await DbAsync();
 		await db.InsertOrReplaceAsync(request);
 	}
 
+	/// <summary>Removes a review request from the phone.</summary>
 	public async Task DeleteReviewRequestAsync(string requestId)
 	{
 		var db = await DbAsync();
 		await db.DeleteAsync<ReviewRequest>(requestId);
 	}
 
+	/// <inheritdoc />
 	public async Task<List<ReviewRequest>> GetRequestsWaitingForReviewAsync(string teamId)
 	{
 		var db = await DbAsync();
@@ -358,6 +403,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.ToListAsync();
 	}
 
+	/// <inheritdoc />
 	public async Task<List<ReviewRequest>> GetRequestsSubmittedByAsync(string email)
 	{
 		var db = await DbAsync();
@@ -365,5 +411,14 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.Where(r => r.SubmittedByEmail == email)
 			.OrderByDescending(r => r.SubmittedAt)
 			.ToListAsync();
+	}
+
+	/// <inheritdoc />
+	public async Task DeleteAccountDataAsync(string accountId)
+	{
+		var sessions = await GetSessionsAsync(accountId);
+		await DeleteSessionsAsync(sessions.Select(session => session.Id));
+		var db = await DbAsync();
+		await db.ExecuteAsync($"DELETE FROM {nameof(Player)} WHERE {nameof(Player.OwnerAccountId)} = ?", accountId);
 	}
 }

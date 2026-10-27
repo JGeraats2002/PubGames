@@ -32,13 +32,13 @@
 										<Label Text="{Binding Player.Name}" LineBreakMode="TailTruncation" />
 										<Label Text="{Binding Score, StringFormat='Score: {0}'}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 									</VerticalStackLayout>
-									<Button Grid.Column="2" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="38" HeightRequest="38" Padding="0"
+									<Button SemanticProperties.Description="Move up" Grid.Column="2" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="48" HeightRequest="48" Padding="0"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button Grid.Column="3" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="38" HeightRequest="38" Padding="0"
+									<Button SemanticProperties.Description="Move down" Grid.Column="3" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="48" HeightRequest="48" Padding="0"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button Grid.Column="4" Text="Replace" Clicked="OnReplaceClicked" HeightRequest="38" Padding="8,0" FontSize="12"
+									<Button Grid.Column="4" Text="Replace" Clicked="OnReplaceClicked" HeightRequest="48" Padding="8,0" FontSize="12"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button Grid.Column="5" Text="✕" Clicked="OnRemoveClicked" WidthRequest="38" HeightRequest="38" Padding="0"
+									<Button SemanticProperties.Description="Remove player" Grid.Column="5" Text="✕" Clicked="OnRemoveClicked" WidthRequest="48" HeightRequest="48" Padding="0"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</Grid>
 							</Border>

@@ -18,13 +18,16 @@ public enum TieBreakScope
 /// <summary>A tie-break moment as the dropdown shows it.</summary>
 public sealed record TieBreakMomentOption(TieBreakMoment Moment)
 {
+	/// <summary>This tie-break moment, as the app calls it.</summary>
 	public string Label => LabelFor(Moment);
 
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Every tie-break moment, as the picker shows them.</summary>
 	public static List<TieBreakMomentOption> All { get; } = Enum.GetValues<TieBreakMoment>().Select(m => new TieBreakMomentOption(m)).ToList();
 
+	/// <summary>What a tie-break moment is called in the app.</summary>
 	public static string LabelFor(TieBreakMoment moment) => moment switch
 	{
 		TieBreakMoment.SubgamesOnly => "After every subgame",
@@ -36,14 +39,19 @@ public sealed record TieBreakMomentOption(TieBreakMoment Moment)
 /// <summary>A tie-break scope as the dropdown shows it; the wording follows the result type.</summary>
 public sealed record TieBreakScopeOption(TieBreakScope Scope, ResultMode Mode)
 {
+	/// <summary>This choice of which ties are played off, as the app calls it.</summary>
 	public string Label => LabelFor(Scope, Mode);
 
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>The choices of which ties are played off, worded for this way of noting results.</summary>
 	public static List<TieBreakScopeOption> AllFor(ResultMode mode) =>
 		Enum.GetValues<TieBreakScope>().Select(s => new TieBreakScopeOption(s, mode)).ToList();
 
+	/// <summary>
+	/// What a choice of which ties are played off is called, worded for this way of noting results.
+	/// </summary>
 	public static string LabelFor(TieBreakScope scope, ResultMode mode) => scope switch
 	{
 		TieBreakScope.Every => "Every shared place",
@@ -74,11 +82,11 @@ public static class TieBreak
 	/// </summary>
 	public static IEnumerable<int> StillTied(List<List<string>> order, bool wholeOrder, bool worstCounts)
 	{
-		for (var i = 0; i < order.Count; i++)
+		for (var groupIndex = 0; groupIndex < order.Count; groupIndex++)
 		{
-			if (order[i].Count < 2) continue;
-			if (wholeOrder || (worstCounts ? i == order.Count - 1 : i == 0))
-				yield return i;
+			if (order[groupIndex].Count < 2) continue;
+			if (wholeOrder || (worstCounts ? groupIndex == order.Count - 1 : groupIndex == 0))
+				yield return groupIndex;
 		}
 	}
 
@@ -98,6 +106,7 @@ public enum DuelEnd
 /// <summary>A way of ending a duel as the dropdown shows it.</summary>
 public sealed record DuelEndOption(DuelEnd End)
 {
+	/// <summary>How a duel ends, as the picker shows it.</summary>
 	public string Label => End switch
 	{
 		DuelEnd.Score => "First to reach a score",
@@ -108,5 +117,6 @@ public sealed record DuelEndOption(DuelEnd End)
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;
 
+	/// <summary>Every way a duel can end, as the picker shows them.</summary>
 	public static List<DuelEndOption> All { get; } = Enum.GetValues<DuelEnd>().Select(e => new DuelEndOption(e)).ToList();
 }

@@ -50,6 +50,7 @@ public sealed record ScoringSettings
 		_ => ["Highest score wins", "Lowest score wins"]
 	};
 
+	/// <summary>Which score wins, in words, for the help: "the highest score wins".</summary>
 	[JsonIgnore]
 	public string ScoreDirectionLabel => ScoreDirectionOptions(ResultMode)[LowestWins ? 1 : 0].ToLowerInvariant();
 
@@ -190,6 +191,7 @@ public sealed record ScoringSettings
 		return $"no ties: duel {TieBreakMomentOption.LabelFor(TieBreakMoment).ToLowerInvariant()}, {TieBreakScopeOption.LabelFor(TieBreakScope, ResultMode).ToLowerInvariant()}, {scoring}";
 	}
 
+	/// <summary>The settings of a game that has none saved.</summary>
 	public static ScoringSettings Default { get; } = new();
 
 	/// <summary>"winner(s) only", "ranking (1st, 2nd, 3rd...)" or "loser(s) only".</summary>
@@ -237,12 +239,12 @@ public sealed record ScoringSettings
 
 		var amounts = new List<int>();
 		var endless = false;
-		for (var n = -bound; n <= bound; n++)
+		for (var amount = -bound; amount <= bound; amount++)
 		{
-			if (!allows(n)) continue;
+			if (!allows(amount)) continue;
 			// Allowed beyond every number in the rules: it keeps repeating, so there are endless amounts.
-			if (range is null && Math.Abs(n) > reach) endless = true;
-			if (amounts.Count <= limit) amounts.Add(n);
+			if (range is null && Math.Abs(amount) > reach) endless = true;
+			if (amounts.Count <= limit) amounts.Add(amount);
 			if (amounts.Count > limit && (endless || range is not null)) break;
 		}
 
@@ -298,8 +300,8 @@ public sealed record ScoringSettings
 	/// <summary>Rules missing a number, or rules that together allow no useful amount at all.</summary>
 	private string? AmountRulesProblem()
 	{
-		for (var i = 0; i < AmountRules.Count; i++)
-			if (AmountRules[i].Problem(i + 1) is { } problem)
+		for (var ruleIndex = 0; ruleIndex < AmountRules.Count; ruleIndex++)
+			if (AmountRules[ruleIndex].Problem(ruleIndex + 1) is { } problem)
 				return problem;
 
 		var (amounts, _) = AllowedAmounts(2);
@@ -318,8 +320,10 @@ public sealed record ScoringSettings
 	// AmountRules is a list, so compare by content rather than by reference.
 	public bool Equals(ScoringSettings? other) => other is not null && ToJson() == other.ToJson();
 
+	/// <summary>Two settings that are alike give the same hash (they're compared by their JSON).</summary>
 	public override int GetHashCode() => ToJson().GetHashCode();
 
+	/// <summary>The settings as JSON, for saving.</summary>
 	public string ToJson() => JsonSerializer.Serialize(this);
 
 	/// <summary>Games saved before scoring settings existed have none: they get the defaults.</summary>
@@ -361,6 +365,9 @@ public sealed record ScoringSettings
 		["equalizingTurn"] = EqualizingTurn
 	};
 
+	/// <summary>
+	/// Reads settings from their cloud document; missing or unreadable settings become the defaults.
+	/// </summary>
 	public static ScoringSettings FromMap(object? value)
 	{
 		if (value is not IDictionary<string, object?> map) return Default;
@@ -391,6 +398,7 @@ public sealed record ScoringSettings
 		};
 	}
 
+	/// <summary>Reads the rules for entered amounts from JSON; unreadable becomes no rules.</summary>
 	private static List<ScoreRule> RulesFromJson(string json)
 	{
 		try

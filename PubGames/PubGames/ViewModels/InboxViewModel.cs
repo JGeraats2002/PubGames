@@ -20,8 +20,10 @@ public partial class InboxViewModel : ObservableObject
 	private readonly ILocalDatabaseService _local;
 	private readonly ICloudSyncService _cloud;
 
+	/// <summary>The messages, newest first.</summary>
 	public ObservableCollection<InboxMessage> Messages { get; } = new();
 
+	/// <summary>That a message is sent, or what went wrong.</summary>
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
@@ -30,6 +32,10 @@ public partial class InboxViewModel : ObservableObject
 
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
+	/// <summary>
+	/// Gets the services it works with - the Inbox, the team, the sign-in, the phone's database and cloud
+	/// sync - from the app (dependency injection).
+	/// </summary>
 	public InboxViewModel(IMessageService messages, ITeamService team, IAuthService auth, ILocalDatabaseService local, ICloudSyncService cloud)
 	{
 		_messages = messages;
@@ -41,6 +47,9 @@ public partial class InboxViewModel : ObservableObject
 
 	private string MyEmail => TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
 
+	/// <summary>
+	/// Shows the messages as saved on the phone, then refreshes them from the cloud and marks them read.
+	/// </summary>
 	public async Task LoadAsync()
 	{
 		Show(await _messages.GetCachedInboxAsync());
@@ -61,17 +70,18 @@ public partial class InboxViewModel : ObservableObject
 			await _messages.MarkReadAsync(message);
 	}
 
+	/// <summary>Shows the messages, newest first.</summary>
 	private void Show(IEnumerable<InboxMessage> messages)
 	{
 		Messages.Clear();
-		foreach (var m in messages)
+		foreach (var message in messages)
 		{
 			// Show "New" based on the state when loaded, even after marking it read.
 			Messages.Add(new InboxMessage
 			{
-				Id = m.Id, ToEmail = m.ToEmail, FromEmail = m.FromEmail, FromName = m.FromName, Text = m.Text,
-				SentAt = m.SentAt, IsRead = m.IsRead, Kind = m.Kind, ReviewRequestId = m.ReviewRequestId,
-				OffersResubmit = m.OffersResubmit
+				Id = message.Id, ToEmail = message.ToEmail, FromEmail = message.FromEmail, FromName = message.FromName, Text = message.Text,
+				SentAt = message.SentAt, IsRead = message.IsRead, Kind = message.Kind, ReviewRequestId = message.ReviewRequestId,
+				OffersResubmit = message.OffersResubmit
 			});
 		}
 	}
@@ -118,6 +128,7 @@ public partial class InboxViewModel : ObservableObject
 		}
 	}
 
+	/// <summary>Deletes a message from the user's Inbox.</summary>
 	public async Task DeleteAsync(InboxMessage message)
 	{
 		try

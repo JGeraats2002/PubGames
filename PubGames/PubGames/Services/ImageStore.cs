@@ -65,15 +65,20 @@ public partial class FirestoreImageStore : IImageStore
 	private readonly IAuthService _auth;
 	private readonly HttpClient _http = new();
 
+	/// <summary>
+	/// Gets the services it works with - the cloud and the sign-in - from the app (dependency injection).
+	/// </summary>
 	public FirestoreImageStore(FirestoreClient firestore, IAuthService auth)
 	{
 		_firestore = firestore;
 		_auth = auth;
 	}
 
+	/// <inheritdoc />
 	public async Task<string?> PickAndUploadAsync() =>
 		await PickAsync(MaxSide, MaxBytes) is { } bytes ? await StoreAsync(bytes, drawing: null) : null;
 
+	/// <inheritdoc />
 	public async Task<string?> TakePhotoAndUploadAsync()
 	{
 		if (!MediaPicker.Default.IsCaptureSupported)
@@ -83,6 +88,7 @@ public partial class FirestoreImageStore : IImageStore
 		return photo is null ? null : await StoreAsync(await ShrinkAsync(photo, MaxSide, MaxBytes), drawing: null);
 	}
 
+	/// <inheritdoc />
 	public async Task<string> UploadAsync(byte[] image, string drawing)
 	{
 		using var stream = new MemoryStream(image);
@@ -109,6 +115,7 @@ public partial class FirestoreImageStore : IImageStore
 		return Scheme + id;
 	}
 
+	/// <inheritdoc />
 	public async Task<string?> GetDrawingAsync(string reference)
 	{
 		if (!reference.StartsWith(Scheme)) return null;
@@ -135,6 +142,7 @@ public partial class FirestoreImageStore : IImageStore
 		return drawing.Length == 0 ? null : drawing;
 	}
 
+	/// <inheritdoc />
 	public async Task DeleteAsync(string reference)
 	{
 		// Only this app's own game images; a web URL isn't ours to delete.
@@ -147,8 +155,10 @@ public partial class FirestoreImageStore : IImageStore
 		File.Delete(DrawingPath(id));
 	}
 
+	/// <summary>Where a created image's drawing is cached on the phone, next to the image itself.</summary>
 	private static string DrawingPath(string id) => CachePath(id) + ".drawing";
 
+	/// <inheritdoc />
 	public async Task<string?> PickAndUploadProfilePhotoAsync()
 	{
 		var bytes = await PickAsync(PhotoMaxSide, PhotoMaxBytes);
@@ -177,6 +187,9 @@ public partial class FirestoreImageStore : IImageStore
 		return file is null ? null : await ShrinkAsync(file, maxSide, maxBytes);
 	}
 
+	/// <summary>
+	/// How the photo picker or camera is opened: the title and the size photos are taken at.
+	/// </summary>
 	private static MediaPickerOptions PickerOptions(int maxSide) => new()
 	{
 		SelectionLimit = 1,
@@ -187,6 +200,7 @@ public partial class FirestoreImageStore : IImageStore
 		RotateImage = true
 	};
 
+	/// <inheritdoc />
 	public async Task<Stream> OpenAsync(string reference, CancellationToken ct = default)
 	{
 		if (reference.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
@@ -219,6 +233,10 @@ public partial class FirestoreImageStore : IImageStore
 		return await ShrinkAsync(source, maxSide, maxBytes);
 	}
 
+	/// <summary>
+	/// Makes a picture small enough to store: at most `maxSide` pixels wide and high and `maxBytes` big, as a
+	/// JPEG.
+	/// </summary>
 	private static async Task<byte[]> ShrinkAsync(Stream source, int maxSide, int maxBytes)
 	{
 		using var original = new MemoryStream();

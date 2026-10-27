@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older: what Android's automatic backup (to Google Drive) takes along.
+     The sign-in is left out: it's encrypted with a key that only exists on this phone,
+     so a copy restored on another phone can't be read (see .NET MAUI's SecureStorage docs).
+     On a new phone the player simply signs in again. The saved players and games (files) do go along. -->
+<full-backup-content>
+	<include domain="file" path="." />
+	<include domain="sharedpref" path="." />
+	<exclude domain="sharedpref" path="com.pubgems.pubgames.microsoft.maui.essentials.preferences.xml" />
+</full-backup-content>

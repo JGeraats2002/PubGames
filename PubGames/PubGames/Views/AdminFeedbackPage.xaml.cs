@@ -8,6 +8,7 @@ public partial class AdminFeedbackPage : ContentPage
 {
 	private readonly AdminFeedbackViewModel _vm;
 
+	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
 	public AdminFeedbackPage(AdminFeedbackViewModel vm)
 	{
 		InitializeComponent();
@@ -15,12 +16,14 @@ public partial class AdminFeedbackPage : ContentPage
 		InfoButton.Attach(this, () => Help.AdminFeedback);
 	}
 
+	/// <summary>Every time the page shows: the feedback is loaded fresh.</summary>
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
 		await _vm.LoadAsync();
 	}
 
+	/// <summary>Pulling the list down loads the feedback again.</summary>
 	private async void OnRefreshing(object? sender, EventArgs e) => await _vm.LoadAsync();
 
 	/// <summary>A new status and/or a reply the sender sees under Settings > Feedback.</summary>
@@ -51,6 +54,7 @@ public partial class AdminFeedbackPage : ContentPage
 			await Shell.Current.GoToAsync(nameof(AdminCreateGamePage), new Dictionary<string, object> { ["gameId"] = gameId });
 	}
 
+	/// <summary>Deletes feedback for everyone, after asking.</summary>
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
 		if (sender is not BindableObject { BindingContext: Feedback item }) return;

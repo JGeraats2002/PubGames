@@ -22,8 +22,11 @@ public sealed record UserProfile(string Uid, string Name, string Nickname, strin
 	public static string FormatCode(string code) =>
 		code.Length == CodeLength ? $"{code[..4]}-{code[4..]}" : code;
 
+	/// <summary>
+	/// A new random personal code, from a secure random source so codes can't be predicted.
+	/// </summary>
 	public static string NewCode() =>
-		new(Enumerable.Range(0, CodeLength).Select(_ => CodeAlphabet[Random.Shared.Next(CodeAlphabet.Length)]).ToArray());
+		new(Enumerable.Range(0, CodeLength).Select(_ => CodeAlphabet[System.Security.Cryptography.RandomNumberGenerator.GetInt32(CodeAlphabet.Length)]).ToArray());
 
 	/// <summary>"ab3k-9qx7" → "AB3K9QX7"; null when it can't be a code.</summary>
 	public static string? NormalizeCode(string? text)
@@ -47,6 +50,7 @@ public sealed record PlayedGame(string GameId, string GameName, DateTime PlayedA
 /// <summary>Played / won / lost / tied, with percentages, for all games or one game.</summary>
 public sealed record GameStats(string Title, int Played, int Won, int Lost, int Tied)
 {
+	/// <summary>The stats of these finished games together, with the given title.</summary>
 	public static GameStats From(string title, IEnumerable<PlayedGame> games)
 	{
 		var list = games.ToList();
@@ -56,10 +60,14 @@ public sealed record GameStats(string Title, int Played, int Won, int Lost, int 
 			list.Count(g => g.Outcome == GameOutcome.Tied));
 	}
 
+	/// <summary>A count as a percentage of the games played, rounded: "42%".</summary>
 	private string Percent(int n) => Played == 0 ? "0%" : $"{Math.Round(100.0 * n / Played)}%";
 
+	/// <summary>"5 (42%)": games won with the percentage.</summary>
 	public string WonText => $"{Won} ({Percent(Won)})";
+	/// <summary>"6 (50%)": games lost with the percentage.</summary>
 	public string LostText => $"{Lost} ({Percent(Lost)})";
+	/// <summary>"1 (8%)": games tied with the percentage.</summary>
 	public string TiedText => $"{Tied} ({Percent(Tied)})";
 
 	/// <summary>"12 played · 5 won (42%) · 6 lost (50%) · 1 tied (8%)".</summary>

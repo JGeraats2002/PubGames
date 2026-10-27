@@ -13,7 +13,7 @@
 			<!-- How this duel works is behind ⓘ (the duel has no title bar of its own). -->
 			<Grid ColumnDefinitions="*,Auto">
 				<Label Text="⚔ Duel" FontSize="24" FontAttributes="Bold" VerticalOptions="Center" />
-				<Button Grid.Column="1" Text="ⓘ" Clicked="OnInfoClicked" FontSize="20" WidthRequest="44" HeightRequest="44" Padding="0"
+				<Button SemanticProperties.Description="Help" Grid.Column="1" Text="ⓘ" Clicked="OnInfoClicked" FontSize="20" WidthRequest="48" HeightRequest="48" Padding="0"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
 			</Grid>
 			<Label Text="{Binding Reason}" FontSize="15" FontAttributes="Bold" />
@@ -47,13 +47,13 @@
 									<Entry Text="{Binding Typed}" Keyboard="Telephone" WidthRequest="70" HorizontalTextAlignment="End" VerticalOptions="Center"
 									       Placeholder="{Binding AmountPlaceholder, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									       IsVisible="{Binding HasBox, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
-									<Button Clicked="OnMinusClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="16"
+									<Button Clicked="OnMinusClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="16"
 									        Text="{Binding MinusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 									<Label Text="{Binding Score}" FontSize="22" FontAttributes="Bold" MinimumWidthRequest="48"
 									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
-									<Button Clicked="OnPlusClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="16"
+									<Button Clicked="OnPlusClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="16"
 									        Text="{Binding PlusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />

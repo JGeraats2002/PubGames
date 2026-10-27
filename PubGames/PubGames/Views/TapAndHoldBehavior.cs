@@ -17,6 +17,7 @@ public class TapAndHoldBehavior : Behavior<View>
 	private Android.Views.View? _native;
 #endif
 
+	/// <summary>Put on a view: listens for taps and holds on it, once Android has made the view.</summary>
 	protected override void OnAttachedTo(View view)
 	{
 		base.OnAttachedTo(view);
@@ -25,6 +26,7 @@ public class TapAndHoldBehavior : Behavior<View>
 		Hook();
 	}
 
+	/// <summary>Taken off a view: stops listening.</summary>
 	protected override void OnDetachingFrom(View view)
 	{
 		view.HandlerChanged -= OnHandlerChanged;
@@ -33,6 +35,7 @@ public class TapAndHoldBehavior : Behavior<View>
 		base.OnDetachingFrom(view);
 	}
 
+	/// <summary>Android made (or remade) the view: listen on the new one.</summary>
 	private void OnHandlerChanged(object? sender, EventArgs e) => Hook();
 
 	/// <summary>(Re)connects to the native view whenever MAUI creates or replaces it.</summary>
@@ -50,6 +53,7 @@ public class TapAndHoldBehavior : Behavior<View>
 #endif
 	}
 
+	/// <summary>Stops listening on the Android view.</summary>
 	private void Unhook()
 	{
 #if ANDROID
@@ -73,8 +77,10 @@ public class TapAndHoldBehavior : Behavior<View>
 	}
 
 #if ANDROID
+	/// <summary>A short tap.</summary>
 	private void OnClick(object? sender, EventArgs e) => Tapped?.Invoke(_view, EventArgs.Empty);
 
+	/// <summary>A hold: the phone vibrates briefly and the hold is reported.</summary>
 	private void OnLongClick(object? sender, Android.Views.View.LongClickEventArgs e)
 	{
 		// Handled: a hold doesn't also count as a tap.

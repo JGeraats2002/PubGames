@@ -31,14 +31,17 @@ public class CategoryGroup
 	/// </summary>
 	public const string RetiredPlayersId = "players";
 
+	/// <summary>The main category's unique id.</summary>
 	[PrimaryKey]
 	public string Id { get; set; } = Guid.NewGuid().ToString("N");
 
+	/// <summary>The main category's name, e.g. Duration.</summary>
 	public string Name { get; set; } = string.Empty;
 
 	/// <summary>Place in the list, lowest first; an admin can move it up and down. Equal places go oldest first.</summary>
 	public int SortOrder { get; set; }
 
+	/// <summary>When the main category was made (UTC).</summary>
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 	/// <summary>
@@ -84,14 +87,18 @@ public class CategoryChoiceGroup
 	/// <summary>Null for the categories without a main category.</summary>
 	public CategoryGroup? Group { get; init; }
 
+	/// <summary>The categories in this main category, each with whether it's selected.</summary>
 	public required List<CategoryChoice> Choices { get; init; }
 
+	/// <summary>The main category's name; "Other categories" for categories without one.</summary>
 	public string Name => Group?.Name ?? "Other categories";
 
 	/// <summary>A game needs at least one category from every main category that has any.</summary>
 	public bool IsRequired => Group is not null && Choices.Count > 0;
 
+	/// <summary>The heading: the name, with "(at least one)" when a game needs a category from it.</summary>
 	public string Title => IsRequired ? $"{Name} (at least one)" : $"{Name} (optional)";
 
+	/// <summary>Whether a category in it is selected.</summary>
 	public bool HasSelection => Choices.Any(c => c.IsSelected);
 }

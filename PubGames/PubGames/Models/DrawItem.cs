@@ -64,12 +64,15 @@ public class DrawItem
 
 	private const float Line = 6;
 
+	/// <summary>What the item is: an arrow, text, a card, a die, a hand ...</summary>
 	public DrawKind Kind { get; init; }
 
 	/// <summary>The centre, in the drawing's own units (see DrawingBoard).</summary>
 	public float X { get; set; }
+	/// <summary>The centre's place down, in the drawing's own units (see DrawingBoard).</summary>
 	public float Y { get; set; }
 
+	/// <summary>How big it is: 1 is its normal size.</summary>
 	public float Scale { get; set; } = 1;
 
 	/// <summary>
@@ -87,11 +90,14 @@ public class DrawItem
 	/// <summary>Arrow, text, person, number and a coaster's print: index into ColorNames.</summary>
 	public int ColorIndex { get; set; }
 
+	/// <summary>The words of a text item.</summary>
 	public string Text { get; set; } = "Text";
 
 	// Card
 	public int Suit { get; set; }
+	/// <summary>A card's value: an index into Ranks (A, 2 ... K).</summary>
 	public int Rank { get; set; }
+	/// <summary>A card lying face down (or a closed deck).</summary>
 	public bool FaceDown { get; set; }
 
 	/// <summary>A whole deck rather than one card; FaceDown then says whether it's closed, and Suit and Rank which card is on top.</summary>
@@ -110,6 +116,7 @@ public class DrawItem
 	/// <summary>Which fingers stick out when not neutral; same order as FingerNames.</summary>
 	public bool[] Fingers { get; set; } = new bool[5];
 
+	/// <summary>A left hand instead of a right one.</summary>
 	public bool Mirrored { get; set; }
 
 	// Drink, die, coaster and table
@@ -121,6 +128,7 @@ public class DrawItem
 
 	// Arrow
 	public bool Curved { get; set; }
+	/// <summary>An arrow with a head at both ends.</summary>
 	public bool BothEnds { get; set; }
 
 	/// <summary>
@@ -142,6 +150,7 @@ public class DrawItem
 
 	/// <summary>Bent arrows: the length of each arm, from the corner to its end.</summary>
 	public float Arm1Length { get; set; } = 150;
+	/// <summary>Bent arrows: the length of arm 2, from the corner to its end (where the head is).</summary>
 	public float Arm2Length { get; set; } = 110;
 
 	public const float DefaultArrowLength = 230;
@@ -162,6 +171,10 @@ public class DrawItem
 		}
 	}
 
+	/// <summary>
+	/// Half the rough box around an arrow, with room for its heads; a bent arrow's box reaches as far as its
+	/// longest arm in every direction.
+	/// </summary>
 	private SizeF ArrowHalfSize()
 	{
 		// Room for the heads beside the line.
@@ -175,6 +188,7 @@ public class DrawItem
 		return new(ArrowLength / 2, Curved ? Math.Max(70, 40 + head) : Math.Max(45, head + 8));
 	}
 
+	/// <summary>The item's name in the editor: "Card A♠", "Die 3", "Coin (heads)" ...</summary>
 	[JsonIgnore]
 	public string Label => Kind switch
 	{
@@ -187,6 +201,7 @@ public class DrawItem
 		_ => Kind.ToString()
 	};
 
+	/// <summary>A copy to change without changing this one (also its own list of fingers).</summary>
 	public DrawItem Clone()
 	{
 		var copy = (DrawItem)MemberwiseClone();
@@ -224,6 +239,9 @@ public class DrawItem
 			&& localY >= frame.Top - slack && localY <= frame.Bottom + slack;
 	}
 
+	/// <summary>
+	/// Draws the item at its place, size and turn, with a dotted frame around it when it's selected.
+	/// </summary>
 	public void Draw(ICanvas canvas, bool selected)
 	{
 		canvas.SaveState();
@@ -334,6 +352,10 @@ public class DrawItem
 		return JsonSerializer.Serialize(look);
 	}
 
+	/// <summary>
+	/// Draws the item once out of sight and finds where its paint is: the area it really covers (Android
+	/// only; elsewhere null).
+	/// </summary>
 	private RectF? Measure()
 	{
 #if ANDROID
@@ -351,16 +373,17 @@ public class DrawItem
 			var pixels = new int[width * height];
 			context.Bitmap.GetPixels(pixels, 0, width, 0, 0, width, height);
 			int left = width, top = height, right = -1, bottom = -1;
-			for (var y = 0; y < height; y++)
+			// Every pixel that has paint on it (not see-through) widens the area.
+			for (var pixelRow = 0; pixelRow < height; pixelRow++)
 			{
-				var row = y * width;
-				for (var x = 0; x < width; x++)
+				var rowStart = pixelRow * width;
+				for (var pixelColumn = 0; pixelColumn < width; pixelColumn++)
 				{
-					if ((pixels[row + x] >>> 24) < 16) continue;
-					if (x < left) left = x;
-					if (x > right) right = x;
-					if (y < top) top = y;
-					if (y > bottom) bottom = y;
+					if ((pixels[rowStart + pixelColumn] >>> 24) < 16) continue;
+					if (pixelColumn < left) left = pixelColumn;
+					if (pixelColumn > right) right = pixelColumn;
+					if (pixelRow < top) top = pixelRow;
+					if (pixelRow > bottom) bottom = pixelRow;
 				}
 			}
 			if (right < 0) return null;
@@ -377,6 +400,9 @@ public class DrawItem
 
 	private Color ItemColor => Palette[Math.Clamp(ColorIndex, 0, Palette.Length - 1)];
 
+	/// <summary>
+	/// Draws an arrow: straight, curved or bent, with one or two heads, in its length, thickness and colour.
+	/// </summary>
 	private void DrawArrow(ICanvas canvas)
 	{
 		var color = ItemColor;
@@ -459,6 +485,7 @@ public class DrawItem
 		canvas.RestoreState();
 	}
 
+	/// <summary>Draws the text in its colour.</summary>
 	private void DrawText(ICanvas canvas)
 	{
 		var half = HalfSize;
@@ -470,6 +497,7 @@ public class DrawItem
 			HorizontalAlignment.Center, VerticalAlignment.Center);
 	}
 
+	/// <summary>Draws a playing card (face up or down) or a whole deck.</summary>
 	private void DrawCard(ICanvas canvas)
 	{
 		if (Deck)
@@ -505,6 +533,7 @@ public class DrawItem
 		canvas.FillPath(SuitPath(Suit, 0, 22, 42));
 	}
 
+	/// <summary>The white sheet of a card with its outline.</summary>
 	private static void DrawCardSheet(ICanvas canvas)
 	{
 		canvas.FillColor = Colors.White;
@@ -552,6 +581,7 @@ public class DrawItem
 		return path;
 	}
 
+	/// <summary>Adds the stem of a spade or club to a suit shape.</summary>
 	private static void AppendStem(PathF path, float cx, float cy, float s)
 	{
 		path.MoveTo(cx, cy);
@@ -560,6 +590,7 @@ public class DrawItem
 		path.Close();
 	}
 
+	/// <summary>Draws a die, a cup with dice in it, or a cup upside down.</summary>
 	private void DrawDie(ICanvas canvas)
 	{
 		switch (Shape)
@@ -581,6 +612,7 @@ public class DrawItem
 		}
 	}
 
+	/// <summary>A small die at a place and angle, as seen in a dice cup.</summary>
 	private static void DrawSmallDie(ICanvas canvas, float x, float y, float degrees, int value)
 	{
 		const float size = 0.45f;
@@ -594,6 +626,7 @@ public class DrawItem
 		canvas.RestoreState();
 	}
 
+	/// <summary>A die's face with its number of pips.</summary>
 	private static void DrawDieFace(ICanvas canvas, int value)
 	{
 		canvas.FillColor = Colors.White;
@@ -656,10 +689,10 @@ public class DrawItem
 
 		// Index to pinky: where each starts on the hand, how long, and how far it leans when held up on its own.
 		(float X, float Length, float Spread)[] fingers = [(-45, 98, -15), (-15, 112, -5), (15, 102, 5), (45, 78, 16)];
-		for (var i = 0; i < fingers.Length; i++)
+		for (var fingerIndex = 0; fingerIndex < fingers.Length; fingerIndex++)
 		{
-			var (x, length, spread) = fingers[i];
-			var isOut = Neutral || Fingers[i + 1];
+			var (x, length, spread) = fingers[fingerIndex];
+			var isOut = Neutral || Fingers[fingerIndex + 1];
 			canvas.SaveState();
 			canvas.Translate(x, 14);
 			canvas.Rotate(isOut && !Neutral ? spread : 0);
@@ -692,6 +725,7 @@ public class DrawItem
 		canvas.DrawRoundedRectangle(-62, 0, 124, 112, 30);
 	}
 
+	/// <summary>Draws a drink (cup, mug, shot glass or bottle) filled to its level.</summary>
 	private void DrawDrink(ICanvas canvas)
 	{
 		var body = new PathF();
@@ -759,6 +793,7 @@ public class DrawItem
 		}
 	}
 
+	/// <summary>Adds a glass that's wider at the top than at the bottom to a shape.</summary>
 	private static void AppendTaperedGlass(PathF path, float topHalf, float bottomHalf, float halfHeight)
 	{
 		path.MoveTo(-topHalf, -halfHeight);
@@ -768,6 +803,7 @@ public class DrawItem
 		path.Close();
 	}
 
+	/// <summary>Draws a simple person in their colour.</summary>
 	private void DrawPerson(ICanvas canvas)
 	{
 		canvas.FillColor = ItemColor;
@@ -783,6 +819,7 @@ public class DrawItem
 		canvas.DrawCircle(0, -54, 30);
 	}
 
+	/// <summary>Draws a coin showing heads or tails.</summary>
 	private void DrawCoin(ICanvas canvas)
 	{
 		canvas.FillColor = Gold;
@@ -873,6 +910,7 @@ public class DrawItem
 		}
 	}
 
+	/// <summary>Draws a round badge with a number in it.</summary>
 	private void DrawNumber(ICanvas canvas)
 	{
 		canvas.FillColor = ItemColor;
@@ -883,6 +921,7 @@ public class DrawItem
 		canvas.DrawString(Value.ToString(), -50, -50, 100, 100, HorizontalAlignment.Center, VerticalAlignment.Center);
 	}
 
+	/// <summary>Draws a check mark or a cross from its strokes, in its colour.</summary>
 	private static void DrawMark(ICanvas canvas, Color color, params (float X, float Y)[][] strokes)
 	{
 		canvas.StrokeColor = color;
@@ -910,6 +949,9 @@ public class DrawingBoard : IDrawable
 	/// <summary>Square for covers (they're shown square), wide for rules pictures.</summary>
 	public bool IsSquare { get; set; }
 
+	/// <summary>
+	/// The drawing's height in its own units: as high as wide for covers, lower for rules pictures.
+	/// </summary>
 	public float Height => IsSquare ? Width : 750;
 
 	public static readonly string[] BackgroundNames = ["White", "Cream", "Yellow", "Orange", "Red", "Green", "Blue", "Purple", "Dark"];
@@ -926,8 +968,10 @@ public class DrawingBoard : IDrawable
 	/// <summary>The sheet's colour, an index into BackgroundNames. Only covers get to choose; rules pictures are always cream.</summary>
 	public int Background { get; set; }
 
+	/// <summary>Everything on the drawing, from bottom to top.</summary>
 	public List<DrawItem> Items { get; } = new();
 
+	/// <summary>The item that's selected in the editor (shown with a frame), or null.</summary>
 	public DrawItem? Selected { get; set; }
 
 	/// <summary>
@@ -954,11 +998,15 @@ public class DrawingBoard : IDrawable
 		}
 	}
 
+	/// <summary>A drawing as it's saved: its shape, items and background colour.</summary>
 	private record Saved(bool IsSquare, List<DrawItem> Items, int Background = 0);
 
 	/// <summary>The item under a point on the drawing: the one on top where they overlap.</summary>
 	public DrawItem? ItemAt(PointF point) => Items.LastOrDefault(i => i.Contains(point));
 
+	/// <summary>
+	/// Draws the whole drawing - background and every item - scaled to the size it's shown at.
+	/// </summary>
 	public void Draw(ICanvas canvas, RectF dirtyRect)
 	{
 		canvas.SaveState();

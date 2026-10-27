@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.ProfilePage"
+             x:DataType="vm:AccountViewModel"
+             Title="Profile">
+
+	<ScrollView>
+		<VerticalStackLayout Padding="20" Spacing="12">
+
+			<!-- What other players see when they add you by your code. -->
+			<Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+				<Border WidthRequest="88" HeightRequest="88" StrokeThickness="0" BackgroundColor="{StaticResource SurfaceMuted}">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="44" />
+					</Border.StrokeShape>
+					<Border.GestureRecognizers>
+						<TapGestureRecognizer Command="{Binding ChangePhotoCommand}" />
+					</Border.GestureRecognizers>
+					<Grid>
+						<Label Text="{Binding Initials}" FontSize="28" IsVisible="{Binding HasNoPhoto}"
+						       HorizontalOptions="Center" VerticalOptions="Center" />
+						<Image Source="{Binding PhotoRef, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill"
+						       IsVisible="{Binding HasPhoto}" />
+					</Grid>
+				</Border>
+				<VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="4">
+					<Label Text="{Binding Email}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
+					<Border IsVisible="{Binding IsTeamMember}" BackgroundColor="{StaticResource Accent}"
+					        StrokeThickness="0" Padding="10,4" HorizontalOptions="Start">
+						<Border.StrokeShape>
+							<RoundRectangle CornerRadius="6" />
+						</Border.StrokeShape>
+						<Label Text="{Binding RoleName}" TextColor="White" FontSize="12" />
+					</Border>
+					<Button Text="Change picture" Command="{Binding ChangePhotoCommand}" HorizontalOptions="Start"
+					        HeightRequest="36" Padding="12,0" FontSize="13"
+					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+					        BorderColor="{StaticResource Border}" BorderWidth="1" />
+				</VerticalStackLayout>
+			</Grid>
+
+			<Label Text="Name" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Text="{Binding ProfileName}" Placeholder="Your name" MaxLength="40" />
+			<Label Text="Nickname" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Text="{Binding Nickname}" Placeholder="What players call you" MaxLength="30" />
+			<Button Text="Save profile" Command="{Binding SaveProfileCommand}" />
+
+			<!-- The personal code: others add you with it, so the games count in your stats. -->
+			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" Margin="0,6,0,0">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<Grid ColumnDefinitions="*,Auto">
+					<VerticalStackLayout VerticalOptions="Center">
+						<Label Text="Your player code" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding Code}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
+					</VerticalStackLayout>
+					<Button Grid.Column="1" Text="Copy" Command="{Binding CopyCodeCommand}" VerticalOptions="Center"
+					        HeightRequest="36" Padding="14,0" FontSize="13" />
+				</Grid>
+			</Border>
+
+			<!-- The owner only: the friend code, for friends to unlock a game for free. Works 15 minutes; New code makes one for 30. -->
+			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" IsVisible="{Binding IsOwner}">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<Grid ColumnDefinitions="*,Auto">
+					<VerticalStackLayout VerticalOptions="Center">
+						<Label Text="Friend code" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding FriendCode}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
+						<Label Text="{Binding FriendCodeValidity}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+					</VerticalStackLayout>
+					<VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+						<Button Text="Copy" Command="{Binding CopyFriendCodeCommand}" HeightRequest="36" Padding="14,0" FontSize="13" />
+						<Button Text="New code" Command="{Binding RenewFriendCodeCommand}" HeightRequest="36" Padding="14,0" FontSize="13"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+						        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+					</VerticalStackLayout>
+				</Grid>
+			</Border>
+
+			<Label Text="{Binding ProfileMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" />
+
+		</VerticalStackLayout>
+	</ScrollView>
+
+</ContentPage>

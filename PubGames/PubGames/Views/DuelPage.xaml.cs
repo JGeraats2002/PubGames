@@ -3,8 +3,8 @@ using PubGames.ViewModels;
 namespace PubGames.Views;
 
 /// <summary>
-/// The duel popup, shown as a modal page. Before the duel counts the players
-/// are asked whether the score is right. Use PlayAsync.
+/// The duel popup, shown as a modal page. The duel ends by itself; before it
+/// counts the players are asked whether the result is right. Use PlayAsync.
 /// </summary>
 public partial class DuelPage : ContentPage
 {
@@ -14,8 +14,8 @@ public partial class DuelPage : ContentPage
 	private DuelPage(DuelViewModel vm)
 	{
 		InitializeComponent();
-		// The page ends above the keyboard, so the box being typed in is never behind it.
-		SafeAreaEdges = new SafeAreaEdges(SafeAreaRegions.Default, SafeAreaRegions.Default, SafeAreaRegions.Default, SafeAreaRegions.SoftInput);
+		// The page ends above the keyboard, so the buttons stay right on top of it.
+		KeyboardWatcher.Track(this, covered => Root.Padding = new Thickness(16, 16, 16, 16 + covered));
 		BindingContext = _vm = vm;
 	}
 
@@ -29,25 +29,38 @@ public partial class DuelPage : ContentPage
 		return scores;
 	}
 
-	private void OnMinusClicked(object? sender, EventArgs e)
+	private async void OnMinusClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: DuelRow row } && _vm.Adjust(row, -1))
-			OnDoneClicked(this, EventArgs.Empty);
+			await FinishAsync();
 	}
 
-	/// <summary>Reaching an end score that ends the duel by itself goes straight to checking the score.</summary>
-	private void OnPlusClicked(object? sender, EventArgs e)
+	private async void OnPlusClicked(object? sender, EventArgs e)
 	{
 		if (sender is BindableObject { BindingContext: DuelRow row } && _vm.Adjust(row, +1))
-			OnDoneClicked(this, EventArgs.Empty);
+			await FinishAsync();
 	}
 
-	private async void OnDoneClicked(object? sender, EventArgs e)
+	private async void OnTurnDoneClicked(object? sender, EventArgs e)
 	{
-		if (_vm.Scores() is not { } scores) return;
-		if (await DisplayAlertAsync("Is this score correct?", _vm.ScoreLines, "Yes, it's correct", "No, change it"))
-			_result.TrySetResult(scores);
+		if (_vm.TurnDone())
+			await FinishAsync();
 	}
+
+	private void OnUndoClicked(object? sender, EventArgs e) => _vm.Undo();
+
+	/// <summary>The duel ended by itself: the players check the result, or take back the last turn if something was entered wrong.</summary>
+	private async Task FinishAsync()
+	{
+		if (await DisplayAlertAsync("Duel over - is this right?", _vm.ScoreLines, "Yes, it's right", "Undo last turn"))
+			_result.TrySetResult(_vm.Scores());
+		else
+			_vm.Undo();
+	}
+
+	/// <summary>How this duel is scored and ends, and how to play it - shown over the duel.</summary>
+	private async void OnInfoClicked(object? sender, EventArgs e) =>
+		await Navigation.PushModalAsync(new InfoPage(Models.Help.Duel(_vm.Explanation), modal: true));
 
 	private async void OnCancelClicked(object? sender, EventArgs e)
 	{

@@ -11,8 +11,11 @@
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="14">
 
+			<!-- A paid game that isn't unlocked: its rules can be read; Unlock comes instead of Skip rules and Start game. -->
+			<Button Text="🔒 Unlock to play" Clicked="OnUnlockClicked" IsVisible="{Binding IsLocked}" />
+
 			<!-- How many subgames make up the game (1 unless changed); used by both Skip rules and Start game. -->
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12" IsVisible="{Binding IsUnlocked}">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
@@ -30,7 +33,7 @@
 			</Border>
 
 			<!-- For groups who already know the game. -->
-			<Button Text="Skip rules" Command="{Binding StartGameCommand}"
+			<Button Text="Skip rules" Command="{Binding StartGameCommand}" IsVisible="{Binding IsUnlocked}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
@@ -59,7 +62,8 @@
 				</BindableLayout.ItemTemplate>
 			</VerticalStackLayout>
 
-			<Button Text="Start game" Command="{Binding StartGameCommand}" Margin="0,20,0,0" />
+			<Button Text="Start game" Command="{Binding StartGameCommand}" Margin="0,20,0,0" IsVisible="{Binding IsUnlocked}" />
+			<Button Text="🔒 Unlock to play" Clicked="OnUnlockClicked" Margin="0,20,0,0" IsVisible="{Binding IsLocked}" />
 
 		</VerticalStackLayout>
 	</ScrollView>

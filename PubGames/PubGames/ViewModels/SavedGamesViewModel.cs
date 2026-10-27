@@ -36,7 +36,7 @@ public partial class SavedGamesViewModel : ObservableObject
 
 	/// <summary>False: unfinished games. True: finished games.</summary>
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(ShowsUnfinished), nameof(SelectedRetention), nameof(RetentionInfo), nameof(RetentionTitle), nameof(EmptyText))]
+	[NotifyPropertyChangedFor(nameof(ShowsUnfinished), nameof(SelectedRetention), nameof(RetentionTitle), nameof(EmptyText))]
 	private bool showsFinished;
 
 	public bool ShowsUnfinished => !ShowsFinished;
@@ -103,18 +103,8 @@ public partial class SavedGamesViewModel : ObservableObject
 			if (value is null || value.Retention == Retention) return;
 			Retention = value.Retention;
 			OnPropertyChanged();
-			OnPropertyChanged(nameof(RetentionInfo));
 		}
 	}
-
-	/// <summary>What the chosen time means.</summary>
-	public string RetentionInfo => (Retention, ShowsFinished) switch
-	{
-		(SavedGamesRetention.DontSave, true) => "Finished games aren't kept: once a game is finished and you leave it, it's gone. Its result still counts in the stats.",
-		(SavedGamesRetention.DontSave, false) => "Unfinished games aren't kept: once you leave a game it's gone.",
-		(SavedGamesRetention.Forever, _) => "Games are kept until you delete them.",
-		_ => $"A game is deleted {SelectedRetention?.Label} after it was last played. Only games with at least one score are kept, on this phone only."
-	};
 
 	public async Task LoadAsync()
 	{

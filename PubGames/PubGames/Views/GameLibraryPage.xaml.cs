@@ -18,6 +18,8 @@ public partial class GameLibraryPage : ContentPage
 	{
 		base.OnAppearing();
 		await _vm.LoadAsync();
+		if (_vm.PassNotice() is { } notice)
+			await DisplayAlertAsync("Pub Games Pass", notice, "OK");
 	}
 
 	private async void OnFilterClicked(object? sender, EventArgs e) => await FilterPage.ShowAsync(Navigation, _vm.Filters);
@@ -33,14 +35,7 @@ public partial class GameLibraryPage : ContentPage
 			return;
 		}
 
-		if (!await _vm.IsOwnedAsync(game))
-		{
-			// TODO: show the unlock/paywall dialog and kick off Google Play
-			// Billing here before allowing navigation into the game.
-			await DisplayAlertAsync(game.Name, $"Unlock for €{game.Price:0.00} to play.", "OK");
-			return;
-		}
-
+		// A paid game that isn't unlocked opens too: its rules can be read first; Unlock is on that page.
 		await Shell.Current.GoToAsync(nameof(GameRulesPage), new ShellNavigationQueryParameters
 		{
 			["game"] = game,

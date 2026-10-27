@@ -71,6 +71,11 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _statusMessageTimer = new();
+
+	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
+
 	public CategoryGamesViewModel(ILocalDatabaseService local, ICloudSyncService cloud, ICategoryService categories, IAuthService auth)
 	{
 		_local = local;
@@ -95,7 +100,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		OnPropertyChanged(nameof(CanSave));
 		if (_category is null)
 		{
-			StatusMessage = "This category no longer exists.";
+			_statusMessageTimer.ShowLasting("This category no longer exists.", v => StatusMessage = v);
 			return;
 		}
 

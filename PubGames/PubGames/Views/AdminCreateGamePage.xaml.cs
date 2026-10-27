@@ -53,7 +53,7 @@ public partial class AdminCreateGamePage : ContentPage
 		{
 			const string discard = "Don't save";
 			var save = _vm.SaveButtonText;
-			var choice = await DisplayActionSheetAsync("Save your changes?", "Keep editing", discard, save);
+			var choice = await ChoicePopup.AskAsync(this, "Save your changes?", null, "Keep editing", discard, save);
 			if (choice == save)
 			{
 				await _vm.SaveCommand.ExecuteAsync(null);

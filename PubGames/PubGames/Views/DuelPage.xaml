@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- The duel popup: the tied players keep score like on the scoreboard (+ and −), or type in their final score. -->
+<!-- The duel popup: the tied players take turns, keeping score like on the scoreboard (+ and −) or typing in their points. -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
@@ -7,14 +7,20 @@
              x:DataType="vm:DuelViewModel"
              BackgroundColor="{StaticResource SurfaceLight}">
 
-	<Grid RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="10">
+	<Grid x:Name="Root" RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="10">
 
 		<VerticalStackLayout Spacing="6">
-			<Label Text="⚔ Duel" FontSize="24" FontAttributes="Bold" />
+			<!-- How this duel works is behind ⓘ (the duel has no title bar of its own). -->
+			<Grid ColumnDefinitions="*,Auto">
+				<Label Text="⚔ Duel" FontSize="24" FontAttributes="Bold" VerticalOptions="Center" />
+				<Button Grid.Column="1" Text="ⓘ" Clicked="OnInfoClicked" FontSize="20" WidthRequest="44" HeightRequest="44" Padding="0"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
+			</Grid>
 			<Label Text="{Binding Reason}" FontSize="15" FontAttributes="Bold" />
-			<Label Text="{Binding Explanation}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+			<Label Text="{Binding Status}" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource Primary}" Margin="0,4,0,0" />
 		</VerticalStackLayout>
 
+		<!-- The players in turn order; the one whose turn it is has a thick border and is the only one who can enter a score. -->
 		<ScrollView Grid.Row="1">
 			<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
 				<BindableLayout.ItemTemplate>
@@ -23,28 +29,33 @@
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="10" />
 							</Border.StrokeShape>
+							<Border.Triggers>
+								<DataTrigger TargetType="Border" Binding="{Binding IsTurn}" Value="True">
+									<Setter Property="Stroke" Value="{StaticResource Primary}" />
+									<Setter Property="StrokeThickness" Value="3" />
+								</DataTrigger>
+							</Border.Triggers>
 							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-								<Label Text="{Binding Player.Name}" FontSize="17" FontAttributes="Bold"
-								       LineBreakMode="TailTruncation" VerticalOptions="Center" />
+								<VerticalStackLayout VerticalOptions="Center" Spacing="2">
+									<Label Text="{Binding Player.Name}" FontSize="17" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+									<Label Text="{Binding RoundsWonText}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+									       IsVisible="{Binding IsBestOf, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
+								</VerticalStackLayout>
 
-								<!-- Type in the score: one box. -->
-								<Entry Grid.Column="1" Text="{Binding Typed}" Placeholder="0" Keyboard="Telephone"
-								       WidthRequest="90" HorizontalTextAlignment="End" VerticalOptions="Center"
-								       IsVisible="{Binding IsTyped, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
-
-								<!-- Plus / minus types: (amount) − score + -->
-								<HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center"
-								                       IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}">
+								<!-- (box) − score +, or (points this turn) score. Only for the player whose turn it is. -->
+								<HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center" IsEnabled="{Binding IsTurn}">
 									<Entry Text="{Binding Typed}" Keyboard="Telephone" WidthRequest="70" HorizontalTextAlignment="End" VerticalOptions="Center"
 									       Placeholder="{Binding AmountPlaceholder, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
-									       IsVisible="{Binding IsManual, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
+									       IsVisible="{Binding HasBox, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
 									<Button Clicked="OnMinusClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="16"
 									        Text="{Binding MinusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
+									        IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 									<Label Text="{Binding Score}" FontSize="22" FontAttributes="Bold" MinimumWidthRequest="48"
 									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
 									<Button Clicked="OnPlusClicked" WidthRequest="44" HeightRequest="44" Padding="0" FontSize="16"
 									        Text="{Binding PlusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
+									        IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</HorizontalStackLayout>
 							</Grid>
@@ -56,10 +67,13 @@
 
 		<Label Grid.Row="2" Text="{Binding Message}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
 
-		<Grid Grid.Row="3" ColumnDefinitions="*,2*" ColumnSpacing="8">
-			<Button Text="Cancel" Clicked="OnCancelClicked"
+		<!-- The duel ends by itself; Undo takes back a turn, Turn done passes it on. -->
+		<Grid Grid.Row="3" ColumnDefinitions="*,*,2*" ColumnSpacing="8">
+			<Button Text="Cancel" Clicked="OnCancelClicked" Padding="4,0"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="1" Text="Duel finished" Clicked="OnDoneClicked" />
+			<Button Grid.Column="1" Text="↶ Undo" Clicked="OnUndoClicked" IsEnabled="{Binding CanUndo}" Padding="4,0"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button Grid.Column="2" Text="Turn done" Clicked="OnTurnDoneClicked" IsVisible="{Binding HasTurnDone}" />
 		</Grid>
 
 	</Grid>

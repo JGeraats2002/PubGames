@@ -21,15 +21,17 @@ public enum PictureSource
 }
 
 /// <summary>
-/// The parts of the scoring page that are added with "+ Add your rules". A
-/// new game starts without any; they always show in this order, whatever order
-/// they were added in.
+/// The parts of the scoring page that are added with "+ Add your rules",
+/// after the scoring type (always there). A new game starts without any; they
+/// always show in this order, whatever order they were added in.
 /// </summary>
 public enum GameFormSection
 {
-	Results,
-	Ties,
-	Turns
+	/// <summary>Everything about a subgame: how its result is noted, who starts, the input order and how it ends.</summary>
+	Subgame,
+
+	/// <summary>Whether ties are allowed, and otherwise the duel - always last.</summary>
+	Ties
 }
 
 /// <summary>A part of the form, its title in the add list, and the form page it's on.</summary>
@@ -100,7 +102,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	public const int RulesPage = 2;
 
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(IsGeneralPage), nameof(IsScoringPage), nameof(IsRulesPage), nameof(CanAddSection), nameof(HasNothingAdded))]
+	[NotifyPropertyChangedFor(nameof(IsGeneralPage), nameof(IsScoringPage), nameof(IsRulesPage), nameof(CanAddSection))]
 	private int currentPage = GeneralPage;
 
 	public bool IsGeneralPage => CurrentPage == GeneralPage;
@@ -110,32 +112,20 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Every part that can be added, in the order the form shows them.</summary>
 	public static IReadOnlyList<GameFormSectionInfo> Sections { get; } =
 	[
-		new(GameFormSection.Results, "Subgame results", ScoringPage),
-		new(GameFormSection.Ties, "Ties", ScoringPage),
-		new(GameFormSection.Turns, "Turns and the end of a subgame", ScoringPage)
+		new(GameFormSection.Subgame, "Subgame", ScoringPage),
+		new(GameFormSection.Ties, "Ties", ScoringPage)
 	];
 
-	[ObservableProperty] private bool resultsAdded;
+	[ObservableProperty] private bool subgameAdded;
 	[ObservableProperty] private bool tiesAdded;
-	[ObservableProperty] private bool turnsAdded;
 
-	public bool IsAdded(GameFormSection section) => section switch
-	{
-		GameFormSection.Results => ResultsAdded,
-		GameFormSection.Ties => TiesAdded,
-		_ => TurnsAdded
-	};
+	public bool IsAdded(GameFormSection section) => section == GameFormSection.Subgame ? SubgameAdded : TiesAdded;
 
 	private void SetAdded(GameFormSection section, bool added)
 	{
-		switch (section)
-		{
-			case GameFormSection.Results: ResultsAdded = added; break;
-			case GameFormSection.Ties: TiesAdded = added; break;
-			default: TurnsAdded = added; break;
-		}
+		if (section == GameFormSection.Subgame) SubgameAdded = added;
+		else TiesAdded = added;
 		OnPropertyChanged(nameof(CanAddSection));
-		OnPropertyChanged(nameof(HasNothingAdded));
 	}
 
 	/// <summary>What can still be added on the page that's open, in the form's order.</summary>
@@ -144,10 +134,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	/// <summary>The page has something left to add (only the scoring page has parts to add).</summary>
 	public bool CanAddSection => AddableSections().Count > 0;
-
-	/// <summary>Nothing has been added on the scoring page yet: show how to start.</summary>
-	public bool HasNothingAdded => CurrentPage == ScoringPage
-		&& Sections.Where(s => s.Page == CurrentPage).All(s => !IsAdded(s.Section));
 
 	public static string TitleOf(GameFormSection section) => Sections.First(s => s.Section == section).Title;
 
@@ -159,28 +145,12 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		SetAdded(section, false);
 		switch (section)
 		{
-			case GameFormSection.Results:
+			case GameFormSection.Subgame:
 				_resultModeChosen = false;
 				ResultMode = ResultMode.Winner;
 				_lowestWins = null;
 				OnPropertyChanged(nameof(SelectedResultModeOption));
 				OnPropertyChanged(nameof(BestScoreIndex));
-				break;
-
-			case GameFormSection.Ties:
-				AllowTies = true;
-				_tieBreakMoment = TieBreakMoment.SubgamesAndFinal;
-				_tieBreakScope = TieBreakScope.Decisive;
-				OnPropertyChanged(nameof(SelectedTieBreakMoment));
-				OnPropertyChanged(nameof(SelectedTieBreakScope));
-				DuelSameScoring = true;
-				DuelScoring.Reset();
-				_duelLowestWins = null;
-				OnPropertyChanged(nameof(DuelBestScoreIndex));
-				ShowDuelEnd(null, EndMode.Automatic);
-				break;
-
-			case GameFormSection.Turns:
 				_startRotation = StartRotation.None;
 				OnPropertyChanged(nameof(SelectedStartRotation));
 				FixedTurnOrder = false;
@@ -191,16 +161,29 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 				OnPropertyChanged(nameof(CanHaveEqualizingTurn));
 				EqualizingTurn = false;
 				break;
+
+			case GameFormSection.Ties:
+				AllowTies = true;
+				_tieBreakMoment = TieBreakMoment.SubgamesAndFinal;
+				_tieBreakScope = TieBreakScope.Decisive;
+				OnPropertyChanged(nameof(SelectedTieBreakMoment));
+				OnPropertyChanged(nameof(SelectedTieBreakScope));
+				DuelScoring.Reset();
+				_duelLowestWins = null;
+				OnPropertyChanged(nameof(DuelBestScoreIndex));
+				ShowDuelEnd(null);
+				break;
 		}
 	}
 
 	/// <summary>An existing game or request shows the parts it uses: everything that isn't how a new game starts.</summary>
 	private void ShowAddedSections()
 	{
-		// Results are only shown when they're not the default: winner(s), highest score wins.
-		SetAdded(GameFormSection.Results, _resultModeChosen && (ResultMode != ResultMode.Winner || _lowestWins == true));
+		// Subgame is shown when something in it isn't the default: winner(s) and highest score wins,
+		// the seats stay, no fixed input order, no end score.
+		SetAdded(GameFormSection.Subgame, (_resultModeChosen && (ResultMode != ResultMode.Winner || _lowestWins == true))
+			|| _startRotation != StartRotation.None || FixedTurnOrder || HasEndScore);
 		SetAdded(GameFormSection.Ties, !AllowTies);
-		SetAdded(GameFormSection.Turns, _startRotation != StartRotation.None || FixedTurnOrder || HasEndScore);
 	}
 
 	/// <summary>The rules as pieces of text with the pictures in between (see EditableRulesBlock); saved as RulesText.</summary>
@@ -219,10 +202,27 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	public string CoverButtonText => HasCover ? "Change cover image" : "Upload cover image";
 
 	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(SelectedPriceOption))]
 	private bool isPaid;
 
 	[ObservableProperty]
-	private decimal price = 0.50m;
+	[NotifyPropertyChangedFor(nameof(SelectedPriceOption))]
+	private decimal price = 0.99m;
+
+	/// <summary>Free or one of the fixed prices (see Prices), so games and the pass stay in line.</summary>
+	public IReadOnlyList<GamePriceOption> PriceOptions => Prices.GameOptions;
+
+	/// <summary>Null for a paid game whose price isn't one of the fixed prices (from before they existed): one must be chosen.</summary>
+	public GamePriceOption? SelectedPriceOption
+	{
+		get => IsPaid ? PriceOptions.FirstOrDefault(o => o.Price == Price) : PriceOptions[0];
+		set
+		{
+			if (value is null) return;
+			IsPaid = value.IsPaid;
+			Price = value.IsPaid ? value.Price : 0.99m;
+		}
+	}
 
 	/// <summary>The game's scoring type and its numbers.</summary>
 	public ScoringEditor Scoring { get; } = new(ScoringTypeOption.All, "Choose scoring type");
@@ -299,7 +299,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	// Ties: allowed, or played off in a duel.
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(HasNoTies), nameof(HasDuelScoring))]
+	[NotifyPropertyChangedFor(nameof(HasNoTies))]
 	private bool allowTies = true;
 
 	/// <summary>Ties aren't allowed: show when and how they're played off.</summary>
@@ -337,13 +337,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 	}
 
-	/// <summary>The duel is played by the game's rules; unticked, the duel gets its own rules below.</summary>
-	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(HasDuelScoring))]
-	private bool duelSameScoring = true;
-
-	public bool HasDuelScoring => !AllowTies && !DuelSameScoring;
-
 	/// <summary>The duel's own scoring type and numbers, e.g. to 10 while the game goes to 100.</summary>
 	public ScoringEditor DuelScoring { get; } = new(ScoringTypeOption.DuelOptions, "Choose the duel's scoring type", "Duel scoring: ");
 
@@ -364,51 +357,124 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 	}
 
-	/// <summary>The duel ends when a player reaches its end score, e.g. 10 while the game goes to 100.</summary>
-	[ObservableProperty]
-	private bool duelHasEndScore;
+	// How the duel ends; the numbers are text, like the score settings, and checked on save.
+	public List<DuelEndOption> DuelEndOptions { get; } = DuelEndOption.All;
 
-	/// <summary>Text, like the score settings; checked on save.</summary>
-	[ObservableProperty]
-	private string duelEndScore = string.Empty;
+	/// <summary>Null until chosen.</summary>
+	private DuelEnd? _duelEnd;
 
-	private EndMode _duelEndMode = EndMode.Automatic;
-
-	public EndModeOption? SelectedDuelEndMode
+	public DuelEndOption? SelectedDuelEnd
 	{
-		get => EndModeOptions.FirstOrDefault(o => o.Mode == _duelEndMode);
+		get => DuelEndOptions.FirstOrDefault(o => o.End == _duelEnd);
 		set
 		{
 			if (value is null) return;
-			_duelEndMode = value.Mode;
+			_duelEnd = value.End;
 			OnPropertyChanged();
+			NotifyDuelEnd();
 		}
 	}
 
-	private void ShowDuelEnd(int? endScore, EndMode mode)
+	private void NotifyDuelEnd()
 	{
-		DuelHasEndScore = endScore is not null;
-		DuelEndScore = endScore?.ToString(CultureInfo.CurrentCulture) ?? string.Empty;
-		_duelEndMode = mode;
-		OnPropertyChanged(nameof(SelectedDuelEndMode));
+		OnPropertyChanged(nameof(IsDuelTurns));
+		OnPropertyChanged(nameof(IsDuelScore));
+		OnPropertyChanged(nameof(IsDuelBestOf));
+		OnPropertyChanged(nameof(CanHaveDuelMargin));
+	}
+
+	public bool IsDuelTurns => _duelEnd == DuelEnd.Turns;
+	public bool IsDuelScore => _duelEnd == DuelEnd.Score;
+	public bool IsDuelBestOf => _duelEnd == DuelEnd.BestOf;
+
+	/// <summary>Winning by a lead goes with a number of turns or a score, not with best of.</summary>
+	public bool CanHaveDuelMargin => IsDuelTurns || IsDuelScore;
+
+	[ObservableProperty]
+	private string duelTurns = "1";
+
+	[ObservableProperty]
+	private string duelEndScore = string.Empty;
+
+	[ObservableProperty]
+	private string duelRounds = "3";
+
+	[ObservableProperty]
+	private bool duelHasMargin;
+
+	[ObservableProperty]
+	private string duelMargin = "2";
+
+	/// <summary>Shows how a saved duel ends; null: nothing chosen yet.</summary>
+	private void ShowDuelEnd(ScoringSettings? duel)
+	{
+		_duelEnd = duel?.EffectiveDuelEnd;
+		OnPropertyChanged(nameof(SelectedDuelEnd));
+		NotifyDuelEnd();
+		var culture = CultureInfo.CurrentCulture;
+		DuelTurns = (duel?.DuelTurns ?? 1).ToString(culture);
+		DuelEndScore = duel?.EndScore?.ToString(culture) ?? string.Empty;
+		DuelRounds = (duel?.DuelRounds ?? 3).ToString(culture);
+		DuelHasMargin = duel?.DuelMargin is > 1;
+		DuelMargin = (duel?.DuelMargin is > 1 ? duel.DuelMargin.Value : 2).ToString(culture);
 	}
 
 	/// <summary>
-	/// Fills in the duel's rules with the game's: scoring type and numbers, which
-	/// score wins and the end score, to change from there - e.g. a lower end
-	/// score. False when the game has no scoring type yet.
+	/// Fills in the duel's rules with the game's: scoring type and numbers and
+	/// which score wins; a game with an end score gives a duel to that score.
+	/// To change from there - e.g. a lower end score. False when the game has
+	/// no scoring type yet.
 	/// </summary>
 	public bool CopyGameRulesToDuel()
 	{
 		if (!Scoring.IsChosen) return false;
 		DuelScoring.CopyFrom(Scoring);
-		_duelLowestWins = ResultsAdded ? _lowestWins ?? false : false;
+		_duelLowestWins = SubgameAdded ? _lowestWins ?? false : false;
 		OnPropertyChanged(nameof(DuelBestScoreIndex));
-		DuelHasEndScore = HasEndScore;
-		DuelEndScore = EndScore;
-		_duelEndMode = _endMode;
-		OnPropertyChanged(nameof(SelectedDuelEndMode));
+		if (HasEndScore)
+		{
+			_duelEnd = DuelEnd.Score;
+			OnPropertyChanged(nameof(SelectedDuelEnd));
+			NotifyDuelEnd();
+			DuelEndScore = EndScore;
+		}
 		return true;
+	}
+
+	/// <summary>
+	/// The duel's settings besides its scoring type and numbers, or null with
+	/// what's wrong: how it ends must be chosen, and its numbers whole numbers.
+	/// </summary>
+	private ScoringSettings? ReadDuelBasis(bool lowestWins, out string? problem)
+	{
+		string? error = null;
+		int? Number(string text, string what, bool allowNegative = false)
+		{
+			if (error is not null) return null;
+			if (int.TryParse(text.Trim().Replace('−', '-'), allowNegative ? NumberStyles.AllowLeadingSign : NumberStyles.None,
+					CultureInfo.CurrentCulture, out var value) && (allowNegative || value >= 1))
+				return value;
+			error = $"Enter {what}.";
+			return null;
+		}
+
+		problem = null;
+		if (_duelEnd is not { } end)
+		{
+			problem = "Choose how the duel ends.";
+			return null;
+		}
+		var basis = new ScoringSettings { LowestWins = lowestWins, DuelEnd = end };
+		basis = end switch
+		{
+			DuelEnd.Score => basis with { EndScore = Number(DuelEndScore, "the score the duel goes to as a whole number", allowNegative: true) },
+			DuelEnd.BestOf => basis with { DuelRounds = Number(DuelRounds, "the number of rounds (1 or more)") ?? 3 },
+			_ => basis with { DuelTurns = Number(DuelTurns, "the number of turns each (1 or more)") ?? 1 }
+		};
+		if (CanHaveDuelMargin && DuelHasMargin)
+			basis = basis with { DuelMargin = Number(DuelMargin, "the lead needed to win (1 or more)") };
+		problem = error;
+		return error is null ? basis : null;
 	}
 
 	// Turns and the end of a subgame.
@@ -518,6 +584,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _statusMessageTimer = new();
+
+	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
+
 	public string PageTitle => IsEditing ? "Edit game" : "New game";
 
 	public string SaveButtonText => (IsModerator, IsEditing) switch
@@ -596,7 +667,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		HasMinPlayers, MinPlayers, HasMaxPlayers, MaxPlayers,
 		string.Join(",", SelectedCategoryIds().Order()),
 		Scoring.Snapshot(), _resultModeChosen, ResultMode, _lowestWins,
-		AllowTies, _tieBreakMoment, _tieBreakScope, DuelSameScoring, DuelScoring.Snapshot(), _duelLowestWins, DuelHasEndScore, DuelEndScore, _duelEndMode,
+		AllowTies, _tieBreakMoment, _tieBreakScope, DuelScoring.Snapshot(), _duelLowestWins,
+		_duelEnd, DuelTurns, DuelEndScore, DuelRounds, DuelHasMargin, DuelMargin,
 		_startRotation, FixedTurnOrder, HasEndScore, EndScore, _endMode, EqualizingTurn);
 
 	private async Task LoadGameAsync(string gameId)
@@ -622,7 +694,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowRules(_editing.RulesText);
 		CoverImageUrl = _editing.CoverImageUrl;
 		IsPaid = _editing.IsPaid;
-		Price = _editing.IsPaid ? _editing.Price : 0.50m;
+		Price = _editing.IsPaid ? _editing.Price : 0.99m;
 		ShowScoring(_editing.ScoringType, _editing.ScoringSettings);
 		ShowPlayers(_editing.MinPlayers, _editing.MaxPlayers);
 		SelectCategories(_editing.CategoryIds);
@@ -656,7 +728,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowRules(request.ProposedRulesText);
 		CoverImageUrl = request.ProposedCoverImageUrl;
 		IsPaid = request.ProposedIsPaid;
-		Price = request.ProposedIsPaid ? request.ProposedPrice : 0.50m;
+		Price = request.ProposedIsPaid ? request.ProposedPrice : 0.99m;
 		ShowScoring(request.ProposedScoringType, ScoringSettings.FromJson(request.ProposedScoringSettingsText));
 		ShowPlayers(request.ProposedMinPlayers, request.ProposedMaxPlayers);
 		SelectCategories(request.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries));
@@ -763,7 +835,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		OnPropertyChanged(nameof(SelectedTieBreakMoment));
 		_tieBreakScope = settings.TieBreakScope;
 		OnPropertyChanged(nameof(SelectedTieBreakScope));
-		DuelSameScoring = settings.DuelSameScoring;
 
 		_startRotation = settings.StartRotation;
 		OnPropertyChanged(nameof(SelectedStartRotation));
@@ -775,12 +846,21 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		OnPropertyChanged(nameof(CanHaveEqualizingTurn));
 		EqualizingTurn = settings.EqualizingTurn;
 
-		if (settings.DuelSettings is { } duel)
+		if (!settings.DuelSameScoring && settings.DuelSettings is { } duel)
 		{
 			DuelScoring.Show(settings.DuelScoringType, duel);
 			_duelLowestWins = duel.LowestWins;
 			OnPropertyChanged(nameof(DuelBestScoreIndex));
-			ShowDuelEnd(duel.EndScore, duel.EndMode);
+			ShowDuelEnd(duel);
+		}
+		else if (!settings.AllowTies)
+		{
+			// Saved when a duel could be "like the game": its rules are filled in from the game's.
+			var (duelType, likeGame) = settings.DuelScoring(type);
+			DuelScoring.Show(duelType, likeGame);
+			_duelLowestWins = likeGame.LowestWins;
+			OnPropertyChanged(nameof(DuelBestScoreIndex));
+			ShowDuelEnd(likeGame);
 		}
 	}
 
@@ -800,16 +880,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			StatusMessage = "Choose a scoring type.";
 			return null;
 		}
-		// Not added: the winner(s) are noted and the highest score wins.
+		// Not chosen (or Subgame not added): the winner(s) are noted and the highest score wins.
 		var resultMode = ResultMode.Winner;
 		var lowestWins = false;
-		if (ResultsAdded)
+		if (SubgameAdded && _resultModeChosen)
 		{
-			if (!_resultModeChosen)
-			{
-				StatusMessage = "Choose how the result of each subgame is noted.";
-				return null;
-			}
 			if (_lowestWins is not { } chosenLowestWins)
 			{
 				StatusMessage = $"{ScoreDirectionPrompt}: the highest or the lowest score.";
@@ -828,7 +903,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		{
 			ResultMode = resultMode, LowestWins = lowestWins,
 			AllowTies = AllowTies, TieBreakMoment = _tieBreakMoment, TieBreakScope = _tieBreakScope,
-			DuelSameScoring = DuelSameScoring,
+			// The duel always has its own rules now.
+			DuelSameScoring = false,
 			StartRotation = _startRotation, FixedTurnOrder = FixedTurnOrder,
 			EndScore = endScore, EndMode = _endMode,
 			EqualizingTurn = CanHaveEqualizingTurn && EqualizingTurn
@@ -839,7 +915,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			return null;
 		}
 
-		if (HasDuelScoring)
+		if (!AllowTies)
 		{
 			if (!DuelScoring.IsChosen)
 			{
@@ -851,12 +927,12 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 				StatusMessage = "Duel scoring: choose whether the highest or the lowest score wins the duel.";
 				return null;
 			}
-			if (ReadEndScore(DuelHasEndScore, DuelEndScore, "the duel's end score", out var duelEnd) is { } duelEndProblem)
+			if (ReadDuelBasis(duelLowestWins, out var duelEndProblem) is not { } duelBasis)
 			{
-				StatusMessage = $"Duel scoring: {duelEndProblem}";
+				StatusMessage = $"Duel: {duelEndProblem}";
 				return null;
 			}
-			if (DuelScoring.Read(DuelBasis(duelLowestWins, duelEnd), out var duelProblem) is not { } duel)
+			if (DuelScoring.Read(duelBasis, out var duelProblem) is not { } duel)
 			{
 				StatusMessage = duelProblem ?? string.Empty;
 				return null;
@@ -864,11 +940,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			settings = settings with { DuelScoringType = DuelScoring.ScoringType, DuelSettings = duel };
 		}
 		else if (DuelScoring.IsChosen && _duelLowestWins is { } keptLowestWins
-			&& ReadEndScore(DuelHasEndScore, DuelEndScore, string.Empty, out var keptEnd) is null
-			&& DuelScoring.Read(DuelBasis(keptLowestWins, keptEnd), out _) is { } kept
+			&& ReadDuelBasis(keptLowestWins, out _) is { } keptBasis
+			&& DuelScoring.Read(keptBasis, out _) is { } kept
 			&& kept.Problem(DuelScoring.ScoringType) is null)
 		{
-			// Not used now, but kept so ticking "same scoring" again later doesn't lose the duel's own scoring.
+			// Ties are allowed now, but the duel's rules are kept for when they're not again.
 			settings = settings with { DuelScoringType = DuelScoring.ScoringType, DuelSettings = kept };
 		}
 
@@ -879,10 +955,6 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 		return settings;
 	}
-
-	/// <summary>The duel's own settings besides its scoring type and numbers.</summary>
-	private ScoringSettings DuelBasis(bool lowestWins, int? endScore) =>
-		new() { LowestWins = lowestWins, EndScore = endScore, EndMode = _duelEndMode };
 
 	/// <summary>An end score from the form: null when switched off. Returns what's wrong, or null when it's fine.</summary>
 	private static string? ReadEndScore(bool has, string text, string what, out int? value)
@@ -971,6 +1043,13 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (string.IsNullOrWhiteSpace(Name))
 		{
 			StatusMessage = "Give the game a name first.";
+			CurrentPage = GeneralPage;
+			return;
+		}
+
+		if (SelectedPriceOption is null)
+		{
+			StatusMessage = "Choose the game's price.";
 			CurrentPage = GeneralPage;
 			return;
 		}
@@ -1080,7 +1159,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		var email = TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
 		if (!ReviewRequest.GamesTakenByOthers(waiting, email).TryGetValue(_editing.Id, out var taken)) return false;
 
-		StatusMessage = $"{taken.SubmitterLabel} has already submitted a request for this game, which is waiting for review. You can change the game again once an admin has decided on it, or it's withdrawn.";
+		_statusMessageTimer.ShowLasting($"{taken.SubmitterLabel} has already submitted a request for this game, which is waiting for review. You can change the game again once an admin has decided on it, or it's withdrawn.", v => StatusMessage = v);
 		return true;
 	}
 

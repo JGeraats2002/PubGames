@@ -6,7 +6,7 @@
              x:DataType="vm:ScoreboardViewModel"
              Title="{Binding GameName}">
 
-	<Grid RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
+	<Grid x:Name="Root" RowDefinitions="Auto,*,Auto" Padding="12" RowSpacing="10">
 
 		<VerticalStackLayout x:Name="Header" Spacing="2">
 			<!-- − / + change how many subgames the game has, e.g. when the winner isn't clear after 1 game. -->

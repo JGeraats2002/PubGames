@@ -6,10 +6,12 @@ using PubGames.Services;
 namespace PubGames.ViewModels;
 
 /// <summary>
-/// The signed-in user's own tab: their profile (picture, name, nickname), the
-/// personal code others add them with, and their stats over every finished
-/// game they played in - on their own phone or someone else's. Signing in
-/// happens on LoginPage; this page is only reachable once signed in.
+/// The signed-in user's own tab. Its main page is Settings (AccountPage), with
+/// a heading per subject; this view model also serves the Profile page:
+/// picture, name, nickname and the personal code others add them with. Plus
+/// their stats over every finished game they played in - on their own phone
+/// or someone else's. Signing in happens on LoginPage; this tab is only
+/// reachable once signed in.
 /// </summary>
 public partial class AccountViewModel : ObservableObject
 {
@@ -17,6 +19,49 @@ public partial class AccountViewModel : ObservableObject
 	private readonly ITeamService _team;
 	private readonly IProfileService _profiles;
 	private readonly IStatsService _stats;
+	private readonly IStoreService _store;
+
+	/// <summary>The owner of the app (a built-in admin): sees today's friend code.</summary>
+	[ObservableProperty]
+	private bool isOwner;
+
+	/// <summary>The owner's friend code: 100% off a game, for friends. Works 15 minutes, or 30 after New code.</summary>
+	[ObservableProperty]
+	private string friendCode = "····-····";
+
+	/// <summary>"Works until 14:45".</summary>
+	[ObservableProperty]
+	private string friendCodeValidity = string.Empty;
+
+	/// <summary>When the code shown runs out (UTC); the page fetches the next one then.</summary>
+	public DateTime? FriendCodeValidUntil { get; private set; }
+
+	public async Task LoadFriendCodeAsync() => ShowFriendCode(IsOwner ? await _store.FriendCodeAsync() : null);
+
+	/// <summary>New code: the old one stops working, the new one works for 30 minutes.</summary>
+	[RelayCommand]
+	private async Task RenewFriendCodeAsync()
+	{
+		ShowFriendCode(await _store.RenewFriendCodeAsync());
+		ProfileMessage = FriendCodeValidUntil is null ? "Couldn't make a new code - check your connection." : "New code: the old one no longer works.";
+	}
+
+	private void ShowFriendCode((string Code, DateTime ValidUntil)? current)
+	{
+		if (!IsOwner) return;
+		if (current is { } code)
+		{
+			FriendCode = code.Code;
+			FriendCodeValidUntil = code.ValidUntil;
+			FriendCodeValidity = $"Works until {code.ValidUntil.ToLocalTime():HH:mm}";
+		}
+		else
+		{
+			FriendCode = "····-····";
+			FriendCodeValidUntil = null;
+			FriendCodeValidity = "Not available offline";
+		}
+	}
 
 	[ObservableProperty]
 	private bool isTeamMember;
@@ -54,6 +99,11 @@ public partial class AccountViewModel : ObservableObject
 	[ObservableProperty]
 	private string profileMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _profileMessageTimer = new();
+
+	partial void OnProfileMessageChanged(string value) => _profileMessageTimer.Shown(value, () => ProfileMessage, v => ProfileMessage = v);
+
 	[ObservableProperty]
 	private bool isBusy;
 
@@ -62,17 +112,22 @@ public partial class AccountViewModel : ObservableObject
 	private GameStats totals = GameStats.From("All games", []);
 
 	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasStatsMessage))]
 	private string statsMessage = string.Empty;
 
-	public AccountViewModel(IAuthService auth, ITeamService team, IProfileService profiles, IStatsService stats)
+	public bool HasStatsMessage => StatsMessage.Length > 0;
+
+	public AccountViewModel(IAuthService auth, ITeamService team, IProfileService profiles, IStatsService stats, IStoreService store)
 	{
+		_store = store;
 		_auth = auth;
 		_team = team;
 		_profiles = profiles;
 		_stats = stats;
 	}
 
-	public async Task LoadAsync()
+	/// <param name="withStats">The Settings page shows the stats summary; the Profile page doesn't need it.</param>
+	public async Task LoadAsync(bool withStats = true)
 	{
 		Email = _auth.CurrentUser?.Email ?? string.Empty;
 		var me = Me = _team.Me;
@@ -95,7 +150,20 @@ public partial class AccountViewModel : ObservableObject
 			ProfileMessage = ex.Message;
 		}
 
-		await LoadStatsAsync();
+		// The owner's email is a built-in admin (AuthConfig.AdminEmails); the server checks the same.
+		IsOwner = _auth.CurrentUser?.IsAdmin == true;
+		if (withStats)
+			await LoadStatsAsync();
+		else
+			await LoadFriendCodeAsync();
+	}
+
+	[RelayCommand]
+	private async Task CopyFriendCodeAsync()
+	{
+		if (!FriendCode.Contains('-')) return;
+		await Clipboard.Default.SetTextAsync(FriendCode);
+		ProfileMessage = "Friend code copied.";
 	}
 
 	private void Show(UserProfile profile)

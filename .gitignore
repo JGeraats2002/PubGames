@@ -7,3 +7,6 @@ obj/
 
 # Firebase config (read into AuthConfig.cs; not needed in the repo)
 google-services.json
+
+# Cloud Functions packages
+functions/node_modules/

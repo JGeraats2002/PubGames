@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.SubscriptionPage"
+             x:DataType="vm:SubscriptionViewModel"
+             Title="Pub Games Pass">
+
+	<ScrollView>
+		<VerticalStackLayout Padding="20" Spacing="12">
+
+			<Label Text="Pub Games Pass" FontSize="22" FontAttributes="Bold" />
+			<Label Text="{Binding Status}" FontSize="15" />
+
+			<!-- The three plans, with Google Play's prices. -->
+			<VerticalStackLayout BindableLayout.ItemsSource="{Binding Plans}" Spacing="8" Margin="0,8,0,0">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="vm:PassPlanRow">
+						<Border Stroke="{StaticResource Border}" Padding="14,10" StrokeShape="RoundRectangle 10">
+							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+								<Label Text="{Binding Name}" FontSize="17" FontAttributes="Bold" VerticalOptions="Center" />
+								<Button Grid.Column="1" Text="{Binding ButtonText}" Clicked="OnPlanClicked" Padding="14,0" HeightRequest="40" FontSize="13">
+									<Button.Triggers>
+										<DataTrigger TargetType="Button" Binding="{Binding IsCurrent}" Value="True">
+											<Setter Property="BackgroundColor" Value="Transparent" />
+											<Setter Property="TextColor" Value="{StaticResource Primary}" />
+											<Setter Property="BorderColor" Value="{StaticResource Primary}" />
+											<Setter Property="BorderWidth" Value="1" />
+										</DataTrigger>
+									</Button.Triggers>
+								</Button>
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+
+			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" />
+
+			<Button Text="Manage subscription" Clicked="OnManageClicked" IsVisible="{Binding HasPass}"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			<Button Text="Restore purchases" Clicked="OnRestoreClicked"
+			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+
+		</VerticalStackLayout>
+	</ScrollView>
+
+</ContentPage>

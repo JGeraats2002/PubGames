@@ -18,7 +18,7 @@
 				<Label Text="Playing now" FontSize="16" />
 				<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Rows}">
 					<BindableLayout.EmptyView>
-						<Label Text="Nobody is playing yet - add players below." TextColor="{StaticResource TextSecondary}" />
+						<Label Text="Nobody is playing yet." TextColor="{StaticResource TextSecondary}" />
 					</BindableLayout.EmptyView>
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="vm:ParticipantRow">

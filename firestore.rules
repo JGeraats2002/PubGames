@@ -219,6 +219,60 @@ service cloud.firestore {
         && request.resource.data.participantUids.size() <= 40;
     }
 
+    // Feedback from players to the admins. Everyone signed in sends it in their own name and
+    // sees their own; admins see all of it, set its status and reply, and delete it.
+    match /feedback/{feedbackId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.fromUid == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.id == feedbackId
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.fromEmail == myEmail()
+        && request.resource.data.status == 'New'
+        && request.resource.data.category in ['Bug', 'Typo', 'RulesMistake', 'ScoringProblem', 'Idea', 'Other']
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 10
+        && request.resource.data.text.size() <= 1000;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reply', 'handledBy', 'updatedAt'])
+        && request.resource.data.status in ['New', 'InProgress', 'Resolved', 'Declined']
+        && (request.resource.data.reply == null || request.resource.data.reply.size() <= 500);
+      allow delete: if isAdmin();
+    }
+
+    // "Remove the link both ways": a note from fromUid to toUid, whose app removes its saved
+    // player for fromUid and then deletes the note. Id: {fromUid}_{toUid}.
+    match /unlinks/{unlinkId} {
+      allow create: if isSignedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && unlinkId == request.auth.uid + '_' + request.resource.data.toUid;
+      allow read, delete: if isSignedIn() && resource.data.toUid == request.auth.uid;
+    }
+
+    // Blocked players: the blocked player can't add the blocker by code. Id: {blockerUid}_{blockedUid}.
+    // Both may read it (get by id, also when it doesn't exist); only the blocker adds or removes it.
+    match /blocks/{blockId} {
+      allow get: if isSignedIn()
+        && (blockId.matches(request.auth.uid + '_.*') || blockId.matches('.*_' + request.auth.uid));
+      allow list: if isSignedIn()
+        && (resource.data.blockerUid == request.auth.uid || resource.data.blockedUid == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.blockerUid == request.auth.uid
+        && request.resource.data.blockedUid is string
+        && blockId == request.auth.uid + '_' + request.resource.data.blockedUid
+        && request.resource.data.blockedName is string
+        && request.resource.data.blockedName.size() <= 40;
+      allow delete: if isSignedIn() && blockId.matches(request.auth.uid + '_.*');
+    }
+
+    // What an account owns: bought games and until when the Pub Games Pass runs. Written only by
+    // the Cloud Functions (functions/index.js) after Google Play confirmed the purchase - never by the app.
+    match /entitlements/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // purchaseTokens and subscriptions are the server's own bookkeeping: no app access (the rule at the end).
+
     // Outgoing emails for Firebase's Trigger Email extension (only used once
     // the app switches to FirestoreEmailSender).
     match /mail/{mailId} {

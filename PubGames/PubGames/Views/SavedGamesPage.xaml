@@ -51,7 +51,6 @@
 					<Label Text="{Binding RetentionTitle}" VerticalOptions="Center" FontAttributes="Bold" />
 					<Picker Grid.Column="1" ItemsSource="{Binding RetentionOptions}" SelectedItem="{Binding SelectedRetention}" MinimumWidthRequest="150" />
 				</Grid>
-				<Label Text="{Binding RetentionInfo}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 			</VerticalStackLayout>
 		</Border>
 

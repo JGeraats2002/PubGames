@@ -33,6 +33,9 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IProfileService, ProfileService>();
 		builder.Services.AddSingleton<IStatsService, StatsService>();
 		builder.Services.AddSingleton<IMessageService, MessageService>();
+		builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
+		builder.Services.AddSingleton<IPlayerLinkService, PlayerLinkService>();
+		builder.Services.AddSingleton<IStoreService, StoreService>();
 		// Opens the admin's mail app prefilled. For fully automatic emails, switch to FirestoreEmailSender (see its comments).
 		builder.Services.AddSingleton<IEmailSender, ComposeEmailSender>();
 		// Swap for a Firebase Storage implementation when moving to the Blaze plan; existing images keep working.
@@ -58,6 +61,10 @@ public static class MauiProgram
 		builder.Services.AddTransient<CategoryGamesViewModel>();
 		builder.Services.AddTransient<InboxViewModel>();
 		builder.Services.AddTransient<AccountViewModel>();
+		builder.Services.AddTransient<FeedbackViewModel>();
+		builder.Services.AddTransient<AdminFeedbackViewModel>();
+		builder.Services.AddTransient<BlockedPlayersViewModel>();
+		builder.Services.AddTransient<SubscriptionViewModel>();
 		builder.Services.AddTransient<LoginViewModel>();
 
 		// --- Pages ---
@@ -80,6 +87,11 @@ public static class MauiProgram
 		builder.Services.AddTransient<CategoryGamesPage>();
 		builder.Services.AddTransient<InboxPage>();
 		builder.Services.AddTransient<AccountPage>();
+		builder.Services.AddTransient<ProfilePage>();
+		builder.Services.AddTransient<FeedbackPage>();
+		builder.Services.AddTransient<AdminFeedbackPage>();
+		builder.Services.AddTransient<BlockedPlayersPage>();
+		builder.Services.AddTransient<SubscriptionPage>();
 		builder.Services.AddTransient<LoginPage>();
 
 		return builder.Build();

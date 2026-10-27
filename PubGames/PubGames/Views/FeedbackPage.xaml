@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.FeedbackPage"
+             x:DataType="vm:FeedbackViewModel"
+             Title="Feedback">
+
+	<ScrollView>
+		<VerticalStackLayout Padding="20" Spacing="10">
+
+			<!-- 1. What it's about. -->
+			<Label Text="What is your feedback about?" FontAttributes="Bold" />
+			<Picker Title="Choose a subject" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" />
+
+			<!-- 2. A game, and which. -->
+			<Label Text="Is it about a game?" FontAttributes="Bold" Margin="0,6,0,0" />
+			<HorizontalStackLayout Spacing="8">
+				<Switch IsToggled="{Binding IsAboutGame}" VerticalOptions="Center" />
+				<Label Text="Yes, it's about a game" VerticalOptions="Center" />
+			</HorizontalStackLayout>
+			<Picker Title="Which game?" ItemsSource="{Binding Games}" SelectedItem="{Binding SelectedGame}"
+			        IsVisible="{Binding ShowsGamePicker}" />
+
+			<!-- 3. The explanation: required. -->
+			<Label Text="Explain what you noticed or what you'd like" FontAttributes="Bold" Margin="0,6,0,0" />
+			<Border Stroke="{StaticResource Border}" Padding="8,2" StrokeShape="RoundRectangle 8">
+				<Editor Text="{Binding Text}" AutoSize="TextChanges" MinimumHeightRequest="120" MaxLength="{Binding MaxLength}"
+				        Placeholder="For example: what happened, where in the app, and what you expected" Keyboard="Chat" />
+			</Border>
+			<Label Text="{Binding CharactersText}" FontSize="11" TextColor="{StaticResource TextSecondary}" HorizontalOptions="End" />
+
+			<Label Text="{Binding StatusMessage}" IsVisible="{Binding HasStatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+			<Button Text="Send feedback" Clicked="OnSendClicked" IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+
+			<!-- Earlier feedback, with the admins' status and reply. -->
+			<Label Text="Your feedback" FontSize="18" FontAttributes="Bold" Margin="0,18,0,0" IsVisible="{Binding HasSent}" />
+			<VerticalStackLayout BindableLayout.ItemsSource="{Binding Sent}" Spacing="8">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="models:Feedback">
+						<Border Stroke="{StaticResource Border}" Padding="12" StrokeShape="RoundRectangle 8">
+							<VerticalStackLayout Spacing="4">
+								<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+									<Label Text="{Binding CategoryText}" FontAttributes="Bold" />
+									<Label Grid.Column="1" Text="{Binding StatusText}" FontSize="12" TextColor="{StaticResource Primary}" />
+								</Grid>
+								<Label Text="{Binding GameText}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding Text}" FontSize="14" />
+								<Border IsVisible="{Binding HasReply}" BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0"
+								        Padding="10,6" StrokeShape="RoundRectangle 6">
+									<Label Text="{Binding Reply, StringFormat='Reply: {0}'}" FontSize="13" />
+								</Border>
+							</VerticalStackLayout>
+						</Border>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+
+		</VerticalStackLayout>
+	</ScrollView>
+
+</ContentPage>

@@ -21,6 +21,11 @@ public partial class LoginViewModel : ObservableObject
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _statusMessageTimer = new();
+
+	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
+
 	public bool ShowSignIn => !IsRestoring && !IsBusy;
 
 	public LoginViewModel(IAuthService auth)

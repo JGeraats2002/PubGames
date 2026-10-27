@@ -96,6 +96,54 @@ public sealed record ScoringSettings
 	/// </summary>
 	public bool EqualizingTurn { get; init; }
 
+	// How a duel ends - only used in a duel's own settings (DuelSettings).
+
+	/// <summary>Duel: how it ends. Null for duels from before this could be chosen: see EffectiveDuelEnd.</summary>
+	public DuelEnd? DuelEnd { get; init; }
+
+	/// <summary>Duel, a number of turns: how many turns each player plays before the scores are compared.</summary>
+	public int DuelTurns { get; init; } = 1;
+
+	/// <summary>Duel, best of: how many rounds; the first to win more than half of them wins.</summary>
+	public int DuelRounds { get; init; } = 3;
+
+	/// <summary>Duel, turns or score: the lead needed to win; null is any lead (1).</summary>
+	public int? DuelMargin { get; init; }
+
+	/// <summary>How the duel ends. Older duels: at their end score if they had one, otherwise after one turn each.</summary>
+	[JsonIgnore]
+	public DuelEnd EffectiveDuelEnd => DuelEnd ?? (EndScore is null ? Models.DuelEnd.Turns : Models.DuelEnd.Score);
+
+	/// <summary>Best of: the rounds needed to win the duel.</summary>
+	[JsonIgnore]
+	public int DuelRoundsToWin => DuelRounds / 2 + 1;
+
+	/// <summary>"each player plays 1 turn", "first to 10, winning by 2", "best of 3 rounds".</summary>
+	[JsonIgnore]
+	public string DuelEndSummary
+	{
+		get
+		{
+			var margin = DuelMargin is > 1 ? $", winning by at least {DuelMargin}" : string.Empty;
+			return EffectiveDuelEnd switch
+			{
+				Models.DuelEnd.Score => $"rounds until someone reaches {EndScore}, best score wins{margin}",
+				Models.DuelEnd.BestOf => $"best of {DuelRounds} rounds",
+				_ => $"each player plays {DuelTurns} {(DuelTurns == 1 ? "turn" : "turns")}, best score wins{margin}; a tie plays another turn"
+			};
+		}
+	}
+
+	/// <summary>Why a duel's end can't work, or null when it's fine.</summary>
+	private string? DuelEndProblem() => EffectiveDuelEnd switch
+	{
+		Models.DuelEnd.Score when EndScore is null => "Enter the score the duel goes to.",
+		Models.DuelEnd.Turns when DuelTurns < 1 => "Each player needs at least 1 turn.",
+		Models.DuelEnd.BestOf when DuelRounds < 1 => "The duel needs at least 1 round.",
+		_ when DuelMargin is < 1 => "The lead needed to win must be at least 1.",
+		_ => null
+	};
+
 	/// <summary>The score has reached the end score, counted away from the starting score.</summary>
 	public bool ReachesEnd(int score) => EndScore is { } end && (end >= StartScore ? score >= end : score <= end);
 
@@ -138,8 +186,7 @@ public sealed record ScoringSettings
 			: type is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
 				? $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {duel.SummaryFor(type, withResult: false)}, {(duel.LowestWins ? "lowest" : "highest")} score wins"
 				: $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {(duel.LowestWins ? "lowest" : "highest")} score wins";
-		if (!DuelSameScoring && duel.EndScore is { } duelEnd)
-			scoring += $", ends at {duelEnd}";
+		scoring += $", {duel.DuelEndSummary}";
 		return $"no ties: duel {TieBreakMomentOption.LabelFor(TieBreakMoment).ToLowerInvariant()}, {TieBreakScopeOption.LabelFor(TieBreakScope, ResultMode).ToLowerInvariant()}, {scoring}";
 	}
 
@@ -202,25 +249,6 @@ public sealed record ScoringSettings
 		return (amounts.Take(limit).ToList(), !endless && amounts.Count <= limit);
 	}
 
-	/// <summary>
-	/// An amount the rules allow, as the placeholder of the amount box: 0 when
-	/// the rules allow it (and when there are no rules), otherwise the allowed
-	/// amount closest to 0 (positive first). Null when nothing is allowed.
-	/// </summary>
-	public int? ExampleAmount()
-	{
-		if (AmountRules.Count == 0) return 0;
-		var allows = AmountRuleSet.Predicate(AmountRules);
-		if (allows(0)) return 0;
-		var bound = ScoreRange ?? AmountRuleSet.Reach(AmountRules) + 100_000;
-		for (var n = 1; n <= bound; n++)
-		{
-			if (allows(n)) return n;
-			if (allows(-n)) return -n;
-		}
-		return null;
-	}
-
 	/// <summary>"You can enter −50, 350 or 400." or the rules in words, for the amount prompt.</summary>
 	public string AllowedAmountsHint()
 	{
@@ -261,8 +289,9 @@ public sealed record ScoringSettings
 			return "An equalizing turn needs an end score that ends the subgame automatically, and a fixed input order (so the app knows whose turn it is).";
 		if (type == ScoringType.ManualPlusMinus && AmountRulesProblem() is { } amountProblem)
 			return amountProblem;
-		if (!AllowTies && !DuelSameScoring && DuelSettings?.Problem(DuelScoringType) is { } duelProblem)
-			return $"Duel scoring: {duelProblem}";
+		if (!AllowTies && !DuelSameScoring && DuelSettings is { } duelSettings
+			&& (duelSettings.DuelEndProblem() ?? duelSettings.Problem(DuelScoringType)) is { } duelProblem)
+			return $"Duel: {duelProblem}";
 		return null;
 	}
 

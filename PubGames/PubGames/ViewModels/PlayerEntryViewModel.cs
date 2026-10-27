@@ -18,6 +18,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 	private readonly IAuthService _auth;
 	private readonly GameNight _gameNight;
 	private readonly IProfileService _profiles;
+	private readonly IPlayerLinkService _links;
 
 	private string CurrentAccountId => _auth.AccountId;
 
@@ -44,6 +45,11 @@ public partial class PlayerEntryViewModel : ObservableObject
 	[NotifyPropertyChangedFor(nameof(HasStatusMessage))]
 	private string statusMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _statusMessageTimer = new();
+
+	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
+
 	public bool HasStatusMessage => StatusMessage.Length > 0;
 
 	private readonly SavedGames _savedGames;
@@ -55,8 +61,9 @@ public partial class PlayerEntryViewModel : ObservableObject
 
 	public string SavedGamesButtonText => SavedGameCount == 0 ? "Saved games ›" : $"Saved games ({SavedGameCount}) ›";
 
-	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IProfileService profiles, SavedGames savedGames)
+	public PlayerEntryViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IProfileService profiles, SavedGames savedGames, IPlayerLinkService links)
 	{
+		_links = links;
 		_savedGames = savedGames;
 		_local = local;
 		_auth = auth;
@@ -94,6 +101,17 @@ public partial class PlayerEntryViewModel : ObservableObject
 		catch (Exception ex) when (ex is HttpRequestException or CloudException or InvalidOperationException)
 		{
 			// Offline: the saved copies will do.
+		}
+		try
+		{
+			// Who removed the link both ways, or blocked the user: their saved player goes.
+			var removed = await _links.TakeRemovedLinksAsync();
+			foreach (var player in _allSaved.Where(p => p.LinkedAccountId is { } id && id != CurrentAccountId && removed.Contains(id)).ToList())
+				await HideAsync(player);
+		}
+		catch (Exception ex) when (ex is HttpRequestException or CloudException or InvalidOperationException)
+		{
+			// Offline: checked again next time.
 		}
 		RefreshLists();
 	}
@@ -161,6 +179,27 @@ public partial class PlayerEntryViewModel : ObservableObject
 			StatusMessage = $"Nobody has the code {code}. Check it with them.";
 			return;
 		}
+		if (profile.Uid != CurrentAccountId)
+		{
+			try
+			{
+				if ((await _links.GetBlockedAsync()).Any(b => b.Uid == profile.Uid))
+				{
+					StatusMessage = "You blocked this player. Unblock them under Account > Blocked players to add them again.";
+					return;
+				}
+				if (await _links.IsBlockedByAsync(profile.Uid))
+				{
+					StatusMessage = "This player can't be added.";
+					return;
+				}
+			}
+			catch (Exception ex) when (ex is HttpRequestException or CloudException)
+			{
+				StatusMessage = ex is HttpRequestException ? "No connection - adding by code needs internet." : ex.Message;
+				return;
+			}
+		}
 
 		var player = await SaveLinkedAsync(profile, isMe: profile.Uid == CurrentAccountId);
 		if (!SelectedPlayers.Any(p => p.Id == player.Id))
@@ -190,8 +229,11 @@ public partial class PlayerEntryViewModel : ObservableObject
 	/// Removes a player from the saved players. They're only hidden, not
 	/// erased, so earlier games still show their name. You can't delete
 	/// yourself: you'd come straight back as the player linked to your account.
+	/// A player added by code can also lose the link both ways (they lose you
+	/// from their saved players too), or be blocked (then they also can't add
+	/// you by your code any more).
 	/// </summary>
-	public async Task<bool> DeleteSavedPlayerAsync(Player player)
+	public async Task<bool> DeleteSavedPlayerAsync(Player player, PlayerRemoval removal = PlayerRemoval.OnlyHere)
 	{
 		if (player.LinkedAccountId == CurrentAccountId)
 		{
@@ -199,12 +241,42 @@ public partial class PlayerEntryViewModel : ObservableObject
 			return false;
 		}
 
+		if (removal != PlayerRemoval.OnlyHere && player.LinkedAccountId is { } other)
+		{
+			try
+			{
+				if (removal == PlayerRemoval.Block)
+					await _links.BlockAsync(other, player.Name);
+				else
+					await _links.UnlinkBothWaysAsync(other);
+			}
+			catch (Exception ex) when (ex is HttpRequestException or CloudException or InvalidOperationException)
+			{
+				StatusMessage = ex is HttpRequestException ? "No connection - removing the link both ways or blocking needs internet." : ex.Message;
+				return false;
+			}
+		}
+
+		await HideAsync(player);
+		StatusMessage = removal switch
+		{
+			PlayerRemoval.Block => $"{player.Name} is removed and blocked.",
+			PlayerRemoval.BothWays => $"{player.Name} is removed, and you'll be removed from their players.",
+			_ => string.Empty
+		};
+		return true;
+	}
+
+	/// <summary>Takes a saved player off the list (and out of this game).</summary>
+	private async Task HideAsync(Player player)
+	{
 		player.IsTemporary = true;
 		await _local.SavePlayerAsync(player);
 		_allSaved.Remove(player);
-		StatusMessage = string.Empty;
+		var playing = SelectedPlayers.FirstOrDefault(p => p.Id == player.Id);
+		if (playing is not null)
+			SelectedPlayers.Remove(playing);
 		ShowSavedPlayers();
-		return true;
 	}
 
 	/// <summary>The saved players minus who's already playing, alphabetical.</summary>
@@ -261,4 +333,17 @@ public partial class PlayerEntryViewModel : ObservableObject
 		SelectedPlayers.Remove(player);
 		ShowSavedPlayers();
 	}
+}
+
+/// <summary>How far deleting a saved player goes.</summary>
+public enum PlayerRemoval
+{
+	/// <summary>Only off this phone's saved players.</summary>
+	OnlyHere,
+
+	/// <summary>Also off the other person's saved players (a player added by code).</summary>
+	BothWays,
+
+	/// <summary>Both ways, and they can't add you by code any more.</summary>
+	Block
 }

@@ -80,7 +80,7 @@
 				</VerticalStackLayout>
 			</CollectionView.Header>
 			<CollectionView.EmptyView>
-				<Label Text="No games yet. Tap the button above to add the first one."
+				<Label Text="No games yet."
 				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>

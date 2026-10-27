@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+ <!-- Cartoon logo: two fanned cards behind a tipped-over dice cup, with two dice rolling out of it. Centred on its painted area. -->
+ <g transform="translate(64 64) scale(1.013) translate(-61.50 -62.88)">
+<g stroke="#1E1A4D" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+  <!-- Ground shadow -->
+  <ellipse cx="64" cy="106" rx="42" ry="6" fill="#1E1A4D" opacity="0.28" stroke="none" />
+
+  <!-- Back card (spade), fanned to the left -->
+  <g transform="translate(-4 2) rotate(-22 40 60)">
+    <rect x="22" y="22" width="36" height="50" rx="6" fill="#FFF6DD" />
+    <path d="M40 34 C36 40 29 44 29 50.5 C29 55.5 35 57.5 38.6 53.5 L36.5 60 H43.5 L41.4 53.5 C45 57.5 51 55.5 51 50.5 C51 44 44 40 40 34 Z" fill="#111111" stroke="#111111" stroke-width="2" />
+    <path d="M27.5 33 L30.5 26 L33.5 33 M28.8 30.4 H32.2" fill="none" stroke="#111111" stroke-width="2.2" />
+  </g>
+
+  <!-- Front card (heart), fanned to the right, overlapping the back card -->
+  <g transform="rotate(12 66 50)">
+    <rect x="46" y="16" width="36" height="50" rx="6" fill="#FFFFFF" />
+    <path d="M64 52 C55 46 51 42 51 37 C51 33 54 30 58 30 C61 30 63 32 64 34 C65 32 67 30 70 30 C74 30 77 33 77 37 C77 42 73 46 64 52 Z" fill="#E5484D" stroke-width="2" />
+    <path d="M52 20.5 V27.5 M56.5 20.5 L52.4 24.2 L56.5 27.5" fill="none" stroke="#E5484D" stroke-width="2.2" />
+  </g>
+
+  <!-- The dice cup, tipped over with its mouth to the right, in front of the cards -->
+  <g transform="translate(-4 -2) rotate(100 52 84)">
+    <path d="M32 62 H72 L66 104 Q52 109 38 104 Z" fill="#E8833A" />
+    <path d="M35.5 76 H68.5" stroke="#B85A1E" stroke-width="3" fill="none" />
+    <path d="M37.5 90 H66.5" stroke="#B85A1E" stroke-width="3" fill="none" />
+    <path d="M63 68 L59.5 99" stroke="#FFC48A" stroke-width="3.5" fill="none" />
+    <rect x="29" y="57" width="46" height="9" rx="4.5" fill="#F6A75E" />
+  </g>
+
+  <!-- Dice rolling out of the cup: both the same size -->
+  <g transform="rotate(18 92 85)">
+    <rect x="82" y="75" width="20" height="20" rx="4.5" fill="#FFFFFF" />
+    <circle cx="86.8" cy="79.8" r="2.1" fill="#3C3489" stroke="none" />
+    <circle cx="92" cy="85" r="2.1" fill="#3C3489" stroke="none" />
+    <circle cx="97.2" cy="90.2" r="2.1" fill="#3C3489" stroke="none" />
+  </g>
+  <g transform="rotate(-14 105 101)">
+    <rect x="95" y="91" width="20" height="20" rx="4.5" fill="#FFFFFF" />
+    <circle cx="100" cy="96" r="2.1" fill="#E5484D" stroke="none" />
+    <circle cx="110" cy="96" r="2.1" fill="#E5484D" stroke="none" />
+    <circle cx="100" cy="106" r="2.1" fill="#E5484D" stroke="none" />
+    <circle cx="110" cy="106" r="2.1" fill="#E5484D" stroke="none" />
+  </g>
+
+  <!-- Motion lines and a little sparkle -->
+  <path d="M104 70 l7 -4 M107 78 l8 -1" stroke="#FFD166" stroke-width="3" fill="none" />
+  <path d="M97 20 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 l5 -2 Z" fill="#FFD166" stroke-width="2" />
+</g>
+ </g>
+</svg>

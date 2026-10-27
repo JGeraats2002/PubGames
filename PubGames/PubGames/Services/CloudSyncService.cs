@@ -11,13 +11,6 @@ public interface ICloudSyncService
 	Task PushPendingSessionsAsync();
 
 	/// <summary>
-	/// Verifies a Google Play Billing purchase token against your backend, and
-	/// only THEN writes the purchase record - the backend is the source of
-	/// truth for "owned", never the device alone.
-	/// </summary>
-	Task<bool> VerifyAndRecordPurchaseAsync(string accountId, string gameId, string playBillingToken);
-
-	/// <summary>
 	/// Writes the game to Firestore so every user sees its current state
 	/// (published, deleted, ...). Throws if offline or not allowed - callers
 	/// should only commit the change locally after this succeeds.
@@ -165,14 +158,6 @@ public class CloudSyncService : ICloudSyncService
 		// TODO: query local sessions where IsSynced == false, POST each to
 		// the backend, then mark IsSynced = true locally on success.
 		return Task.CompletedTask;
-	}
-
-	public Task<bool> VerifyAndRecordPurchaseAsync(string accountId, string gameId, string playBillingToken)
-	{
-		// TODO: POST { accountId, gameId, playBillingToken } to your backend.
-		// Backend calls the Google Play Developer API to verify the token
-		// server-side, then inserts the Purchase row and returns success.
-		return Task.FromResult(false);
 	}
 
 	public async Task SaveReviewRequestAsync(ReviewRequest r)

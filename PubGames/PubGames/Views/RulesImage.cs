@@ -14,7 +14,7 @@ namespace PubGames.Views;
 public class RulesImage : ContentView
 {
 	/// <summary>How much of the cream background shows around the picture.</summary>
-	public const double Frame = 8;
+	public const double FrameWidth = 8;
 
 	public static readonly BindableProperty ImageRefProperty = BindableProperty.Create(
 		nameof(ImageRef), typeof(string), typeof(RulesImage),
@@ -40,7 +40,7 @@ public class RulesImage : ContentView
 			BackgroundColor = (Color)Application.Current!.Resources["SurfaceMuted"],
 			StrokeThickness = 0,
 			StrokeShape = new RoundRectangle { CornerRadius = 8 },
-			Padding = Frame,
+			Padding = FrameWidth,
 			Content = _image
 		};
 		SizeChanged += (_, _) => Fit();
@@ -83,7 +83,7 @@ public class RulesImage : ContentView
 
 	private void Fit()
 	{
-		var width = Width - 2 * Frame;
+		var width = Width - 2 * FrameWidth;
 		if (_shape > 0 && width > 0)
 			_image.HeightRequest = width * _shape;
 	}

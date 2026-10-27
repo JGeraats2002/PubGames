@@ -71,10 +71,6 @@ public interface ILocalDatabaseService
 	Task<List<InboxMessage>> GetMessagesToAsync(IEnumerable<string> recipients);
 	Task SaveMessageAsync(InboxMessage message);
 	Task DeleteMessageAsync(string messageId);
-
-	// Purchases
-	Task<bool> IsGameOwnedAsync(string accountId, string gameId);
-	Task SavePurchaseAsync(Purchase purchase);
 }
 
 /// <summary>
@@ -104,7 +100,6 @@ public class LocalDatabaseService : ILocalDatabaseService
 		await _db.CreateTableAsync<Team>();
 		await _db.CreateTableAsync<TeamMember>();
 		await _db.CreateTableAsync<ReviewRequest>();
-		await _db.CreateTableAsync<Purchase>();
 
 		return _db;
 	}
@@ -370,20 +365,5 @@ public class LocalDatabaseService : ILocalDatabaseService
 			.Where(r => r.SubmittedByEmail == email)
 			.OrderByDescending(r => r.SubmittedAt)
 			.ToListAsync();
-	}
-
-	public async Task<bool> IsGameOwnedAsync(string accountId, string gameId)
-	{
-		var db = await DbAsync();
-		var purchase = await db.Table<Purchase>()
-			.Where(p => p.AccountId == accountId && p.GameId == gameId)
-			.FirstOrDefaultAsync();
-		return purchase is not null;
-	}
-
-	public async Task SavePurchaseAsync(Purchase purchase)
-	{
-		var db = await DbAsync();
-		await db.InsertOrReplaceAsync(purchase);
 	}
 }

@@ -43,10 +43,8 @@
 							<Label Text="{Binding Name}" />
 							<Label Text="{Binding InfoLine}" FontSize="12" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
 						</VerticalStackLayout>
-						<Label Grid.Column="2" VerticalOptions="Center"
-						       Text="{Binding Price, StringFormat='€{0:0.00}'}"
-						       IsVisible="{Binding IsPaid}"
-						       TextColor="{StaticResource Primary}" />
+						<Label Grid.Column="2" VerticalOptions="Center" Text="{Binding AccessLabel}"
+						       TextColor="{StaticResource Primary}" FontAttributes="Bold" />
 					</Grid>
 				</DataTemplate>
 			</CollectionView.ItemTemplate>

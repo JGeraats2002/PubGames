@@ -29,11 +29,15 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(MyStatsPage), typeof(MyStatsPage));
 		Routing.RegisterRoute(nameof(GameStatsPage), typeof(GameStatsPage));
 		Routing.RegisterRoute(nameof(SavedGamesPage), typeof(SavedGamesPage));
+		Routing.RegisterRoute(nameof(ProfilePage), typeof(ProfilePage));
+		Routing.RegisterRoute(nameof(FeedbackPage), typeof(FeedbackPage));
+		Routing.RegisterRoute(nameof(BlockedPlayersPage), typeof(BlockedPlayersPage));
+		Routing.RegisterRoute(nameof(SubscriptionPage), typeof(SubscriptionPage));
 	}
 
 	/// <param name="me">
 	/// The user's team membership: admins and moderators get the Admin tab,
-	/// only admins its Requests and Team pages; regular players (null) get none.
+	/// only admins its Requests, Feedback and Team pages; regular players (null) get none.
 	/// </param>
 	public AppShell(TeamMember? me)
 	{
@@ -41,5 +45,6 @@ public partial class AppShell : Shell
 		AdminTab.IsVisible = me is not null;
 		RequestsContent.IsVisible = me?.IsAdmin == true;
 		TeamContent.IsVisible = me?.IsAdmin == true;
+		FeedbackContent.IsVisible = me?.IsAdmin == true;
 	}
 }

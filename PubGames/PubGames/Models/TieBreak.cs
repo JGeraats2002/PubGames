@@ -86,3 +86,27 @@ public static class TieBreak
 	public static string Names(IReadOnlyList<string> names) =>
 		names.Count <= 1 ? string.Concat(names) : $"{string.Join(", ", names.SkipLast(1))} and {names[^1]}";
 }
+
+/// <summary>How a tie-break duel ends. Stored as text, so the order may change.</summary>
+public enum DuelEnd
+{
+	Turns,  // every player plays a number of turns; best score wins, a tie plays another turn
+	Score,  // rounds are played until someone has reached the end score; best score wins
+	BestOf  // every round's best player wins that round; first to most of the rounds wins
+}
+
+/// <summary>A way of ending a duel as the dropdown shows it.</summary>
+public sealed record DuelEndOption(DuelEnd End)
+{
+	public string Label => End switch
+	{
+		DuelEnd.Score => "First to reach a score",
+		DuelEnd.BestOf => "Best of a number of rounds",
+		_ => "A number of turns each"
+	};
+
+	/// <summary>The Picker shows this.</summary>
+	public override string ToString() => Label;
+
+	public static List<DuelEndOption> All { get; } = Enum.GetValues<DuelEnd>().Select(e => new DuelEndOption(e)).ToList();
+}

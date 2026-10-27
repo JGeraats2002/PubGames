@@ -41,8 +41,11 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 	[ObservableProperty]
 	private string searchText = string.Empty;
 
-	public GameLibraryViewModel(ILocalDatabaseService local, IAuthService auth, ICloudSyncService cloud, ICategoryService categories)
+	private readonly IStoreService _store;
+
+	public GameLibraryViewModel(ILocalDatabaseService local, IAuthService auth, ICloudSyncService cloud, ICategoryService categories, IStoreService store)
 	{
+		_store = store;
 		_local = local;
 		_auth = auth;
 		_cloud = cloud;
@@ -56,6 +59,10 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 
 		// Show the saved copy straight away, then refresh it from the cloud.
 		await ShowLocalAsync();
+
+		// What the account owns (bought games, the pass); the list shows a lock and price on the rest.
+		await _store.RefreshAsync();
+		ShowAccess();
 
 		try
 		{
@@ -85,6 +92,7 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		Filters.Show(await _categories.GetCachedGroupsAsync(), categories.Where(c => used.Contains(c.Id)));
 		foreach (var game in _allGames)
 			game.CategoryLabel = _categories.LabelFor(game.CategoryIds, categories);
+		ShowAccess();
 
 		ApplyFilters();
 	}
@@ -108,6 +116,36 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		}
 	}
 
-	public async Task<bool> IsOwnedAsync(PubGame game) =>
-		!game.IsPaid || await _local.IsGameOwnedAsync(CurrentAccountId, game.Id);
+	public bool IsOwned(PubGame game) => _store.Owns(game);
+
+	/// <summary>The lock and price right of every game the account doesn't own yet.</summary>
+	public void ShowAccess()
+	{
+		foreach (var game in _allGames)
+			game.AccessLabel = _store.Owns(game) ? string.Empty : $"🔒 {Prices.Format(game.Price)}";
+		ApplyFilters();
+	}
+
+	/// <summary>
+	/// Once a day at most: the pass is about to end without renewing (3 days
+	/// or less), or ended in the last week. Null when there's nothing to say.
+	/// </summary>
+	public string? PassNotice()
+	{
+		var e = _store.Current;
+		if (e.PassRunsUntil is not { } until || e.Renews) return null;
+		var left = until - DateTime.UtcNow;
+		string? notice = left > TimeSpan.Zero && left <= TimeSpan.FromDays(3)
+			? $"Your Pub Games Pass ends on {until.ToLocalTime():d MMMM} and doesn't renew. Account > Pub Games Pass keeps every game unlocked."
+			: left <= TimeSpan.Zero && left > TimeSpan.FromDays(-7)
+				? "Your Pub Games Pass has ended. Paid games you didn't buy are locked again; Account > Pub Games Pass unlocks them."
+				: null;
+		if (notice is null) return null;
+
+		var key = $"passNotice:{_auth.AccountId}";
+		var today = DateTime.Now.ToString("yyyy-MM-dd");
+		if (Preferences.Default.Get(key, string.Empty) == today) return null;
+		Preferences.Default.Set(key, today);
+		return notice;
+	}
 }

@@ -12,19 +12,13 @@
 		<ScrollView>
 			<VerticalStackLayout Spacing="18">
 
-				<VerticalStackLayout Spacing="4">
-					<Label Text="Filter games" FontSize="20" FontAttributes="Bold" />
-					<Label Text="Choose what you're looking for. Nothing here is required." FontSize="13"
-					       TextColor="{StaticResource TextSecondary}" />
-				</VerticalStackLayout>
+				<Label Text="Filter games" FontSize="20" FontAttributes="Bold" />
 
 				<!-- A game fits when this number is within its minimum and maximum. All the way left: any number. -->
 				<VerticalStackLayout Spacing="4">
 					<Label Text="Number of players" FontAttributes="Bold" />
 					<Label Text="{Binding PlayersText}" />
 					<Slider x:Name="PlayersSlider" Minimum="0" ValueChanged="OnPlayersChanged" />
-					<Label Text="Slide all the way to the left for any number of players." FontSize="12"
-					       TextColor="{StaticResource TextSecondary}" />
 				</VerticalStackLayout>
 
 				<!-- The categories under their main categories; tap to choose, tap again to take it off. -->

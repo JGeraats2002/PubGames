@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:models="clr-namespace:PubGames.Models"
+             x:Class="PubGames.Views.AdminFeedbackPage"
+             x:DataType="vm:AdminFeedbackViewModel"
+             Title="Feedback">
+
+	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="10">
+
+		<Picker Title="Show" ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" />
+
+		<Label Grid.Row="1" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+
+		<RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Refreshing="OnRefreshing">
+			<CollectionView ItemsSource="{Binding Items}">
+				<CollectionView.EmptyView>
+					<Label Text="No feedback here." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				</CollectionView.EmptyView>
+				<CollectionView.ItemTemplate>
+					<DataTemplate x:DataType="models:Feedback">
+						<Border Margin="0,0,0,8" Padding="12" Stroke="{StaticResource Border}" StrokeShape="RoundRectangle 8">
+							<VerticalStackLayout Spacing="4">
+								<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+									<Label Text="{Binding CategoryText}" FontAttributes="Bold" />
+									<Label Grid.Column="1" Text="{Binding StatusText}" FontSize="12" TextColor="{StaticResource Primary}" />
+								</Grid>
+								<Label Text="{Binding GameText}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding FromLabel}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding Text}" FontSize="14" />
+								<Border IsVisible="{Binding HasReply}" BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0"
+								        Padding="10,6" StrokeShape="RoundRectangle 6">
+									<Label Text="{Binding Reply, StringFormat='Reply: {0}'}" FontSize="13" />
+								</Border>
+								<HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+									<Button Text="Handle" Clicked="OnHandleClicked" FontSize="12" Padding="12,0" HeightRequest="36" />
+									<Button Text="Open game" Clicked="OnOpenGameClicked" IsVisible="{Binding HasGame}"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="36" />
+									<Button Text="Delete" Clicked="OnDeleteClicked"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
+									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="36" />
+								</HorizontalStackLayout>
+							</VerticalStackLayout>
+						</Border>
+					</DataTemplate>
+				</CollectionView.ItemTemplate>
+			</CollectionView>
+		</RefreshView>
+
+	</Grid>
+
+</ContentPage>

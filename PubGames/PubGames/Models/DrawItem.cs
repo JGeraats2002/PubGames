@@ -72,6 +72,15 @@ public class DrawItem
 
 	public float Scale { get; set; } = 1;
 
+	/// <summary>
+	/// Which side of its frame the editor's Across number gives: 0 the left
+	/// side, 1 the centre, 2 the right side. Null: the centre.
+	/// </summary>
+	public int? AlignX { get; set; }
+
+	/// <summary>Which side Down gives: 0 the top, 1 the middle, 2 the bottom. Null: the middle.</summary>
+	public int? AlignY { get; set; }
+
 	/// <summary>Degrees, clockwise.</summary>
 	public float Rotation { get; set; }
 
@@ -209,9 +218,10 @@ public class DrawItem
 		var angle = -Rotation * MathF.PI / 180;
 		var localX = (dx * MathF.Cos(angle) - dy * MathF.Sin(angle)) / Scale;
 		var localY = (dx * MathF.Sin(angle) + dy * MathF.Cos(angle)) / Scale;
-		var half = HalfSize;
+		var frame = ContentBounds();
 		var slack = 12 / Scale;
-		return Math.Abs(localX) <= half.Width + slack && Math.Abs(localY) <= half.Height + slack;
+		return localX >= frame.Left - slack && localX <= frame.Right + slack
+			&& localY >= frame.Top - slack && localY <= frame.Bottom + slack;
 	}
 
 	public void Draw(ICanvas canvas, bool selected)
@@ -221,6 +231,24 @@ public class DrawItem
 		canvas.Rotate(Rotation);
 		canvas.Scale(Scale, Scale);
 
+		DrawContent(canvas);
+
+		if (selected)
+		{
+			// Tightly around what's drawn.
+			var frame = ContentBounds();
+			canvas.StrokeColor = Blue;
+			canvas.StrokeSize = 3 / Scale;
+			canvas.StrokeDashPattern = [6, 6];
+			canvas.DrawRectangle(frame.Left, frame.Top, frame.Width, frame.Height);
+		}
+
+		canvas.RestoreState();
+	}
+
+	/// <summary>The item itself, centred on (0, 0), at its normal size and unturned.</summary>
+	private void DrawContent(ICanvas canvas)
+	{
 		canvas.StrokeColor = Outline;
 		canvas.StrokeSize = Line;
 		canvas.StrokeLineCap = LineCap.Round;
@@ -243,17 +271,108 @@ public class DrawItem
 			case DrawKind.Coaster: DrawCoaster(canvas); break;
 			case DrawKind.Table: DrawTable(canvas); break;
 		}
+	}
 
-		if (selected)
+	/// <summary>
+	/// Half the width and height of the selection frame: tight around what's
+	/// really drawn, before scaling and turning.
+	/// </summary>
+	[JsonIgnore]
+	public SizeF FrameHalf
+	{
+		get
 		{
-			var half = HalfSize;
-			canvas.StrokeColor = Blue;
-			canvas.StrokeSize = 3 / Scale;
-			canvas.StrokeDashPattern = [6, 6];
-			canvas.DrawRectangle(-half.Width, -half.Height, half.Width * 2, half.Height * 2);
+			var content = ContentBounds();
+			return new SizeF(content.Width / 2, content.Height / 2);
 		}
+	}
 
-		canvas.RestoreState();
+	/// <summary>
+	/// The middle of the selection frame on the drawing. Not always the
+	/// item's place (X, Y): that's the point it turns around, like a bent
+	/// arrow's corner.
+	/// </summary>
+	[JsonIgnore]
+	public PointF FrameCentre
+	{
+		get
+		{
+			var centre = ContentBounds().Center;
+			var angle = Rotation * MathF.PI / 180;
+			var (cos, sin) = (MathF.Cos(angle), MathF.Sin(angle));
+			return new PointF(X + (centre.X * cos - centre.Y * sin) * Scale, Y + (centre.X * sin + centre.Y * cos) * Scale);
+		}
+	}
+
+	// The measured drawing, kept until something about its look changes.
+	private string? _boundsKey;
+	private RectF _bounds;
+
+	/// <summary>
+	/// The area the drawing really covers, as drawn around (0, 0) at normal
+	/// size and unturned: found by drawing it once out of sight and looking
+	/// where the paint is. Without that (not on Android): the rough box (HalfSize).
+	/// </summary>
+	public RectF ContentBounds()
+	{
+		var half = HalfSize;
+		var frame = new RectF(-half.Width, -half.Height, half.Width * 2, half.Height * 2);
+		var key = LookKey();
+		if (key == _boundsKey) return _bounds;
+		_boundsKey = key;
+		_bounds = Measure() ?? frame;
+		return _bounds;
+	}
+
+	/// <summary>Everything that changes how the item looks, not where it is.</summary>
+	private string LookKey()
+	{
+		var look = Clone();
+		look.X = look.Y = look.Rotation = 0;
+		look.Scale = 1;
+		look.AlignX = look.AlignY = null;
+		return JsonSerializer.Serialize(look);
+	}
+
+	private RectF? Measure()
+	{
+#if ANDROID
+		var half = HalfSize;
+		// Room around the rough box: some drawings reach past it (a hand's wrist; text, whose width is only estimated).
+		const int margin = 60;
+		var width = (int)MathF.Ceiling(half.Width * (Kind == DrawKind.Text ? 4 : 2)) + 2 * margin;
+		var height = (int)MathF.Ceiling(half.Height * 2) + 2 * margin;
+		try
+		{
+			using var context = new Microsoft.Maui.Graphics.Platform.PlatformBitmapExportContext(width, height, 1f);
+			var canvas = context.Canvas;
+			canvas.Translate(width / 2f, height / 2f);
+			DrawContent(canvas);
+			var pixels = new int[width * height];
+			context.Bitmap.GetPixels(pixels, 0, width, 0, 0, width, height);
+			int left = width, top = height, right = -1, bottom = -1;
+			for (var y = 0; y < height; y++)
+			{
+				var row = y * width;
+				for (var x = 0; x < width; x++)
+				{
+					if ((pixels[row + x] >>> 24) < 16) continue;
+					if (x < left) left = x;
+					if (x > right) right = x;
+					if (y < top) top = y;
+					if (y > bottom) bottom = y;
+				}
+			}
+			if (right < 0) return null;
+			return new RectF(left - width / 2f, top - height / 2f, right - left + 1, bottom - top + 1);
+		}
+		catch (Exception)
+		{
+			return null;
+		}
+#else
+		return null;
+#endif
 	}
 
 	private Color ItemColor => Palette[Math.Clamp(ColorIndex, 0, Palette.Length - 1)];

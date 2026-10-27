@@ -15,7 +15,7 @@
 		              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
 		              Route="players" />
 
-		<!-- Hidden for regular players; visible to admins and moderators (Requests and Team: admins only). -->
+		<!-- Hidden for regular players; visible to admins and moderators (Requests, Feedback and Team: admins only). -->
 		<Tab x:Name="AdminTab" Title="Admin" Route="admin">
 			<ShellContent Title="Library"
 			              ContentTemplate="{DataTemplate views:AdminLibraryPage}"
@@ -29,11 +29,15 @@
 			<ShellContent x:Name="RequestsContent" Title="Requests"
 			              ContentTemplate="{DataTemplate views:ReviewRequestsPage}"
 			              Route="requests" />
+			<ShellContent x:Name="FeedbackContent" Title="Feedback"
+			              ContentTemplate="{DataTemplate views:AdminFeedbackPage}"
+			              Route="feedback" />
 			<ShellContent x:Name="TeamContent" Title="Team"
 			              ContentTemplate="{DataTemplate views:AdminTeamPage}"
 			              Route="team" />
 		</Tab>
 
+		<!-- Opens on Settings: Profile, My stats, Blocked players, Feedback and Sign out. -->
 		<ShellContent Title="Account"
 		              ContentTemplate="{DataTemplate views:AccountPage}"
 		              Route="account" />

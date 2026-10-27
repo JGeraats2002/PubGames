@@ -104,6 +104,11 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _statusMessageTimer = new();
+
+	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
+
 	public string SubmitterLabel => _request?.SubmitterLabel ?? "the moderator";
 
 	public ReviewRequestViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions,
@@ -126,7 +131,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		_request = await _local.GetReviewRequestAsync(requestId);
 		if (_request is null)
 		{
-			StatusMessage = "This request no longer exists - it may have been withdrawn.";
+			_statusMessageTimer.ShowLasting("This request no longer exists - it may have been withdrawn.", v => StatusMessage = v);
 			return;
 		}
 
@@ -256,7 +261,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		}
 
 		if (gameGone && r.Type is ReviewRequestType.GameChanges or ReviewRequestType.Deletion)
-			StatusMessage = "This game no longer exists, so this request can only be rejected.";
+			_statusMessageTimer.ShowLasting("This game no longer exists, so this request can only be rejected.", v => StatusMessage = v);
 
 		ShowPreviewDetails();
 	}

@@ -146,14 +146,18 @@ public partial class ImageEditorPage : ContentPage
 		if (kind == DrawKind.Table)
 		{
 			// The table is where everything else lies on: in the middle, under what's there already.
-			item = new DrawItem { Kind = kind, X = DrawingBoard.Width / 2, Y = _board.Height / 2 };
+			item = new DrawItem { Kind = kind, X = DrawingBoard.Width / 2, Y = _board.Height / 2, AlignX = _alignAcross, AlignY = _alignDown };
 			_board.Items.Insert(0, item);
 		}
 		else
 		{
 			// Each new item a little further down, so they don't land exactly on top of each other.
 			var step = _board.Items.Count % 5 * 40;
-			item = new DrawItem { Kind = kind, X = DrawingBoard.Width / 2 - 80 + step, Y = _board.Height / 2 - 80 + step };
+			item = new DrawItem
+			{
+				Kind = kind, X = DrawingBoard.Width / 2 - 80 + step, Y = _board.Height / 2 - 80 + step,
+				AlignX = _alignAcross, AlignY = _alignDown
+			};
 			_board.Items.Add(item);
 		}
 		Select(item);
@@ -240,8 +244,11 @@ public partial class ImageEditorPage : ContentPage
 				_pinching = true;
 				(_pinchDistance, _pinchAngle, _pinchScale, _pinchRotation) = (distance, angle, item.Scale, item.Rotation);
 			}
-			item.Scale = Math.Clamp(_pinchScale * distance / _pinchDistance, MinScale, MaxScale);
-			item.Rotation = ((_pinchRotation + angle - _pinchAngle) % 360 + 360) % 360;
+			KeepAligned(item, () =>
+			{
+				item.Scale = Math.Clamp(_pinchScale * distance / _pinchDistance, MinScale, MaxScale);
+				item.Rotation = ((_pinchRotation + angle - _pinchAngle) % 360 + 360) % 360;
+			});
 		}
 		else
 		{
@@ -306,7 +313,7 @@ public partial class ImageEditorPage : ContentPage
 						Checkpoint();
 						typing = true;
 					}
-					item.Text = args.NewTextValue ?? string.Empty;
+					KeepAligned(item, () => item.Text = args.NewTextValue ?? string.Empty);
 					Canvas.Invalidate();
 				};
 				entry.Unfocused += (_, _) => typing = false;
@@ -391,15 +398,16 @@ public partial class ImageEditorPage : ContentPage
 
 		// Help with lining things up; dragging on the image stays free.
 		Options.Add(Chips("Place across", ["Left", "¼", "Middle", "¾", "Right"],
-			i => Math.Abs(item.X - AlignedPlace(i, DrawingBoard.Width, Extent(item).Width)) < 1,
-			i => item.X = AlignedPlace(i, DrawingBoard.Width, Extent(item).Width)));
+			i => Math.Abs(item.FrameCentre.X - AlignedPlace(i, DrawingBoard.Width, Extent(item).Width)) < 1,
+			i => MoveFrameCentre(item, true, AlignedPlace(i, DrawingBoard.Width, Extent(item).Width)), keepAligned: false));
 		Options.Add(Chips("Place up and down", ["Top", "¼", "Middle", "¾", "Bottom"],
-			i => Math.Abs(item.Y - AlignedPlace(i, _board.Height, Extent(item).Height)) < 1,
-			i => item.Y = AlignedPlace(i, _board.Height, Extent(item).Height)));
+			i => Math.Abs(item.FrameCentre.Y - AlignedPlace(i, _board.Height, Extent(item).Height)) < 1,
+			i => MoveFrameCentre(item, false, AlignedPlace(i, _board.Height, Extent(item).Height)), keepAligned: false));
 
-		// The exact place of the item's centre: 0 is the left or top edge, across goes to 1000.
-		Options.Add(SliderRow("Across", string.Empty, 0, (int)DrawingBoard.Width, (int)MathF.Round(item.X), value => item.X = value));
-		Options.Add(SliderRow("Down", string.Empty, 0, (int)_board.Height, (int)MathF.Round(item.Y), value => item.Y = value));
+		// The exact place, measured the way chosen with the alignment icons: from the image's left edge,
+		// centre or right edge to the same point of the item (and top, middle or bottom down).
+		Options.Add(PlaceRow(item, across: true));
+		Options.Add(PlaceRow(item, across: false));
 
 		// Size as a percentage of the normal size, turn in degrees: whole numbers, so two items can be made exactly alike.
 		Options.Add(SliderRow("Size", "%", (int)(MinScale * 100), (int)(MaxScale * 100), (int)MathF.Round(item.Scale * 100), value => item.Scale = value / 100f));
@@ -407,7 +415,7 @@ public partial class ImageEditorPage : ContentPage
 		Options.Add(Chips(null, ["Turn ↺ 45°", "Turn ↻ 45°", "Upright"], _ => false, i =>
 			item.Rotation = i == 2 ? 0 : (MathF.Round(item.Rotation / 45) * 45 + (i == 0 ? 315 : 45)) % 360));
 
-		Options.Add(Chips(null, ["Copy", "To front", "To back"], _ => false, i =>
+		Options.Add(Chips(null, ["Copy", "To front", "To back"], keepAligned: false, isOn: _ => false, choose: i =>
 		{
 			if (i == 0)
 			{
@@ -436,6 +444,170 @@ public partial class ImageEditorPage : ContentPage
 		Options.Add(delete);
 	}
 
+	// ----- Alignment and exact place -----
+	//
+	// Each item has an alignment, chosen with the stripe icons: left, centre or
+	// right (and top, middle or bottom). Across and Down give where that side
+	// (or the middle) of its frame is - the frame fits tightly around the
+	// drawing - always counted from the left and top edge of the drawing area.
+	// Changing the alignment leaves the item where it is: only the number
+	// changes, to the side it now gives. Making the item bigger or smaller
+	// (size, pinching, length, text, ...) keeps that side where it is, so it
+	// grows away from it; centred, it grows the same in every direction.
+
+	private const string AlignAcrossKey = "imageEditor.alignAcross";
+	private const string AlignDownKey = "imageEditor.alignDown";
+
+	/// <summary>The alignment chosen last, for new items: 0 left / top, 1 centre / middle, 2 right / bottom.</summary>
+	private int _alignAcross = Preferences.Default.Get(AlignAcrossKey, 1);
+	private int _alignDown = Preferences.Default.Get(AlignDownKey, 1);
+
+	/// <summary>The item's alignment; one from before alignment existed counts as centred.</summary>
+	private static int AlignOf(DrawItem item, bool across) => (across ? item.AlignX : item.AlignY) ?? 1;
+
+	/// <summary>The three alignment icons and the number (slider and box) itself.</summary>
+	private View PlaceRow(DrawItem item, bool across)
+	{
+		var align = AlignOf(item, across);
+		var chosen = across ? item.AlignX : item.AlignY;
+		var icons = new HorizontalStackLayout { Spacing = 6 };
+		for (var i = 0; i < 3; i++)
+		{
+			var index = i;
+			icons.Add(AlignIcon(across, index, chosen == index, () =>
+			{
+				// The item stays where it is; the number changes to the side it now gives.
+				Checkpoint();
+				if (across)
+				{
+					item.AlignX = index;
+					_alignAcross = index;
+					Preferences.Default.Set(AlignAcrossKey, index);
+				}
+				else
+				{
+					item.AlignY = index;
+					_alignDown = index;
+					Preferences.Default.Set(AlignDownKey, index);
+				}
+				Changed();
+			}));
+		}
+		var (minimum, maximum) = Range(item, across);
+		var slider = SliderRow(across ? "Across" : "Down", string.Empty, (int)MathF.Ceiling(minimum), (int)MathF.Floor(maximum),
+			(int)MathF.Round(Measured(item, across)), value => PlaceAt(item, across, value), keepAligned: false);
+		return new VerticalStackLayout
+		{
+			Spacing = 4,
+			Children =
+			{
+				icons,
+				slider
+			}
+		};
+	}
+
+	/// <summary>Half the item's frame on the drawing area, the size of the area, and the alignment - across or down.</summary>
+	private (float Half, float Size, int Align) Axis(DrawItem item, bool across) => across
+		? (Extent(item).Width, DrawingBoard.Width, AlignOf(item, true))
+		: (Extent(item).Height, _board.Height, AlignOf(item, false));
+
+	/// <summary>Where the measured side (or middle) of the frame is, from the left or top edge of the drawing area.</summary>
+	private float Measured(DrawItem item, bool across)
+	{
+		var (half, _, align) = Axis(item, across);
+		var centre = item.FrameCentre;
+		return (across ? centre.X : centre.Y) + (align - 1) * half;
+	}
+
+	/// <summary>Moves the item so the middle of its frame is at this place across or down.</summary>
+	private static void MoveFrameCentre(DrawItem item, bool across, float place)
+	{
+		var centre = item.FrameCentre;
+		if (across) item.X += place - centre.X;
+		else item.Y += place - centre.Y;
+	}
+
+	/// <summary>
+	/// The numbers that keep the whole frame inside the drawing area (an item
+	/// bigger than the area can only be in its middle).
+	/// </summary>
+	private (float Minimum, float Maximum) Range(DrawItem item, bool across)
+	{
+		var (half, size, align) = Axis(item, across);
+		var lowestCentre = Math.Min(half, size / 2);
+		var highestCentre = Math.Max(size - half, size / 2);
+		return (lowestCentre + (align - 1) * half, highestCentre + (align - 1) * half);
+	}
+
+	/// <summary>Puts the measured side (or middle) at this number, kept inside the drawing area.</summary>
+	private void PlaceAt(DrawItem item, bool across, float value)
+	{
+		var (half, _, align) = Axis(item, across);
+		var (minimum, maximum) = Range(item, across);
+		MoveFrameCentre(item, across, Math.Clamp(value, minimum, maximum) - (align - 1) * half);
+	}
+
+	/// <summary>A change of size or turn, after which the measured sides (or middles) are where they were.</summary>
+	private void KeepAligned(DrawItem item, Action change)
+	{
+		var (across, down) = (Measured(item, true), Measured(item, false));
+		change();
+		PlaceAt(item, true, across);
+		PlaceAt(item, false, down);
+	}
+
+	/// <summary>
+	/// An alignment icon like in a word processor: stripes of different
+	/// lengths lined up left, centred or right - or, for down, top, middle or bottom.
+	/// </summary>
+	private static View AlignIcon(bool across, int align, bool isOn, Action tapped)
+	{
+		var icon = new GraphicsView
+		{
+			Drawable = new AlignStripes(across, align, isOn ? Colors.White : Resource("TextPrimary")),
+			WidthRequest = 30, HeightRequest = 26, InputTransparent = true
+		};
+		var chip = new Border
+		{
+			Content = icon, Padding = new Thickness(10, 6),
+			BackgroundColor = isOn ? Resource("Primary") : Colors.Transparent,
+			Stroke = isOn ? Resource("Primary") : Resource("Border"), StrokeThickness = 1,
+			StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 8 }
+		};
+		var tap = new TapGestureRecognizer();
+		tap.Tapped += (_, _) => tapped();
+		chip.GestureRecognizers.Add(tap);
+		string[] names = across ? ["Align left", "Align centre", "Align right"] : ["Align top", "Align middle", "Align bottom"];
+		SemanticProperties.SetDescription(chip, names[align]);
+		return chip;
+	}
+
+	/// <summary>Four stripes of different lengths, lined up on one side or centred.</summary>
+	private sealed class AlignStripes(bool across, int align, Color color) : IDrawable
+	{
+		private static readonly float[] Lengths = [1f, 0.6f, 0.85f, 0.5f];
+
+		public void Draw(ICanvas canvas, RectF rect)
+		{
+			canvas.StrokeColor = color;
+			canvas.StrokeSize = 2.5f;
+			canvas.StrokeLineCap = LineCap.Round;
+			const float inset = 2f;
+			var (along, width) = across ? (rect.Width - 2 * inset, rect.Height) : (rect.Height - 2 * inset, rect.Width);
+			for (var i = 0; i < Lengths.Length; i++)
+			{
+				var length = along * Lengths[i];
+				var start = align switch { 0 => inset, 2 => inset + along - length, _ => inset + (along - length) / 2 };
+				var at = inset + (width - 2 * inset) * (i + 0.5f) / Lengths.Length;
+				if (across)
+					canvas.DrawLine(start, at, start + length, at);
+				else
+					canvas.DrawLine(at, start, at, start + length);
+			}
+		}
+	}
+
 	/// <summary>
 	/// Where an item's centre goes for an alignment button: 0 and 4 put its
 	/// edge against the edge of the image, 1-3 put its centre on the quarter lines.
@@ -452,7 +624,7 @@ public partial class ImageEditorPage : ContentPage
 	/// <summary>Half the width and height an item takes on the image, as it's sized and turned now.</summary>
 	private static SizeF Extent(DrawItem item)
 	{
-		var half = item.HalfSize;
+		var half = item.FrameHalf;
 		var angle = item.Rotation * MathF.PI / 180;
 		var (cos, sin) = (MathF.Abs(MathF.Cos(angle)), MathF.Abs(MathF.Sin(angle)));
 		return new SizeF((half.Width * cos + half.Height * sin) * item.Scale, (half.Width * sin + half.Height * cos) * item.Scale);
@@ -476,7 +648,12 @@ public partial class ImageEditorPage : ContentPage
 	}
 
 	/// <summary>A row of buttons to choose from; the chosen ones are highlighted.</summary>
-	private View Chips(string? title, string[] choices, Func<int, bool> isOn, Action<int> choose)
+	/// <param name="keepAligned">
+	/// The selected item's aligned side (or middle) stays where it is: when
+	/// the choice makes it bigger or smaller, it grows or shrinks from there.
+	/// Off for choices that move the item on purpose.
+	/// </param>
+	private View Chips(string? title, string[] choices, Func<int, bool> isOn, Action<int> choose, bool keepAligned = true)
 	{
 		var row = new FlexLayout { Wrap = Microsoft.Maui.Layouts.FlexWrap.Wrap };
 		for (var i = 0; i < choices.Length; i++)
@@ -485,7 +662,10 @@ public partial class ImageEditorPage : ContentPage
 			var chip = Chip(choices[i], isOn(i), () =>
 			{
 				Checkpoint();
-				choose(index);
+				if (keepAligned && _board.Selected is { } selected)
+					KeepAligned(selected, () => choose(index));
+				else
+					choose(index);
 				Changed();
 			});
 			chip.Margin = new Thickness(0, 0, 6, 6);
@@ -518,13 +698,22 @@ public partial class ImageEditorPage : ContentPage
 	/// The drawing follows while the slider moves or a number is typed; the
 	/// buttons aren't rebuilt, so neither is interrupted.
 	/// </summary>
-	private View SliderRow(string title, string unit, int minimum, int maximum, int value, Action<int> set)
+	/// <param name="keepAligned">As with Chips: off for Across and Down, which move the item.</param>
+	private View SliderRow(string title, string unit, int minimum, int maximum, int value, Action<int> change, bool keepAligned = true)
 	{
+		void set(int chosen)
+		{
+			if (keepAligned && _board.Selected is { } selected)
+				KeepAligned(selected, () => change(chosen));
+			else
+				change(chosen);
+		}
+
 		value = Math.Clamp(value, minimum, maximum);
 		var slider = new Slider { Minimum = minimum, Maximum = maximum, Value = value, VerticalOptions = LayoutOptions.Center };
 		var entry = new Entry
 		{
-			Text = value.ToString(), Keyboard = Keyboard.Numeric, MaxLength = 4, FontSize = 14,
+			Text = value.ToString(), Keyboard = minimum < 0 ? Keyboard.Telephone : Keyboard.Numeric, MaxLength = 5, FontSize = 14,
 			HorizontalTextAlignment = TextAlignment.End, VerticalOptions = LayoutOptions.Center
 		};
 

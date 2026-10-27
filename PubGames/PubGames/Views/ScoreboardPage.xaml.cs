@@ -15,11 +15,11 @@ public partial class ScoreboardPage : ContentPage
 {
 	private const int MaxPerColumn = 8;
 
+	/// <summary>The page's padding; at the bottom the keyboard's height is added while it's open.</summary>
+	private const double RootPadding = 12;
+
 	/// <summary>Manual plus / minus: each player's amount box, read when their + or − is tapped.</summary>
 	private readonly Dictionary<ParticipantRow, Entry> _amountBoxes = new();
-
-	/// <summary>The amount boxes' placeholder: an amount the game's rules allow, or nothing without rules.</summary>
-	private string _amountPlaceholder = string.Empty;
 
 	private readonly ScoreboardViewModel _vm;
 	private readonly GameNight _gameNight;
@@ -30,8 +30,8 @@ public partial class ScoreboardPage : ContentPage
 	public ScoreboardPage(ScoreboardViewModel vm, GameNight gameNight)
 	{
 		InitializeComponent();
-		// The page ends above the keyboard, so the box being typed in is never behind it.
-		SafeAreaEdges = new SafeAreaEdges(SafeAreaRegions.Default, SafeAreaRegions.Default, SafeAreaRegions.Default, SafeAreaRegions.SoftInput);
+		// The page ends above the keyboard, so Previous / Next stay right on top of it.
+		KeyboardWatcher.Track(this, covered => Root.Padding = new Thickness(RootPadding, RootPadding, RootPadding, RootPadding + covered));
 		BindingContext = _vm = vm;
 		InfoButton.AttachWithRules(this, () => Help.Scoreboard(_vm.Game?.ScoringType ?? ScoringType.PlusMinus, _vm.Settings), () => _vm.Game is { } game ? Help.GameRules(game) : null);
 		_gameNight = gameNight;
@@ -43,7 +43,6 @@ public partial class ScoreboardPage : ContentPage
 			Footer.IsVisible = true;
 			ScoreMessage.IsVisible = _vm.Rules.ManualAmounts is not null;
 			TurnDoneButton.IsVisible = _vm.FixedTurnOrder && _vm.Rules.ManualAmounts is null;
-			_amountPlaceholder = _vm.Rules.ManualAmounts?.ExampleAmount()?.ToString() ?? "0";
 			ScoreMessage.Text = string.Empty;
 			_builtForCount = -1; // other players may sit in the same number of seats
 			UpdateFooter();
@@ -86,10 +85,10 @@ public partial class ScoreboardPage : ContentPage
 
 		// Never taller than the window minus the title bar and tab bar, even if the page reports more.
 		var visible = Window is { Height: > 0 } window ? Math.Min(Height, window.Height - 160) : Height;
-		var root = (Grid)Content;
+		var root = Root;
 		var header = Header.Height > 0 ? Header.Height : 56;
 		var footer = Footer.Height > 0 ? Footer.Height : 104;
-		return visible - root.Padding.VerticalThickness - header - footer - root.RowSpacing * 2;
+		return visible - RootPadding * 2 - header - footer - root.RowSpacing * 2;
 	}
 
 	private double _builtForHeight;
@@ -229,7 +228,7 @@ public partial class ScoreboardPage : ContentPage
 		{
 			Board.Children.Add(new Label
 			{
-				Text = "Nobody is playing. Tap \"Change players\" to add players.",
+				Text = "Nobody is playing.",
 				TextColor = Color("TextSecondary"),
 				HorizontalOptions = LayoutOptions.Center,
 				VerticalOptions = LayoutOptions.Center
@@ -585,7 +584,7 @@ public partial class ScoreboardPage : ContentPage
 	{
 		var box = new Entry
 		{
-			Placeholder = _amountPlaceholder,
+			Placeholder = "0",
 			Keyboard = Keyboard.Telephone, // has a minus sign, for negative amounts
 			FontSize = fontSize,
 			HorizontalTextAlignment = TextAlignment.End,
@@ -602,6 +601,15 @@ public partial class ScoreboardPage : ContentPage
 		box.Completed += async (_, _) => await MoveToBoxAsync(row, +1, apply: true);
 		_amountBoxes[row] = box;
 		return box;
+	}
+
+	private readonly ViewModels.MessageTimer _scoreMessageTimer = new();
+
+	/// <summary>Why an amount wasn't accepted; it clears itself after a few seconds.</summary>
+	private void ShowScoreMessage(string text)
+	{
+		ScoreMessage.Text = text;
+		_scoreMessageTimer.Shown(text, () => ScoreMessage.Text ?? string.Empty, v => ScoreMessage.Text = v);
 	}
 
 	/// <summary>A player's amount box has the keyboard: show Previous / Next above it and keep the card in sight.</summary>
@@ -651,7 +659,7 @@ public partial class ScoreboardPage : ContentPage
 			{
 				if (_vm.FixedTurnOrder)
 				{
-					ScoreMessage.Text = $"{from.Player.Name}: enter a score first - type 0 for no points.";
+					ShowScoreMessage($"{from.Player.Name}: enter a score first - type 0 for no points.");
 					return;
 				}
 			}
@@ -698,19 +706,19 @@ public partial class ScoreboardPage : ContentPage
 
 		if (text.Length == 0)
 		{
-			ScoreMessage.Text = $"{row.Player.Name}: type an amount first, then tap + or −.";
+			ShowScoreMessage($"{row.Player.Name}: type an amount first, then tap + or −.");
 			return false;
 		}
 		// Some keyboards type a real minus sign (−) instead of a hyphen.
 		if (!int.TryParse(text.Replace('−', '-'), System.Globalization.NumberStyles.AllowLeadingSign,
 			System.Globalization.CultureInfo.CurrentCulture, out var amount))
 		{
-			ScoreMessage.Text = $"{row.Player.Name}: \"{text}\" isn't a whole number.";
+			ShowScoreMessage($"{row.Player.Name}: \"{text}\" isn't a whole number.");
 			return false;
 		}
 		if (!manual.AllowsAmount(amount) && !(amount == 0 && _vm.FixedTurnOrder))
 		{
-			ScoreMessage.Text = $"{row.Player.Name}: {amount} isn't allowed. {manual.AllowedAmountsHint()}";
+			ShowScoreMessage($"{row.Player.Name}: {amount} isn't allowed. {manual.AllowedAmountsHint()}");
 			return false;
 		}
 

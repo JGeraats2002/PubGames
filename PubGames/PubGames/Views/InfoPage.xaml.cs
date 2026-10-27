@@ -62,9 +62,13 @@ public static class InfoButton
 			})
 		});
 
-	/// <summary>Pushed on the page's own stack; pages outside the shell (sign-in) show it as a modal page.</summary>
+	/// <summary>
+	/// Pushed on the page's own stack. Pages outside the shell (sign-in) and
+	/// pages shown on top of it (image editor, duel, filter) have no stack to
+	/// push on: there it's shown as a modal page too.
+	/// </summary>
 	public static Task ShowAsync(Page page, PageHelp help) =>
-		Shell.Current is null
+		Shell.Current is null || page.Navigation.ModalStack.Count > 0
 			? page.Navigation.PushModalAsync(new InfoPage(help, modal: true))
 			: page.Navigation.PushAsync(new InfoPage(help));
 }

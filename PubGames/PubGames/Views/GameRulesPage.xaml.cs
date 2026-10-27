@@ -1,4 +1,5 @@
 using PubGames.Models;
+using PubGames.Services;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -20,6 +21,48 @@ public partial class GameRulesPage : ContentPage
 			{
 				["sessionId"] = sessionId
 			});
+	}
+
+	/// <summary>Back from the pass page: perhaps the game is unlocked now.</summary>
+	protected override void OnAppearing()
+	{
+		base.OnAppearing();
+		_vm.CheckUnlocked();
+	}
+
+	/// <summary>Buy the game once, a friend code, or the Pub Games Pass. Nothing is charged unless a purchase is completed.</summary>
+	private async void OnUnlockClicked(object? sender, EventArgs e)
+	{
+		var buy = $"Buy {await _vm.PriceAsync()}";
+		const string pass = "Pub Games Pass";
+		const string code = "I have a code";
+		var choice = await ChoicePopup.AskAsync(this, $"Unlock {_vm.GameName}", null, "Cancel", code, pass, buy);
+		if (choice == pass)
+		{
+			await Shell.Current.GoToAsync(nameof(SubscriptionPage));
+			return;
+		}
+		if (choice == code)
+		{
+			await RedeemAsync();
+			return;
+		}
+		if (choice != buy) return;
+
+		var (outcome, problem) = await _vm.BuyAsync();
+		if (outcome == PurchaseOutcome.Pending)
+			await DisplayAlertAsync("Payment pending", $"{_vm.GameName} unlocks as soon as Google Play confirms the payment.", "OK");
+		else if (outcome == PurchaseOutcome.Failed)
+			await DisplayAlertAsync("Not bought", problem ?? "The purchase didn't go through.", "OK");
+	}
+
+	private async Task RedeemAsync()
+	{
+		var typed = await DisplayPromptAsync("Code", "Type the code you were given.", "Use code", "Cancel",
+			placeholder: "XXXX-XXXX", maxLength: 9, keyboard: Keyboard.Text);
+		if (string.IsNullOrWhiteSpace(typed)) return;
+		if (await _vm.RedeemAsync(typed) is { } problem)
+			await DisplayAlertAsync("Code not used", problem, "OK");
 	}
 
 	private void OnFewerSubgamesClicked(object? sender, EventArgs e) => _vm.ChangeSubgameCount(-1);

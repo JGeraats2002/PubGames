@@ -46,6 +46,11 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	[ObservableProperty]
 	private string statusMessage = string.Empty;
 
+	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
+	private readonly MessageTimer _statusMessageTimer = new();
+
+	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
+
 	public SessionPlayersViewModel(ILocalDatabaseService local, IAuthService auth)
 	{
 		_local = local;

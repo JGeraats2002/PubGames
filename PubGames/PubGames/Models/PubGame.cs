@@ -91,6 +91,14 @@ public class PubGame
 	[Ignore]
 	public bool HasNoCategory => string.IsNullOrEmpty(CategoryIdsText);
 
+	/// <summary>
+	/// Right of a game in the players' list: its price with a lock when the
+	/// account doesn't own it yet; empty for free and owned games. Filled in
+	/// by the list.
+	/// </summary>
+	[Ignore]
+	public string AccessLabel { get; set; } = string.Empty;
+
 	/// <summary>One line under the game's name in a list: "2-6 players · Cards, 15-30 min" (the categories when CategoryLabel is filled in).</summary>
 	[Ignore]
 	public string InfoLine => string.Join(" · ", new[]

@@ -198,7 +198,36 @@ public partial class AdminCreateGamePage : ContentPage
 	/// <summary>
 	/// Remembers the piece of rules text the cursor is in, so a picture can be added there.
 	/// </summary>
-	private void OnRulesEditorFocused(object? sender, FocusEventArgs e) => _lastRulesEditor = sender as Editor;
+	private async void OnRulesEditorFocused(object? sender, FocusEventArgs e)
+	{
+		_lastRulesEditor = sender as Editor;
+		if (_movingImage is null || _lastRulesEditor is not { } editor) return;
+
+		// Moving a picture: the tap is the place. Remember it once the cursor has moved there, then close the
+		// keyboard so Place here is in view (it would otherwise be behind the keyboard).
+		await Task.Delay(300);
+		if (_lastRulesEditor != editor) return;
+		_moveCursor = CursorOf(editor);
+		editor.Unfocus();
+		if (editor.IsSoftInputShowing())
+			await editor.HideSoftInputAsync(CancellationToken.None);
+	}
+
+	/// <summary>
+	/// Where the cursor is in a text box. On Android straight from the text field: the editor's own value can
+	/// lag behind after a tap, especially at the start or end of a word or line.
+	/// </summary>
+	private static int CursorOf(Editor editor)
+	{
+#if ANDROID
+		if (editor.Handler?.PlatformView is Android.Widget.EditText field && field.SelectionStart >= 0)
+			return field.SelectionStart;
+#endif
+		return editor.CursorPosition;
+	}
+
+	/// <summary>Where the cursor was when the text was tapped while moving a picture (the keyboard is closed by then).</summary>
+	private int _moveCursor;
 
 	/// <summary>
 	/// The piece of text that was last tapped into and where its cursor is.
@@ -206,7 +235,7 @@ public partial class AdminCreateGamePage : ContentPage
 	/// </summary>
 	private (EditableRulesBlock Block, int Cursor)? RulesCursor() =>
 		_lastRulesEditor?.BindingContext is EditableRulesBlock { IsText: true } block && _vm.RulesBlocks.Contains(block)
-			? (block, _lastRulesEditor.CursorPosition)
+			? (block, _movingImage is null ? CursorOf(_lastRulesEditor) : _moveCursor)
 			: null;
 
 	/// <summary>
@@ -269,7 +298,14 @@ public partial class AdminCreateGamePage : ContentPage
 		}
 		else if (choice == move)
 		{
-			// The place it goes is tapped from now on, not where the cursor happened to be.
+			// The place it goes is tapped from now on, not where the cursor happened to be. A text box that still
+			// has the focus would not report a new tap, so it lets go first.
+			if (_lastRulesEditor is { IsFocused: true } focused)
+			{
+				focused.Unfocus();
+				if (focused.IsSoftInputShowing())
+					await focused.HideSoftInputAsync(CancellationToken.None);
+			}
 			_lastRulesEditor = null;
 			_movingImage = image;
 			MoveBar.IsVisible = true;

@@ -27,7 +27,7 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 
 ## Waar we gebleven zijn (bijgewerkt 28-10-2026)
 
-Laatste commit: `22fdba3 latest ideas while publishing the game`. **Stap 5 t/m 8 (28-10-2026) zijn nog niet gecommit.**
+Laatste commit: `ad8c403` (stap 5 t/m 8, versie 2 / 1.1). Nog niet gepusht.
 
 ### Gedaan (27 en 28-10-2026)
 

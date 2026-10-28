@@ -8,5 +8,13 @@ obj/
 # Firebase config (read into AuthConfig.cs; not needed in the repo)
 google-services.json
 
+# Signing keys (kept in %USERPROFILE%\PubGamesKeys, never in the repo)
+*.keystore
+*.jks
+*.pass
+
+# Firebase Hosting cache
+.firebase/
+
 # Cloud Functions packages
 functions/node_modules/

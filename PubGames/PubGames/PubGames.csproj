@@ -19,6 +19,17 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
+	<!-- Release builds are signed with the Play upload key. The keystore and its password
+	     live outside the repo (%USERPROFILE%\PubGamesKeys) and must never be committed. -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<AndroidPackageFormat>aab</AndroidPackageFormat>
+		<AndroidKeyStore>true</AndroidKeyStore>
+		<AndroidSigningKeyStore>$(USERPROFILE)\PubGamesKeys\pubgames-upload.keystore</AndroidSigningKeyStore>
+		<AndroidSigningKeyAlias>pubgames-upload</AndroidSigningKeyAlias>
+		<AndroidSigningStorePass>file:$(USERPROFILE)\PubGamesKeys\pubgames-upload.pass</AndroidSigningStorePass>
+		<AndroidSigningKeyPass>file:$(USERPROFILE)\PubGamesKeys\pubgames-upload.pass</AndroidSigningKeyPass>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<MauiIcon Include="Resources\Images\appicon.svg" ForegroundFile="Resources\Images\appiconfg.svg" Color="#3C3489" />
 		<MauiSplashScreen Include="Resources\Images\splash.svg" Color="#3C3489" BaseSize="128,128" />
@@ -45,12 +56,6 @@
 		<PackageReference Include="Xamarin.AndroidX.Fragment.Ktx" Version="1.9.0" />
 		<PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.11.0.1" />
 		<PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core.Ktx" Version="2.11.0.1" />
-		<PackageReference Include="Xamarin.GoogleAndroid.Libraries.Identity.GoogleId" Version="1.1.0.13" />
-		<!-- Add Xamarin.GooglePlayServices / Plugin.InAppBilling (or the official
-		     Google.Android.PlayBilling bindings) when you wire up real purchases.
-		     Add Firebase.Auth / Firebase.Firestore (via Plugin.Firebase) for the
-		     cloud account + sync layer. Both left out so the project restores
-		     cleanly without extra setup on first open. -->
-	</ItemGroup>
+		<PackageReference Include="Xamarin.GoogleAndroid.Libraries.Identity.GoogleId" Version="1.1.0.13" />	</ItemGroup>
 
 </Project>

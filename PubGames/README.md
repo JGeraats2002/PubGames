@@ -16,36 +16,83 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 | `PubGames/PubGames/Models/PageHelp.cs` | Alle uitleg uit de ⓘ-knoppen |
 | `functions/index.js` | Cloud Functions (aankopen controleren, kortingscode, refunds, account verwijderen) |
 | `firestore.rules` | Beveiligingsregels van Firestore |
+| `public/` | Website (Firebase Hosting): privacybeleid, account verwijderen |
+| `PlayStore/` | Play Console-teksten, antwoorden, icoon en feature graphic |
 | `firebase.json`, `.firebaserc` | Firebase-deploy-instellingen |
 
 ---
 
-## Waar we gebleven zijn (bijgewerkt 27-10-2026)
+## Waar we gebleven zijn (bijgewerkt 28-10-2026)
 
-**Laatst gedaan:** opschoning op basis van literatuur (naamgeving, commentaar, toegankelijkheid,
-veiligheid). De app bouwt met 0 fouten en 0 warnings. Alle Cloud Functions zijn gedeployed,
-ook `deleteAccount`.
+**Nog niet gecommit:** keystore-instellingen in de csproj, `public/` (website), `PlayStore/`,
+`.gitignore`, `firebase.json` en deze README. Commit alleen als de gebruiker erom vraagt.
 
-**Nog niet gecommit:** ongeveer 140 gewijzigde bestanden sinds commit
-`42ea8dc Betaling toegevoegd en detaileringen`. Commit pas als de gebruiker erom vraagt.
+### Gedaan (27 en 28-10-2026)
 
-### Open punten voor de gebruiker
+- Identiteitsverificatie Google Play goedgekeurd.
+- Upload-keystore gemaakt in `%USERPROFILE%\PubGamesKeys` (buiten de repo, wachtwoord in
+  `pubgames-upload.pass`). Release-builds worden er automatisch mee ondertekend (zie csproj).
+  De gebruiker moet keystore + wachtwoord back-uppen; kwijt = geen updates meer.
+- Website live via Firebase Hosting: https://pubgames-92835.web.app (`/privacy`, `/delete-account`).
+- App aangemaakt in de Play Console (`com.pubgems.pubgames`), Play App Signing aan
+  (door Google gegenereerde sleutel). Versie 1 (1.0) staat bij Internal testing.
+- SHA-1 van de app-signeersleutel én de uploadsleutel staan in Firebase.
+- Store listing (EN + NL), Store settings (Game → Casual) en alle App content-formulieren
+  ingevuld. Content rating 14+ t/m 18+ per land; doelgroep 18+. Alle antwoorden en teksten staan
+  in `PlayStore/README.md`.
+- Closed testing-release 1 (1.0) + alles ingediend ter beoordeling (28-10-2026).
+  Saudi-Arabië uit de landen gehaald (alcohol). Korea: niet beschikbaar door GRAC, geen actie.
+- Warnings over deobfuscation file en native debug symbols: negeren (MAUI/.NET).
 
-1. **Identiteitsverificatie Google Play** loopt nog (id-kaart). Daarna:
-   - **B.** Een interne testversie uploaden (`.aab`) in de Play Console.
-   - **C.** Het abonnement `pubgames_pass` aanmaken met de basisplannen week, maand en jaar
-     (€0,99 / €2,99 / €24,99).
-   - **D.** De Google Play Android Developer API aanzetten. Het serviceaccount
-     `737835893040-compute@developer.gserviceaccount.com` uitnodigen in de Play Console
-     (Gebruikers en rechten) met rechten voor financiën/bestellingen en het beheren van producten.
-   - **E.** Licentietesters toevoegen, zodat testaankopen gratis zijn.
-2. **Privacybeleid:** Play vraagt een openbare URL voor de gegevensveiligheid.
-3. **Leeftijdsclassificatie:** het content rating-formulier invullen. Alcohol telt mee, en de app
-   vraagt zelf al om een 18+-bevestiging.
-4. **API-sleutel beperken:** in de Google Cloud-console, onder APIs & Services > Credentials,
-   de Android-sleutel beperken tot het app-pakket en de gebruikte API's.
-5. **`firebase-functions` bijwerken:** niet dringend. Er komen breaking changes; doe het later
-   apart en test het.
+### Nog te doen – volgorde
+
+**Fase 1 – Play-koppeling (samen, ±30 min, met de gebruiker door de console lopen)**
+1. **D.** Google Play Android Developer API aanzetten in Google Cloud. Het serviceaccount
+   `737835893040-compute@developer.gserviceaccount.com` uitnodigen in de Play Console
+   (Users and permissions) met rechten voor financiën/bestellingen en het beheren van producten.
+2. **C.** Abonnement `pubgames_pass` aanmaken met basisplannen `week`, `month`, `year`
+   (€0,99 / €2,99 / €24,99). Mogelijk eerst een payments profile koppelen.
+3. **E.** License testers: Settings → License testing (account-niveau), `jjh.geraats@gmail.com`
+   en de andere testers, RESPOND_NORMALLY.
+4. **API-sleutel beperken:** Google Cloud → APIs & Services → Credentials, de Android-sleutel
+   beperken tot `com.pubgems.pubgames` + de SHA-1's en de gebruikte API's.
+
+**Fase 2 – App-aanpassingen, nodig vóórdat de testers worden uitgenodigd**
+(De gebruiker wil deze vóór de closed test. Daarna een nieuwe `.aab` bouwen met
+`ApplicationVersion` 2 en die bij Closed testing uploaden.)
+
+5. **Teampagina – zoeken en sorteren** (voor owner en admins):
+   - Zoekbalk die zoekt op **naam** én **e-mailadres**.
+   - Filter: **Admins** / **Moderators** (bijv. segment- of chipknoppen).
+   - Admins en moderators in **twee aparte lijsten**, elk **alfabetisch** gesorteerd.
+6. **Ingebouwde vertaler voor spellen:**
+   - Een moderator schrijft/bewerkt een spel in zijn eigen taal; het spel onthoudt de brontaal.
+   - Bij opslaan vertaalt een Cloud Function alle tekstvelden (naam, regels, enz.) naar alle
+     ondersteunde talen (Cloud Translation API of een LLM; LLM vertaalt spelregels vaak beter)
+     en bewaart ze per taal in het spel-document (bijv. `translations.nl.rules`).
+   - Eén keer vertalen per spel per taal, niet per speler → kosten blijven heel laag.
+   - De app toont de taal van de gebruiker, met de brontaal als terugval.
+   - Moderators kunnen een vertaling handmatig verbeteren (wordt dan niet meer overschreven).
+7. **Taalkeuze in de app:**
+   - Instelbaar bij **Settings**.
+   - Bij de **eerste keer inloggen** een taalkeuzescherm: per taal de **vlag in een cirkel** met
+     daaronder de **naam van de taal**, geschreven in de taal die op dat moment is ingesteld
+     (bijv. "Spaans" als de app op Nederlands staat, "Spanish" als hij op Engels staat).
+   - Vaste UI-teksten van de app lokaliseren (.resx) en ⓘ-teksten in `PageHelp.cs` ook.
+   - **Input van de gebruiker nodig:** welke talen, en welke vlag bij Engels (VK of VS).
+8. Daarna de Store listing ook in die talen aanbieden (Play kan AI-vertalingen maken; nakijken).
+
+**Fase 3 – Closed test en productie**
+9. Na goedkeuring door Google: opt-in-link (Closed testing → Testers) naar **15+ testers** sturen
+   (minimaal 12 nodig, buffer voor uitvallers). Testers: link openen → Become a tester →
+   installeren via Play, 14 dagen laten staan en af en toe gebruiken.
+10. Zodra er 12+ testers opted-in zijn: **14 dagen** laten lopen (persoonlijk ontwikkelaarsaccount).
+11. Daarna op het Dashboard **Apply for production** en de vragen over de test beantwoorden.
+
+**Later / niet dringend**
+- **`firebase-functions` bijwerken:** er komen breaking changes; apart doen en testen.
+- De Firebase CLI blijft op deze pc hangen bij `firebase apps:list` (wacht vermoedelijk op een
+  vraag); console gebruiken voor zulke dingen.
 
 ### Bekende beperkingen / mogelijke vervolgstappen
 

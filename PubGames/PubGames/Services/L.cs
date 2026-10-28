@@ -28,6 +28,13 @@ public static class L
 		: English.TryGetValue(text, out var english) ? english
 		: text;
 
+	/// <summary>
+	/// The translation of a key in the app's language, or null when the string files don't have one (and in
+	/// English). For names that are made in the app, like categories, with a translation made by hand.
+	/// </summary>
+	public static string? Known(string key) =>
+		_texts.TryGetValue(key, out var translated) && translated.Length > 0 ? translated : null;
+
 	/// <summary>A text with values filled in ({0}, {1}, ...), in the app's language.</summary>
 	/// <param name="text">The English text with {0}, {1}, ... where the values go.</param>
 	/// <param name="values">The values, in order.</param>

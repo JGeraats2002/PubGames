@@ -97,7 +97,7 @@ public partial class CategoryClouds : ContentView
 	/// <summary>The selected categories on one line ("All" in a filter is not a category, so it isn't listed).</summary>
 	private void ShowSummary()
 	{
-		var selected = _watched.Where(c => c.IsSelected && c.Category.Id.Length > 0).Select(c => c.Category.Name).ToList();
+		var selected = _watched.Where(c => c.IsSelected && c.Category.Id.Length > 0).Select(c => c.Category.ShownName).ToList();
 		Summary.Text = selected.Count == 0 ? Placeholder : string.Join(", ", selected);
 		Summary.FontAttributes = selected.Count == 0 ? FontAttributes.None : FontAttributes.Bold;
 	}

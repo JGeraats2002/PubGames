@@ -392,18 +392,49 @@ const LANGUAGES = { en: "en", nl: "nl", fr: "fr", de: "de", es: "es", it: "it", 
 const IMAGE_TAG = /!\[[^\]]*\]\([^)\s]+\)/g;
 
 /** Which version of a game's name and rules a translation is of. Must match GameTranslation.HashOf in the app. */
-function sourceHash(name, rulesText) {
-  return crypto.createHash("sha256").update(`${name}\u001f${rulesText}`, "utf8").digest("hex").slice(0, 16);
+function sourceHash(name, rulesText, cover) {
+  return crypto.createHash("sha256").update(`${name}\u001f${rulesText}\u001f${cover || ""}`, "utf8").digest("hex").slice(0, 16);
+}
+
+// The version of the translator below. Automatic translations made by an older one are made again the next
+// time the game is saved (GameTranslation.Engine in the app). 2: names kept as they are, text in pictures.
+const TRANSLATOR_VERSION = 2;
+
+// Text items in a drawing made with Create image (DrawKind.Text in the app).
+const DRAW_KIND_TEXT = 1;
+
+/**
+ * The texts in the pictures of a game that were made with Create image, per picture id, in their order on
+ * the drawing. Photos and pictures without text are left out.
+ */
+async function pictureTexts(rulesText, cover) {
+  const ids = new Set();
+  for (const match of `${rulesText} ${cover || ""}`.matchAll(/fsimg:([A-Za-z0-9_-]+)/g)) ids.add(match[1]);
+  const result = {};
+  for (const id of ids) {
+    try {
+      const doc = await db.collection("images").doc(id).get();
+      const drawing = doc.exists ? doc.get("drawing") : null;
+      if (typeof drawing !== "string" || drawing.length === 0) continue;
+      const texts = (JSON.parse(drawing).Items || [])
+        .filter((item) => item.Kind === DRAW_KIND_TEXT && typeof item.Text === "string")
+        .map((item) => item.Text);
+      if (texts.some((text) => text.trim().length > 0)) result[id] = texts;
+    } catch (error) {
+      logger.warn(`pictureTexts ${id} skipped`, error);
+    }
+  }
+  return result;
 }
 
 /** Cloud Translation, signed in as this project's service account. */
 let translator = null;
 async function translateTexts(texts, from, to) {
-  if (texts.length === 0) return [];
   if (!translator) {
     const auth = new google.auth.GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-translation"] });
     translator = google.translate({ version: "v3", auth: await auth.getClient() });
   }
+  if (texts.length === 0) return [];
   const projectId = process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG || "{}").projectId;
   const result = [];
   // At most 1024 texts and about 30,000 characters per request.
@@ -426,6 +457,31 @@ async function translateTexts(texts, from, to) {
   }
   await flush();
   return result;
+}
+
+/** The app's language code for a code from Cloud Translation (pt-BR -> pt, zh-CN -> zh), or null. */
+function appLanguageOf(code) {
+  if (typeof code !== "string") return null;
+  const base = code.toLowerCase().split("-")[0];
+  return LANGUAGES[base] ? base : null;
+}
+
+/**
+ * The language a game is really written in, when Cloud Translation is sure of it: then a wrongly chosen
+ * "Written in" doesn't give translations from the wrong language. Null when the text is too short to tell
+ * or it isn't sure.
+ */
+async function detectLanguage(text) {
+  const plain = text.replace(IMAGE_TAG, " ").trim();
+  if (plain.length < 40) return null;
+  await translateTexts([], "en", "en");
+  const projectId = process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG || "{}").projectId;
+  const { data } = await translator.projects.detectLanguage({
+    parent: `projects/${projectId}/locations/global`,
+    requestBody: { content: plain.slice(0, 5000), mimeType: "text/plain" }
+  });
+  const best = (data.languages || [])[0];
+  return best && best.confidence >= 0.7 ? appLanguageOf(best.languageCode) : null;
 }
 
 /** Translates a game's rules, keeping every picture where it is. */
@@ -458,32 +514,124 @@ exports.translateGame = onDocumentWritten({ document: "games/{gameId}", timeoutS
   const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
   if (!after || after.status === "Deleted" || typeof after.name !== "string") return;
 
-  const from = LANGUAGES[after.sourceLanguage] ? after.sourceLanguage : "en";
   const name = after.name;
   const rulesText = typeof after.rulesText === "string" ? after.rulesText : "";
-  const hash = sourceHash(name, rulesText);
+  const hash = sourceHash(name, rulesText, after.coverImageUrl);
   const existing = after.translations || {};
+  let pictures = null;
 
   const updates = {};
+  let from = LANGUAGES[after.sourceLanguage] ? after.sourceLanguage : "en";
+  // "Written in" set to the wrong language: the game's language is corrected, and a "translation" into the
+  // language it's really written in is dropped.
+  try {
+    const detected = await detectLanguage(`${name}
+${rulesText}`);
+    if (detected && detected !== from) {
+      logger.info(`translateGame ${event.params.gameId}: written in ${detected}, not ${from}`);
+      from = detected;
+      updates.sourceLanguage = detected;
+      if (existing[detected]) updates[`translations.${detected}`] = admin.firestore.FieldValue.delete();
+    }
+  } catch (error) {
+    logger.warn(`translateGame ${event.params.gameId}: language not detected`, error);
+  }
+  // The original's own language has no translation (one can be left from when "Written in" was wrong).
+  if (existing[from] && !updates.sourceLanguage) updates[`translations.${from}`] = admin.firestore.FieldValue.delete();
+
   for (const to of Object.keys(LANGUAGES)) {
     if (to === from) continue;
     const current = existing[to];
-    if (current && (current.manual === true || current.sourceHash === hash)) continue;
+    if (current && (current.manual === true || (current.sourceHash === hash && (current.engine || 1) >= TRANSLATOR_VERSION))) continue;
     try {
-      const [translatedName] = await translateTexts([name], from, to);
+      // Text in pictures: translated per picture. Empty texts, numbers and the game's name stay as they are.
+      pictures = pictures || await pictureTexts(rulesText, after.coverImageUrl);
+      const sameAsName = (text) => text.trim().toLowerCase() === name.trim().toLowerCase();
+      const keep = (text) => text.trim().length === 0 || sameAsName(text) || !/\p{L}/u.test(text);
+      const imageTexts = {};
+      for (const [id, texts] of Object.entries(pictures)) {
+        const translated = await translateTexts(texts.filter((text) => !keep(text)), from, to);
+        let next = 0;
+        imageTexts[id] = texts.map((text) => (keep(text) ? text : translated[next++]));
+      }
+      // A game's name is a name: it isn't translated (Toepen stays Toepen). It can be corrected by hand.
       updates[`translations.${to}`] = {
-        name: translatedName,
+        name,
         rulesText: await translateRules(rulesText, from, to),
+        imageTexts,
         manual: false,
-        sourceHash: hash
+        sourceHash: hash,
+        engine: TRANSLATOR_VERSION
       };
     } catch (error) {
       logger.error(`translateGame ${event.params.gameId} -> ${to} failed`, error);
     }
   }
-  if (Object.keys(updates).length > 0)
+  if (Object.keys(updates).length > 0) {
+    // Writing the translations runs this again; the messages are sent then, with every translation there.
     await event.data.after.ref.update(updates);
+    return;
+  }
+  await notifyTranslationChecks(event.params.gameId, after, from, hash);
 });
+
+/**
+ * Translations to check: every team member who uses a language gets one message per game for a translation
+ * into it that no person has checked against the original as it is now (checkedHash, see
+ * GameTranslation.CheckFor in the app). No second message while the first is still there; messages for a
+ * translation that has been checked by now are taken away.
+ */
+async function notifyTranslationChecks(gameId, game, from, hash) {
+  try {
+    const translations = game.translations || {};
+    const toCheck = Object.keys(LANGUAGES).filter((code) => code !== from && translations[code]
+      && translations[code].checkedHash !== hash);
+
+    const sent = await db.collection("messages").where("gameId", "==", gameId).get();
+    const already = new Set();
+    const batch = db.batch();
+    let changes = 0;
+    for (const doc of sent.docs) {
+      const message = doc.data();
+      if (message.kind !== "TranslationCheck") continue;
+      if (!toCheck.includes(message.language) || game.status === "Deleted") {
+        batch.delete(doc.ref);
+        changes++;
+      } else {
+        already.add(`${message.toEmail}|${message.language}`);
+      }
+    }
+
+    if (toCheck.length > 0 && game.status !== "Deleted") {
+      const team = await db.collection("team").get();
+      for (const member of team.docs.map((doc) => doc.data())) {
+        const email = typeof member.email === "string" ? member.email.toLowerCase() : "";
+        if (!email || !toCheck.includes(member.language) || already.has(`${email}|${member.language}`)) continue;
+        const ref = db.collection("messages").doc();
+        // The same fields the app writes back when it's marked read (firestore.rules only lets isRead change).
+        batch.set(ref, {
+          id: ref.id,
+          toEmail: email,
+          fromEmail: "",
+          fromName: "Pub Games",
+          text: `Please check the ${member.language} translation of "${game.name}".`,
+          sentAt: new Date(),
+          isRead: false,
+          kind: "TranslationCheck",
+          reviewRequestId: null,
+          offersResubmit: false,
+          gameId,
+          gameName: game.name,
+          language: member.language
+        });
+        changes++;
+      }
+    }
+    if (changes > 0) await batch.commit();
+  } catch (error) {
+    logger.error(`notifyTranslationChecks ${gameId} failed`, error);
+  }
+}
 
 /** Translates a category's or main category's name into every other language when it's new or renamed. */
 async function translateName(event) {
@@ -506,4 +654,28 @@ async function translateName(event) {
 }
 
 exports.translateCategory = onDocumentWritten("categories/{categoryId}", translateName);
+
+/** A hand showing only the middle finger (thumb either way). Must match DrawItem.IsRudeHand in the app. */
+function isRudeHand(item) {
+  const HAND = 4;
+  const fingers = item.Fingers;
+  return item.Kind === HAND && item.Neutral === false && Array.isArray(fingers) && fingers.length === 5
+    && fingers[2] === true && !fingers[1] && !fingers[3] && !fingers[4];
+}
+
+/**
+ * The app doesn't save a picture with a rude hand in it; one that still gets here (from a changed app) is
+ * removed straight away.
+ */
+exports.checkImage = onDocumentWritten("images/{imageId}", async (event) => {
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after || typeof after.drawing !== "string" || after.drawing.length === 0) return;
+  try {
+    if (!(JSON.parse(after.drawing).Items || []).some(isRudeHand)) return;
+  } catch (error) {
+    return;
+  }
+  logger.warn(`checkImage ${event.params.imageId}: rude hand, removed (by ${after.createdByUserId})`);
+  await event.data.after.ref.delete();
+});
 exports.translateCategoryGroup = onDocumentWritten("categoryGroups/{groupId}", translateName);

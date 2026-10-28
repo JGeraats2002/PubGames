@@ -24,7 +24,8 @@
 		<FlexLayout x:Name="Clouds" Wrap="Wrap" IsVisible="False">
 			<BindableLayout.ItemTemplate>
 				<DataTemplate x:DataType="models:CategoryChoice">
-					<Border Margin="0,0,8,8" Padding="12,6" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
+					<!-- Shrink 0: FlexLayout would otherwise squeeze a cloud and cut its name off ("Dic" for Dice). -->
+					<Border FlexLayout.Shrink="0" Margin="0,0,8,8" Padding="12,6" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="16" />
 						</Border.StrokeShape>
@@ -37,7 +38,7 @@
 						<Border.GestureRecognizers>
 							<TapGestureRecognizer Tapped="OnCloudTapped" CommandParameter="{Binding .}" />
 						</Border.GestureRecognizers>
-						<Label Text="{Binding Category.ShownName}" FontSize="13">
+						<Label Text="{Binding Category.ShownName}" FontSize="13" LineBreakMode="NoWrap">
 							<Label.Triggers>
 								<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
 									<Setter Property="TextColor" Value="White" />

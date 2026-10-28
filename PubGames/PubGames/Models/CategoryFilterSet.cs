@@ -54,7 +54,7 @@ public partial class CategoryFilterSet : ObservableObject
 		var list = categories.ToList();
 		_selected.IntersectWith(list.Select(c => c.Id));
 		Groups.Clear();
-		foreach (var (group, inGroup) in CategoryGroup.Arrange(groups, list))
+		foreach (var (group, inGroup) in CategoryGroup.Arrange(groups, list, inAppLanguage: true))
 		{
 			if (inGroup.Count == 0) continue;
 			Groups.Add(new CategoryChoiceGroup

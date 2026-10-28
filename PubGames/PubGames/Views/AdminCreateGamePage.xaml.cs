@@ -140,38 +140,48 @@ public partial class AdminCreateGamePage : ContentPage
 	}
 
 	/// <summary>
-	/// Asks where the picture comes from: the phone's photos, the camera, or
-	/// the image editor (which then opens). Null when cancelled.
+	/// Opens the image editor for a picture: game pictures are always made there (own photos are only for
+	/// profile pictures). With a picture that was made there before, editing it or starting a new one is asked.
+	/// Null when cancelled.
 	/// </summary>
-	/// <param name="editable">The drawing of the picture that's there now, if it was made in the image editor: then editing it is offered too.</param>
-	private async Task<(PictureSource Source, EditedImage? Drawing)?> ChoosePictureAsync(bool cover, string? editable = null)
+	/// <param name="editable">The drawing of the picture that's there now, if it was made in the image editor.</param>
+	private async Task<EditedImage?> MakePictureAsync(bool cover, string? editable = null)
 	{
-		var edit = L.T("Edit this image");
-		var upload = L.T("Upload an image");
-		var photo = L.T("Take a photo");
-		var create = L.T("Create an image");
-
-		string[] choices = editable is null ? [upload, photo, create] : [edit, upload, photo, create];
-		var choice = await DisplayActionSheetAsync(L.T("Where does the picture come from?"), L.T("Cancel"), null, choices);
-		if (choice == upload)
-			return (PictureSource.Library, null);
-		if (choice == photo)
-			return (PictureSource.Camera, null);
-		if (choice == create)
-			return await ImageEditorPage.OpenAsync(Navigation, cover) is { } created ? (PictureSource.Drawing, created) : null;
-		if (choice == edit)
-			return await ImageEditorPage.OpenAsync(Navigation, cover, editable) is { } edited ? (PictureSource.Drawing, edited) : null;
-		return null;
+		if (editable is not null)
+		{
+			var edit = L.T("Edit this image");
+			var create = L.T("Create a new image");
+			var choice = await DisplayActionSheetAsync(L.T("Picture"), L.T("Cancel"), null, edit, create);
+			if (choice == edit)
+				return await ImageEditorPage.OpenAsync(Navigation, cover, editable);
+			if (choice != create)
+				return null;
+		}
+		return await ImageEditorPage.OpenAsync(Navigation, cover);
 	}
 
 	/// <summary>
-	/// Chooses the cover: upload, take a photo, create an image, change the created image, or remove it.
+	/// Chooses the cover: create an image, or change the one created before.
 	/// </summary>
 	private async void OnCoverClicked(object? sender, EventArgs e)
 	{
 		var drawing = await _vm.GetDrawingAsync(_vm.CoverImageUrl);
-		if (await ChoosePictureAsync(cover: true, drawing) is { } picture)
-			await _vm.SetCoverAsync(picture.Source, picture.Drawing);
+		if (await MakePictureAsync(cover: true, drawing) is { } picture)
+			await _vm.SetCoverAsync(picture);
+	}
+
+	/// <summary>
+	/// Make this the original: after asking, the translation shown becomes the game's name and rules (see
+	/// AdminCreateGameViewModel.MakeOriginalAsync), and the General and Rules pages show it.
+	/// </summary>
+	private async void OnMakeOriginalClicked(object? sender, EventArgs e)
+	{
+		if (_vm.TranslationLanguage is not { } language || _vm.SourceLanguage is not { } source) return;
+		if (!await DisplayAlertAsync(L.F("Make {0} the original?", language.Name),
+				L.F("The {0} name and rules become the game itself, so you can change them on the General and Rules pages. The {1} text is kept as the {1} translation, as it is now. After saving, the other languages are translated again from {0}; translations corrected by hand stay as they are.", language.Name, source.Name),
+				L.T("Make it the original"), L.T("Cancel")))
+			return;
+		await _vm.MakeOriginalAsync();
 	}
 
 	/// <summary>Deletes the game (admins) or asks an admin to (moderators), after asking.</summary>
@@ -263,8 +273,8 @@ public partial class AdminCreateGamePage : ContentPage
 		string? reference = null;
 		try
 		{
-			if (await ChoosePictureAsync(cover: false) is { } picture)
-				reference = await _vm.UploadPictureAsync(picture.Source, picture.Drawing);
+			if (await MakePictureAsync(cover: false) is { } picture)
+				reference = await _vm.UploadPictureAsync(picture);
 		}
 		finally
 		{
@@ -293,7 +303,7 @@ public partial class AdminCreateGamePage : ContentPage
 		{
 			// The picture's own shape comes with its drawing.
 			if (await ImageEditorPage.OpenAsync(Navigation, cover: false, drawing) is { } edited
-				&& await _vm.UploadPictureAsync(PictureSource.Drawing, edited) is { } reference)
+				&& await _vm.UploadPictureAsync(edited) is { } reference)
 				image.ImageRef = reference;
 		}
 		else if (choice == move)

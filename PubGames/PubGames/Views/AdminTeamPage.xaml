@@ -13,7 +13,15 @@
 		<DataTemplate x:Key="MemberTemplate" x:DataType="models:TeamMember">
 			<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
 				<VerticalStackLayout Spacing="6">
-					<Label Text="{Binding Label}" />
+					<!-- The flag of the language they use the app in, to ask the right people to check a game. -->
+					<Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+						<Border WidthRequest="28" HeightRequest="28" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse"
+						        IsVisible="{Binding HasLanguage}" VerticalOptions="Center"
+						        SemanticProperties.Description="{Binding LanguageName}">
+							<Image Source="{Binding LanguageFlag}" Aspect="AspectFill" />
+						</Border>
+						<Label Grid.Column="1" Text="{Binding Label}" VerticalOptions="Center" />
+					</Grid>
 					<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
 						<Label.FormattedText>
 							<FormattedString>

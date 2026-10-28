@@ -12,7 +12,13 @@ public enum MessageKind
 	Message,
 
 	/// <summary>Sent automatically when an admin approves or rejects a moderator's review request.</summary>
-	ReviewDecision
+	ReviewDecision,
+
+	/// <summary>
+	/// Sent by the cloud (functions/index.js, notifyTranslationChecks) to the team members who use a language:
+	/// a game's translation into it is new or changed and waits to be checked.
+	/// </summary>
+	TranslationCheck
 }
 
 /// <summary>
@@ -63,6 +69,30 @@ public class InboxMessage
 	/// <summary>A rejected new game or change: the message offers "Edit and submit again".</summary>
 	public bool OffersResubmit { get; set; }
 
+	/// <summary>For a translation check: the game it's about.</summary>
+	public string? GameId { get; set; }
+
+	/// <summary>For a translation check: the game's name, as it was when the message was sent.</summary>
+	public string? GameName { get; set; }
+
+	/// <summary>For a translation check: the language to check (en, nl, ...).</summary>
+	public string? Language { get; set; }
+
+	/// <summary>A translation to check: the message offers "Check translation" instead of Reply.</summary>
+	[Ignore]
+	public bool IsTranslationCheck => Kind == MessageKind.TranslationCheck;
+
+	/// <summary>It can be answered (not for messages from the app itself).</summary>
+	[Ignore]
+	public bool CanReply => !IsTranslationCheck;
+
+	/// <summary>The text as shown: a translation check is written in the reader's language.</summary>
+	[Ignore]
+	public string ShownText => IsTranslationCheck
+		? L.F("\"{0}\" is new or has changed. Can you check the {1} translation? Check translation opens it; correct what's needed, tap Translation is fine and save.",
+			GameName ?? string.Empty, Services.AppLanguage.Find(Language)?.Name ?? Language ?? string.Empty)
+		: Text;
+
 	/// <summary>The sender's name, or their email without a name.</summary>
 	[Ignore]
 	public string FromLabel => string.IsNullOrEmpty(FromName) ? FromEmail : FromName;
@@ -71,7 +101,9 @@ public class InboxMessage
 	/// The message's heading: who it's from (and to all admins), or that it's a review decision.
 	/// </summary>
 	[Ignore]
-	public string Heading => Kind == MessageKind.ReviewDecision
+	public string Heading => Kind == MessageKind.TranslationCheck
+		? L.T("Translation to check")
+		: Kind == MessageKind.ReviewDecision
 		? L.F("Review decision from {0}", FromLabel)
 		: ToEmail == AllAdmins ? L.F("{0} to all admins", FromLabel) : L.F("From {0}", FromLabel);
 

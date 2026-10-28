@@ -37,6 +37,12 @@ public interface ITeamService
 	/// Does nothing for players, built-in admins, or when it's already up to date.
 	/// </summary>
 	Task UpdateMyNameAsync(string name);
+
+	/// <summary>
+	/// Puts the language the signed-in member uses the app in on the team list, so the Team page shows it.
+	/// Does nothing for someone who isn't on the team, or when it's already there; never throws.
+	/// </summary>
+	Task UpdateMyLanguageAsync();
 }
 
 /// <summary>
@@ -63,6 +69,7 @@ public class TeamService : ITeamService
 		_auth = auth;
 		_local = local;
 		_firestore = firestore;
+		AppLanguage.Chosen += async (_, _) => await UpdateMyLanguageAsync();
 	}
 
 	/// <inheritdoc />
@@ -76,7 +83,11 @@ public class TeamService : ITeamService
 			return Me = null;
 
 		if (user.IsAdmin)
-			return Me = BuiltInAdmin(user.Email, user.DisplayName);
+		{
+			Me = BuiltInAdmin(user.Email, user.DisplayName);
+			_ = UpdateMyLanguageAsync();
+			return Me;
+		}
 
 		var email = TeamMember.NormalizeEmail(user.Email);
 		try
@@ -90,6 +101,7 @@ public class TeamService : ITeamService
 			}
 			Me = ToMember(doc);
 			await _local.SaveTeamMemberAsync(Me);
+			_ = UpdateMyLanguageAsync();
 		}
 		catch (Exception ex) when (ex is HttpRequestException or CloudException or InvalidOperationException)
 		{
@@ -108,6 +120,9 @@ public class TeamService : ITeamService
 	{
 		var docs = await _firestore.GetAllAsync(Collection);
 		var members = docs.Select(ToMember).Where(m => m.TeamId == CurrentTeamId).ToList();
+		// The owners aren't on the list, but can have a document with just their language (UpdateMyLanguageAsync).
+		_ownerLanguages = members.Where(m => AuthConfig.AdminEmails.Contains(m.Email, StringComparer.OrdinalIgnoreCase))
+			.ToDictionary(m => m.Email, m => m.Language);
 
 		// Removed by another admin since the last refresh.
 		var emails = members.Select(m => m.Email).ToHashSet();
@@ -130,6 +145,7 @@ public class TeamService : ITeamService
 			["teamId"] = member.TeamId,
 			["displayName"] = member.DisplayName,
 			["role"] = member.Role.ToString(),
+			["language"] = member.Language,
 			["addedAt"] = member.AddedAt
 		});
 		await _local.SaveTeamMemberAsync(member);
@@ -145,6 +161,40 @@ public class TeamService : ITeamService
 		await _firestore.UpdateFieldsAsync(Collection, me.Email, new Dictionary<string, object?> { ["displayName"] = name });
 		me.DisplayName = name;
 		await _local.SaveTeamMemberAsync(me);
+	}
+
+	/// <inheritdoc />
+	/// <summary>The owners' languages, from their documents (see PullMembersAsync), by email.</summary>
+	private Dictionary<string, string> _ownerLanguages = [];
+
+	/// <inheritdoc />
+	public async Task UpdateMyLanguageAsync()
+	{
+		var code = AppLanguage.Current.Code;
+		if (Me is not { } me || me.Language == code) return;
+		try
+		{
+			if (me.IsBuiltInAdmin)
+			{
+				// An owner has no place on the list; a document of their own holds just their language.
+				await _firestore.SetAsync(Collection, me.Email, new Dictionary<string, object?>
+				{
+					["email"] = me.Email, ["teamId"] = me.TeamId, ["role"] = TeamRole.Admin.ToString(), ["language"] = code
+				});
+				me.Language = code;
+			}
+			else
+			{
+				// Only this field: the rules let members change nothing else about themselves.
+				await _firestore.UpdateFieldsAsync(Collection, me.Email, new Dictionary<string, object?> { ["language"] = code });
+				me.Language = code;
+				await _local.SaveTeamMemberAsync(me);
+			}
+		}
+		catch (Exception)
+		{
+			// Offline: it's put there next time the app starts.
+		}
 	}
 
 	/// <inheritdoc />
@@ -166,6 +216,10 @@ public class TeamService : ITeamService
 			.Select(email => BuiltInAdmin(email,
 				_auth.CurrentUser is { } me && me.Email.Equals(email, StringComparison.OrdinalIgnoreCase) ? me.DisplayName : string.Empty))
 			.ToList();
+		foreach (var owner in builtIn)
+			owner.Language = Me is { IsBuiltInAdmin: true } myself && myself.Email == owner.Email && myself.Language.Length > 0
+				? myself.Language
+				: _ownerLanguages.GetValueOrDefault(owner.Email, string.Empty);
 		var builtInEmails = builtIn.Select(m => m.Email).ToHashSet();
 
 		return builtIn
@@ -192,6 +246,7 @@ public class TeamService : ITeamService
 		TeamId = f.GetValueOrDefault("teamId") as string ?? CurrentTeamId,
 		DisplayName = f.GetValueOrDefault("displayName") as string ?? string.Empty,
 		Role = Enum.TryParse<TeamRole>(f.GetValueOrDefault("role") as string, out var role) ? role : TeamRole.Moderator,
+		Language = f.GetValueOrDefault("language") as string ?? string.Empty,
 		AddedAt = f.GetValueOrDefault("addedAt") as DateTime? ?? DateTime.UtcNow
 	};
 }

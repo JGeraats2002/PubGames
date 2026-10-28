@@ -47,6 +47,25 @@ public class TeamMember
 	/// <summary>Admin or moderator.</summary>
 	public TeamRole Role { get; set; } = TeamRole.Moderator;
 
+	/// <summary>The language the member uses the app in (en, nl, ...; see AppLanguage); empty when not known yet.</summary>
+	public string Language { get; set; } = string.Empty;
+
+	/// <summary>The member's language, or null when not known yet.</summary>
+	[Ignore]
+	public Services.AppLanguageInfo? LanguageInfo => Services.AppLanguage.Find(Language);
+
+	/// <summary>The flag of the member's language (see AppLanguageInfo.Flag); null when not known.</summary>
+	[Ignore]
+	public string? LanguageFlag => LanguageInfo?.Flag;
+
+	/// <summary>The member's language is known, so its flag shows.</summary>
+	[Ignore]
+	public bool HasLanguage => LanguageInfo is not null;
+
+	/// <summary>The member's language by name, for the flag's description and the search.</summary>
+	[Ignore]
+	public string LanguageName => LanguageInfo?.Name ?? string.Empty;
+
 	/// <summary>When the member was added (UTC).</summary>
 	public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 

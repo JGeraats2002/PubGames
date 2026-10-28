@@ -13,12 +13,6 @@ namespace PubGames.Services;
 /// </summary>
 public interface IImageStore
 {
-	/// <summary>Lets the user pick a photo, shrinks and uploads it. Returns its reference, or null if they cancelled.</summary>
-	Task<string?> PickAndUploadAsync();
-
-	/// <summary>The same with a photo taken with the camera now.</summary>
-	Task<string?> TakePhotoAndUploadAsync();
-
 	/// <summary>
 	/// Uploads a picture made in the app (the image editor), with the drawing
 	/// it was made from so it can be edited later. Returns its reference.
@@ -42,7 +36,7 @@ public interface IImageStore
 /// Free-plan image storage: each image is one Firestore document holding the
 /// (shrunk) JPEG bytes. Firestore documents max out at 1 MiB, hence the size cap.
 /// To upgrade, add a Firebase Storage implementation that returns https URLs
-/// from PickAndUploadAsync; OpenAsync below already handles both kinds.
+/// from UploadAsync; OpenAsync below already handles both kinds.
 /// </summary>
 public partial class FirestoreImageStore : IImageStore
 {
@@ -75,28 +69,14 @@ public partial class FirestoreImageStore : IImageStore
 	}
 
 	/// <inheritdoc />
-	public async Task<string?> PickAndUploadAsync() =>
-		await PickAsync(MaxSide, MaxBytes) is { } bytes ? await StoreAsync(bytes, drawing: null) : null;
-
-	/// <inheritdoc />
-	public async Task<string?> TakePhotoAndUploadAsync()
-	{
-		if (!MediaPicker.Default.IsCaptureSupported)
-			throw new InvalidOperationException(L.T("This phone can't take photos from the app - upload a picture instead."));
-
-		var photo = await MediaPicker.Default.CapturePhotoAsync(PickerOptions(MaxSide));
-		return photo is null ? null : await StoreAsync(await ShrinkAsync(photo, MaxSide, MaxBytes), drawing: null);
-	}
-
-	/// <inheritdoc />
 	public async Task<string> UploadAsync(byte[] image, string drawing)
 	{
 		using var stream = new MemoryStream(image);
 		return await StoreAsync(await ShrinkAsync(stream, MaxSide, MaxBytes), drawing);
 	}
 
-	/// <summary>Saves a game image in the cloud and on this phone. Returns its reference.</summary>
-	private async Task<string> StoreAsync(byte[] bytes, string? drawing)
+	/// <summary>Saves a game image (made in the image editor) in the cloud and on this phone. Returns its reference.</summary>
+	private async Task<string> StoreAsync(byte[] bytes, string drawing)
 	{
 		var id = Guid.NewGuid().ToString("N");
 		var fields = new Dictionary<string, object?>
@@ -106,12 +86,11 @@ public partial class FirestoreImageStore : IImageStore
 			["createdByUserId"] = _auth.AccountId,
 			["createdAt"] = DateTime.UtcNow
 		};
-		if (drawing is not null)
-			fields[DrawingField] = drawing;
+		fields[DrawingField] = drawing;
 		await _firestore.SetAsync(Collection, id, fields);
 
 		await File.WriteAllBytesAsync(CachePath(id), bytes);
-		await File.WriteAllTextAsync(DrawingPath(id), drawing ?? string.Empty);
+		await File.WriteAllTextAsync(DrawingPath(id), drawing);
 		return Scheme + id;
 	}
 
@@ -206,6 +185,12 @@ public partial class FirestoreImageStore : IImageStore
 		if (reference.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
 			return await _http.GetStreamAsync(reference, ct);
 
+		if (reference.StartsWith(Scheme) && reference.Contains('@')
+			&& await OpenTranslatedAsync(reference[Scheme.Length..], ct) is { } translated)
+			return translated;
+		if (reference.Contains('@'))
+			reference = reference[..reference.IndexOf('@')];
+
 		var (collection, id) =
 			reference.StartsWith(Scheme) ? (Collection, reference[Scheme.Length..])
 			: reference.StartsWith(PhotoScheme) ? (PhotoCollection, reference[PhotoScheme.Length..])
@@ -222,6 +207,52 @@ public partial class FirestoreImageStore : IImageStore
 		}
 		return File.OpenRead(path);
 	}
+
+	/// <summary>
+	/// A picture made with Create image, drawn again with its texts in another language ("ID@nl"), and kept on
+	/// the phone. Null when there's nothing to translate (then the picture shows as it is).
+	/// </summary>
+	private async Task<Stream?> OpenTranslatedAsync(string idAndLanguage, CancellationToken ct)
+	{
+		var id = idAndLanguage[..idAndLanguage.IndexOf('@')];
+		if (!IdPattern().IsMatch(id) || TranslatedPictures.TextsFor(idAndLanguage) is not { Count: > 0 } texts) return null;
+
+		var language = idAndLanguage[(id.Length + 1)..];
+		var fingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+			System.Text.Encoding.UTF8.GetBytes(string.Join("\u001F", texts))))[..12];
+		var path = $"{CachePath(id)}_{language}_{fingerprint}.png";
+		// A picture is opened twice at once (to show it and to measure it): it's drawn only once.
+		await TranslatedLock.WaitAsync(ct);
+		try
+		{
+			if (!File.Exists(path))
+			{
+				if (await GetDrawingAsync(Scheme + id) is not { } drawing) return null;
+				var board = new Models.DrawingBoard();
+				if (!board.Load(drawing)) return null;
+
+				var next = 0;
+				foreach (var item in board.Items.Where(i => i.Kind == Models.DrawKind.Text))
+				{
+					if (next < texts.Count && !string.IsNullOrWhiteSpace(texts[next])) item.Text = texts[next];
+					next++;
+				}
+
+				var png = await MainThread.InvokeOnMainThreadAsync(board.ToPng);
+				var temporary = path + ".part";
+				await File.WriteAllBytesAsync(temporary, png, ct);
+				File.Move(temporary, path, overwrite: true);
+			}
+		}
+		finally
+		{
+			TranslatedLock.Release();
+		}
+		return File.OpenRead(path);
+	}
+
+	/// <summary>One translated picture is drawn at a time (see OpenTranslatedAsync).</summary>
+	private static readonly SemaphoreSlim TranslatedLock = new(1, 1);
 
 	/// <summary>
 	/// The picker already resizes to maxSide; if the result is still too big

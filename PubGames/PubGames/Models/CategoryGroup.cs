@@ -41,11 +41,15 @@ public class CategoryGroup
 	/// <summary>The name in other languages, as JSON by language code; made by the cloud (translateCategory).</summary>
 	public string? TranslationsText { get; set; }
 
-	/// <summary>The name in the app's language: the translation when there is one, otherwise the name itself.</summary>
+	/// <summary>
+	/// The name in the app's language: the translation made by hand in the string files ("Category: name")
+	/// when there is one, otherwise the cloud's translation, otherwise the name itself.
+	/// </summary>
 	[Ignore]
 	public string ShownName =>
-		GameTranslation.NamesFromJson(TranslationsText).TryGetValue(Services.AppLanguage.Current.Code, out var translated)
-		&& !string.IsNullOrWhiteSpace(translated) ? translated : Name;
+		Services.L.Known($"Category: {Name}")
+		?? (GameTranslation.NamesFromJson(TranslationsText).TryGetValue(Services.AppLanguage.Current.Code, out var translated)
+			&& !string.IsNullOrWhiteSpace(translated) ? translated : Name);
 
 	/// <summary>Place in the list, lowest first; an admin can move it up and down. Equal places go oldest first.</summary>
 	public int SortOrder { get; set; }
@@ -58,19 +62,47 @@ public class CategoryGroup
 	/// gave them (see InOrder). Categories without a main category (or with
 	/// one that no longer exists) come last, under a null group.
 	/// </summary>
+	/// <param name="inAppLanguage">
+	/// For players and the game form: a list that is alphabetical in its own language stays alphabetical in
+	/// the app's language (see ShownOrder). The categories page keeps the admins' order as it is.
+	/// </param>
 	public static List<(CategoryGroup? Group, List<GameCategory> Categories)> Arrange(
-		IEnumerable<CategoryGroup> groups, IEnumerable<GameCategory> categories)
+		IEnumerable<CategoryGroup> groups, IEnumerable<GameCategory> categories, bool inAppLanguage = false)
 	{
 		var orderedGroups = InOrder(groups);
+		if (inAppLanguage)
+			orderedGroups = ShownOrder(orderedGroups, g => g.Name, g => g.ShownName);
 		var groupIds = orderedGroups.Select(g => g.Id).ToHashSet();
 		var byGroup = categories
 			.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt)
 			.ToLookup(c => !string.IsNullOrEmpty(c.GroupId) && groupIds.Contains(c.GroupId) ? c.GroupId : string.Empty);
 
-		var arranged = orderedGroups.Select(g => ((CategoryGroup?)g, byGroup[g.Id].ToList())).ToList();
+		var arranged = orderedGroups
+			.Select(g => ((CategoryGroup?)g, inAppLanguage ? ShownOrder(byGroup[g.Id].ToList(), c => c.Name, c => c.ShownName) : byGroup[g.Id].ToList()))
+			.ToList();
 		if (byGroup[string.Empty].Any())
-			arranged.Add((null, byGroup[string.Empty].OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase).ToList()));
+			arranged.Add((null, byGroup[string.Empty]
+				.OrderBy(c => inAppLanguage ? c.ShownName : c.Name, StringComparer.CurrentCultureIgnoreCase).ToList()));
 		return arranged;
+	}
+
+	/// <summary>
+	/// A list in the app's language: when it's in alphabetical order by its own names (Cards, Dice, Hands,
+	/// ...), it's sorted again by the translated names, so it stays alphabetical. Any other order (Easy,
+	/// Medium, Hard) was chosen on purpose and is kept. A last "Other" stays last.
+	/// </summary>
+	public static List<T> ShownOrder<T>(List<T> items, Func<T, string> name, Func<T, string> shown) where T : class
+	{
+		var last = items.Count > 0 && name(items[^1]).Trim().Equals("Other", StringComparison.OrdinalIgnoreCase) ? items[^1] : default;
+		var sorted = last is null ? items : items.Take(items.Count - 1).ToList();
+		if (sorted.Count < 2) return items;
+
+		var names = sorted.Select(name).ToList();
+		if (!names.SequenceEqual(names.OrderBy(n => n, StringComparer.InvariantCultureIgnoreCase))) return items;
+
+		var result = sorted.OrderBy(shown, StringComparer.CurrentCultureIgnoreCase).ToList();
+		if (last is not null) result.Add(last);
+		return result;
 	}
 
 	/// <summary>

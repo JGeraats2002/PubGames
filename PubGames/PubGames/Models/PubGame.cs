@@ -54,7 +54,10 @@ public class PubGame
 
 		var copy = (PubGame)MemberwiseClone();
 		copy.Name = translation.Name;
-		copy.RulesText = string.IsNullOrWhiteSpace(translation.RulesText) ? RulesText : translation.RulesText;
+		copy.RulesText = Services.TranslatedPictures.Translate(
+			string.IsNullOrWhiteSpace(translation.RulesText) ? RulesText : translation.RulesText, code, translation.ImageTexts);
+		if (CoverImageUrl is { } cover)
+			copy.CoverImageUrl = Services.TranslatedPictures.Translate(cover, code, translation.ImageTexts);
 		return copy;
 	}
 

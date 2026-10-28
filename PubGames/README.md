@@ -27,7 +27,13 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 
 ## Waar we gebleven zijn (bijgewerkt 28-10-2026)
 
-Laatste commit: `ad8c403` (stap 5 t/m 8, versie 2 / 1.1). Nog niet gepusht.
+Laatste commit: "translation feedback fixed" (28-10-2026, gepusht). Versie 3 (1.2) staat bij Closed
+testing. Functions en firestore.rules zijn gedeployed.
+
+**Gebleven bij: `.aab` versie 4 maken.** Eerst test de gebruiker alles uit punt 10 hieronder in VS 2026.
+Pas als hij zegt dat alles werkt: `ApplicationVersion` naar 4 (`ApplicationDisplayVersion` 1.3) in
+`PubGames.csproj`, een Release-`.aab` bouwen (VS gesloten, zie werkafspraken) en die bij Closed testing
+uploaden.
 
 ### Gedaan (27 en 28-10-2026)
 
@@ -78,10 +84,14 @@ Laatste commit: `ad8c403` (stap 5 t/m 8, versie 2 / 1.1). Nog niet gepusht.
    - Cloud Functions `translateGame`, `translateCategory`, `translateCategoryGroup`
      (Cloud Translation API v3, plaatjes-tags blijven staan). Spelers zien `PubGame.InAppLanguage()`,
      categorieën `ShownName`.
-   - **Nog door de gebruiker te doen:** Cloud Translation API aanzetten
-     (console.cloud.google.com → APIs & Services → Library → "Cloud Translation API" → Enable) en
-     `firebase deploy --only functions --project pubgames-92835`. Bestaande spellen worden vertaald
-     zodra ze een keer worden opgeslagen.
+   - Cloud Translation API staat aan en de functions zijn gedeployed (28-10-2026, nog zonder de
+     plaatjesteksten). Opnieuw gedeployed op 28-10 's avonds (plaatjesteksten,
+     taalherkenning, `checkImage`). Elk bestaand spel moet één keer worden opgeslagen om opnieuw vertaald te worden.
+   - Tekst in plaatjes (Text-items van de editor) wordt vertaald: `translations.{taal}.imageTexts`
+     per plaatje-id. De app verwijst dan naar `fsimg:ID@nl`; `FirestoreImageStore.OpenTranslatedAsync`
+     tekent het plaatje opnieuw met de vertaalde teksten (`Services/TranslatedPictures.cs`).
+   - De cloud herkent de taal van de regels (Cloud Translation detect, ≥ 40 tekens, zekerheid ≥ 0,7)
+     en corrigeert `sourceLanguage` als "Written in" fout staat.
 7. ~~Taalkeuze in de app~~ **Gebouwd 28-10-2026**: 9 talen (en, nl, fr, de, es, it, pt-BR, zh-Hans,
    ar met rechts-naar-links). Vlaggen in `Resources/Images/flag_*.svg` (Engels half VS/half VK,
    Chinees = China, Arabisch = VAE, Portugees = Brazilië). Taalscherm bij eerste login en via
@@ -95,14 +105,52 @@ Laatste commit: `ad8c403` (stap 5 t/m 8, versie 2 / 1.1). Nog niet gepusht.
    via `App.SetRootPageAsync` (na de lopende schermwissel). App-icoon = kaart + dobbelsteen (zoals in
    de Play Store); logo en splash blijven de versie met de beker. Na icoonwijziging `obj/.../resizetizer`
    weggooien, anders bouwt hij het oude icoon.
-9. Nieuwe `.aab` bouwen met `ApplicationVersion` 2 en bij Closed testing uploaden (na testen).
+9. ~~Nieuwe `.aab`~~ Versie 3 (1.2) is geüpload bij Closed testing. **Volgende `.aab` (versie 4) pas
+   bouwen als de gebruiker alles getest heeft.**
+10. Gebouwd 28-10-2026 (avond), nog te testen door de gebruiker:
+   - Spelplaatjes (omslag en regels) alleen nog uit de afbeeldingseditor; eigen foto's alleen voor de
+     profielfoto. CAMERA-permissie uit het manifest gehaald.
+   - Editor weigert een hand met alleen de middelvinger (duim maakt niet uit): `DrawItem.IsRudeHand`;
+     de Cloud Function `checkImage` verwijdert zo'n plaatje als het toch binnenkomt.
+   - Categorieën handmatig vertaald in `Resources/Strings/*.json` met sleutel `Category: <naam>`
+     (`L.Known`); die gaan vóór de cloudvertaling. Nieuwe categorieën vertaalt de cloud.
+   - Categoriewolken werden afgekapt ("Dic", "Mou"): `FlexLayout.Shrink="0"` in `CategoryClouds.xaml`.
+   - Nieuw bericht: `ChooseRecipientPage` met snelkeuzes Everyone / All admins / All moderators,
+     zoeken en All/Admins/Moderators zoals Team, meerdere mensen aanvinken. Elk krijgt een eigen
+     bericht (de gedeelde `admins`-inbox wordt niet meer gebruikt voor nieuwe berichten).
+   - Ronde 2 (28-10 avond): "Middle" botste (Middelvinger bij Place across) → vingers hebben nu eigen
+     sleutels (`Index finger`, `Middle finger`, `Ring finger`). Let op zulke botsingen bij korte sleutels.
+   - Languages-pagina opent in de app-taal; plaatjes tonen een live voorbeeld met de vertaalde teksten
+     (`TranslatedPictures.Preview`). Knop **Make this the original** (`MakeOriginalAsync`): vertaling wordt
+     origineel, plaatjes met tekst opnieuw geüpload met de nieuwe teksten, oud origineel blijft als
+     handmatige vertaling.
+   - Cloud-vertaler versie 2 (`TRANSLATOR_VERSION`, `GameTranslation.Engine`): spelnamen worden niet meer
+     vertaald, plaatjestekst gelijk aan de naam of zonder letters blijft staan, een vertaling in de eigen
+     brontaal wordt verwijderd. Oudere automatische vertalingen worden opnieuw gemaakt bij opslaan.
+     **Functions opnieuw deployen.**
+   - Lijsten die in het Engels alfabetisch zijn, blijven alfabetisch na vertaling: knoppen in de
+     afbeeldingseditor (`SortedChips`, `AddChoices`) en categorieën (`CategoryGroup.ShownOrder`, alleen
+     voor spelers en het spelformulier; de categoriepagina houdt de volgorde van de admins).
+   - Teampagina en ontvangerskeuze tonen een vlag (taal waarin iemand de app gebruikt; zoeken op
+     taalnaam werkt). Veld `language` in `team/{email}`, bijgewerkt door `TeamService.UpdateMyLanguageAsync`
+     (bij start en bij taalkeuze, `AppLanguage.Chosen`). De eigenaar krijgt een eigen `team`-document met
+     alleen zijn taal (wordt in de lijst genegeerd via `WithBuiltInAdmins`). **firestore.rules deployen.**
+   - Vertaalcontrole (zoals Weblate/Crowdin/Lokalise): `GameTranslation.CheckedHash`/`CheckedBy`, status
+     via `CheckFor` (NotChecked / Checked / CheckAgain). Knop **Translation is fine** op de pagina
+     Languages; met de hand verbeteren telt als controleren. De Cloud Function
+     `notifyTranslationChecks` (in `translateGame`) stuurt per spel en taal één bericht
+     (`kind: TranslationCheck`, met `gameId`, `gameName`, `language`) aan teamleden met die taal en
+     verwijdert het als de vertaling gecontroleerd is. Inbox-knop **Check translation** opent het spel
+     op die taal (query `language`). Let op: `MessageService.SaveAsync` schrijft de extra velden alleen
+     voor TranslationCheck, anders weigeren de regels het markeren als gelezen.
+   - Functions en firestore.rules gedeployed op 28-10-2026 (avond), inclusief vertaalcontrole en vlaggen.
 
 **Fase 3 – Closed test en productie**
-10. Na goedkeuring door Google: opt-in-link (Closed testing → Testers) naar **15+ testers** sturen
+11. Na goedkeuring door Google: opt-in-link (Closed testing → Testers) naar **15+ testers** sturen
    (minimaal 12 nodig, buffer voor uitvallers). Testers: link openen → Become a tester →
    installeren via Play, 14 dagen laten staan en af en toe gebruiken.
-11. Zodra er 12+ testers opted-in zijn: **14 dagen** laten lopen (persoonlijk ontwikkelaarsaccount).
-12. Daarna op het Dashboard **Apply for production** en de vragen over de test beantwoorden.
+12. Zodra er 12+ testers opted-in zijn: **14 dagen** laten lopen (persoonlijk ontwikkelaarsaccount).
+13. Daarna op het Dashboard **Apply for production** en de vragen over de test beantwoorden.
 
 **Later / niet dringend**
 - **`firebase-functions` bijwerken:** er komen breaking changes; apart doen en testen.
@@ -131,9 +179,10 @@ Laatste commit: `ad8c403` (stap 5 t/m 8, versie 2 / 1.1). Nog niet gepusht.
 - **Commit en push alleen op verzoek.** Commitberichten in de stijl van de gebruiker.
 - **Firebase-deploys draait de gebruiker zelf** met `! firebase deploy --only functions --project pubgames-92835`
   (of `--only firestore:rules`).
-- **Niet bouwen terwijl VS bouwt:** dat geeft bestandslocks (XALNS7024). Bouw met
+- **Niet bouwen terwijl VS open is:** dat geeft bestandslocks (XALNS7024) of een kapotte
+  `obj\...\lp`-map (FileNotFound `values-*.xml`). Eerst vragen of VS dicht is. Bouw met
   `dotnet build PubGames/PubGames/PubGames.csproj -f net10.0-android36.0`. Bij vreemde
-  resource-fouten: bin/obj weggooien.
+  resource-fouten: VS sluiten, achtergebleven MSBuild/VBCSCompiler stoppen, bin/obj weggooien.
 
 **Stijl (zo gewenst door de gebruiker)**
 - Alle uitleg staat alleen onder de ⓘ-knop (`Models/PageHelp.cs`), niet als tekst op het

@@ -7,19 +7,6 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
-/// <summary>Where a game's picture comes from.</summary>
-public enum PictureSource
-{
-	/// <summary>Picked from the phone's photos.</summary>
-	Library,
-
-	/// <summary>Taken with the camera now.</summary>
-	Camera,
-
-	/// <summary>Made in the app's image editor.</summary>
-	Drawing
-}
-
 /// <summary>
 /// The parts of the scoring page that are added with "+ Add your rules",
 /// after the scoring type (always there). A new game starts without any; they
@@ -117,7 +104,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		if (value != LanguagesPage) return;
 		_translations = EffectiveTranslations();
-		TranslationLanguage ??= TranslationLanguages.FirstOrDefault();
+		TranslationLanguage ??= PreferredTranslationLanguage();
 		ShowTranslation();
 	}
 
@@ -718,6 +705,13 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			await LoadRequestAsync(requestId);
 		else if (query.TryGetValue("gameId", out var gid) && gid is string gameId)
 			await LoadGameAsync(gameId);
+
+		// From a "translation to check" message: straight to that language on the Languages page.
+		if (query.TryGetValue("language", out var code) && TranslationLanguages.FirstOrDefault(l => l.Code == code as string) is { } language)
+		{
+			TranslationLanguage = language;
+			CurrentPage = LanguagesPage;
+		}
 		_savedForm = FormSnapshot();
 	}
 
@@ -841,7 +835,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			// Offline: this phone's copy.
 		}
 
-		foreach (var (group, inGroup) in CategoryGroup.Arrange(groups, categories))
+		foreach (var (group, inGroup) in CategoryGroup.Arrange(groups, categories, inAppLanguage: true))
 		{
 			// Categories without a main category are on their way out (an admin's app removes them).
 			if (group is null && groups.Count > 0) continue;
@@ -1054,10 +1048,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>A picture can be chosen while no other picture is uploading.</summary>
 	private bool CanUpload() => !IsUploading;
 
-	/// <summary>Sets the cover to a picture from the given source.</summary>
-	public async Task SetCoverAsync(PictureSource source, EditedImage? drawing = null)
+	/// <summary>Sets the cover to a picture made in the image editor.</summary>
+	public async Task SetCoverAsync(EditedImage drawing)
 	{
-		var reference = await UploadPictureAsync(source, drawing);
+		var reference = await UploadPictureAsync(drawing);
 		if (reference is not null)
 			CoverImageUrl = reference;
 	}
@@ -1071,11 +1065,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	private void RemoveCover() => CoverImageUrl = null;
 
 	/// <summary>
-	/// Uploads one image: picked from the phone, taken with the camera, or made
-	/// in the image editor (then given as drawing). Returns its reference, or
-	/// null if cancelled or failed (StatusMessage says why).
+	/// Uploads one image made in the image editor, with its drawing. Returns its reference, or null if it
+	/// failed (StatusMessage says why).
 	/// </summary>
-	public async Task<string?> UploadPictureAsync(PictureSource source, EditedImage? drawing = null)
+	public async Task<string?> UploadPictureAsync(EditedImage drawing)
 	{
 		if (IsUploading) return null;
 
@@ -1083,15 +1076,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		StatusMessage = L.T("Uploading image...");
 		try
 		{
-			var reference = source switch
-			{
-				PictureSource.Camera => await _images.TakePhotoAndUploadAsync(),
-				PictureSource.Drawing when drawing is not null => await _images.UploadAsync(drawing.Image, drawing.Drawing),
-				_ => await _images.PickAndUploadAsync()
-			};
+			var reference = await _images.UploadAsync(drawing.Image, drawing.Drawing);
 			StatusMessage = string.Empty;
-			if (reference is not null)
-				_uploadedHere.Add(reference);
+			_uploadedHere.Add(reference);
 			return reference;
 		}
 		catch (HttpRequestException)

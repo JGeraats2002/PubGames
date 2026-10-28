@@ -4,28 +4,139 @@
              xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.ChooseRecipientPage"
+             x:DataType="vm:ChooseRecipientsViewModel"
              Title="{loc:T ChooseRecipient_SendAMessageTo}">
 
-	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
-
-		<SearchBar x:Name="Search" Placeholder="{loc:T ChooseRecipient_SearchByNameOrEmail}" TextChanged="OnSearchChanged" />
-
-		<CollectionView Grid.Row="1" x:Name="List">
-			<CollectionView.EmptyView>
-				<Label Text="{loc:T ChooseRecipient_NobodyFound}" TextColor="{StaticResource TextSecondary}" />
-			</CollectionView.EmptyView>
-			<CollectionView.ItemTemplate>
-				<DataTemplate x:DataType="vm:MessageRecipient">
-					<VerticalStackLayout Padding="10" Spacing="2">
-						<VerticalStackLayout.GestureRecognizers>
-							<TapGestureRecognizer Tapped="OnRecipientTapped" CommandParameter="{Binding .}" />
-						</VerticalStackLayout.GestureRecognizers>
-						<Label Text="{Binding Label}" FontSize="16" />
-						<Label Text="{Binding Detail}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+	<ContentPage.Resources>
+		<!-- One person: ticked or not; tapping anywhere on the row ticks or unticks. -->
+		<DataTemplate x:Key="RecipientTemplate" x:DataType="vm:RecipientChoice">
+			<Frame Margin="0,0,0,8" Padding="8,4,12,4" BorderColor="{StaticResource Border}" MinimumHeightRequest="56">
+				<Frame.GestureRecognizers>
+					<TapGestureRecognizer Command="{Binding ToggleCommand, Source={RelativeSource AncestorType={x:Type vm:ChooseRecipientsViewModel}}, x:DataType=vm:ChooseRecipientsViewModel}"
+					                      CommandParameter="{Binding .}" />
+				</Frame.GestureRecognizers>
+				<Grid ColumnDefinitions="48,Auto,*" ColumnSpacing="4">
+					<CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource Primary}" VerticalOptions="Center"
+					          SemanticProperties.Description="{Binding Recipient.Label}" />
+					<!-- The flag of the language they use the app in. -->
+					<Border Grid.Column="1" WidthRequest="28" HeightRequest="28" Margin="0,0,6,0" StrokeThickness="1" Stroke="{StaticResource Border}"
+					        StrokeShape="Ellipse" IsVisible="{Binding Recipient.HasLanguage}" VerticalOptions="Center"
+					        SemanticProperties.Description="{Binding Recipient.LanguageName}">
+						<Image Source="{Binding Recipient.Flag}" Aspect="AspectFill" />
+					</Border>
+					<VerticalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center">
+						<Label Text="{Binding Recipient.Label}" FontSize="16" />
+						<Label Text="{Binding Recipient.Detail}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 					</VerticalStackLayout>
-				</DataTemplate>
-			</CollectionView.ItemTemplate>
-		</CollectionView>
+				</Grid>
+			</Frame>
+		</DataTemplate>
+
+		<!-- The buttons: outlined, filled when selected (like on the team page). -->
+		<Style x:Key="FilterButton" TargetType="Button">
+			<Setter Property="HeightRequest" Value="48" />
+			<Setter Property="Padding" Value="4,0" />
+			<Setter Property="FontSize" Value="13" />
+			<Setter Property="BackgroundColor" Value="Transparent" />
+			<Setter Property="TextColor" Value="{StaticResource Primary}" />
+			<Setter Property="BorderColor" Value="{StaticResource Primary}" />
+			<Setter Property="BorderWidth" Value="1" />
+		</Style>
+	</ContentPage.Resources>
+
+	<Grid RowDefinitions="*,Auto">
+
+		<ScrollView>
+			<VerticalStackLayout Padding="20" Spacing="12">
+
+				<!-- Whole groups at once: tap again to untick them. -->
+				<Label Text="{loc:T ChooseRecipient_SendTo}" FontSize="14" FontAttributes="Bold" />
+				<Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+					<Button Text="{loc:T ChooseRecipient_Everyone}" Style="{StaticResource FilterButton}" Command="{Binding ToggleEveryoneCommand}">
+						<Button.Triggers>
+							<DataTrigger TargetType="Button" Binding="{Binding EveryoneSelected}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="TextColor" Value="White" />
+							</DataTrigger>
+						</Button.Triggers>
+					</Button>
+					<Button Grid.Column="1" Text="{loc:T ChooseRecipient_AllAdmins}" Style="{StaticResource FilterButton}" Command="{Binding ToggleAdminsCommand}">
+						<Button.Triggers>
+							<DataTrigger TargetType="Button" Binding="{Binding AllAdminsSelected}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="TextColor" Value="White" />
+							</DataTrigger>
+						</Button.Triggers>
+					</Button>
+					<Button Grid.Column="2" Text="{loc:T ChooseRecipient_AllModerators}" Style="{StaticResource FilterButton}" Command="{Binding ToggleModeratorsCommand}"
+					        IsEnabled="{Binding HasAnyModerators}">
+						<Button.Triggers>
+							<DataTrigger TargetType="Button" Binding="{Binding AllModeratorsSelected}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="TextColor" Value="White" />
+							</DataTrigger>
+						</Button.Triggers>
+					</Button>
+				</Grid>
+
+				<!-- Or find people one by one: search by name or email, and show everyone, only admins or only moderators. -->
+				<Label Text="{loc:T ChooseRecipient_OrChoosePeople}" FontSize="14" FontAttributes="Bold" Margin="0,8,0,0" />
+				<SearchBar Placeholder="{loc:T ChooseRecipient_SearchByNameOrEmail}" Text="{Binding SearchText}" />
+				<Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+					<Button Text="{loc:T AdminTeam_All}" Style="{StaticResource FilterButton}"
+					        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.All}">
+						<Button.Triggers>
+							<DataTrigger TargetType="Button" Binding="{Binding ShowingAll}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="TextColor" Value="White" />
+							</DataTrigger>
+						</Button.Triggers>
+					</Button>
+					<Button Grid.Column="1" Text="{loc:T AdminTeam_Admins}" Style="{StaticResource FilterButton}"
+					        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.Admins}">
+						<Button.Triggers>
+							<DataTrigger TargetType="Button" Binding="{Binding ShowingAdmins}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="TextColor" Value="White" />
+							</DataTrigger>
+						</Button.Triggers>
+					</Button>
+					<Button Grid.Column="2" Text="{loc:T AdminTeam_Moderators}" Style="{StaticResource FilterButton}"
+					        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.Moderators}">
+						<Button.Triggers>
+							<DataTrigger TargetType="Button" Binding="{Binding ShowingModerators}" Value="True">
+								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+								<Setter Property="TextColor" Value="White" />
+							</DataTrigger>
+						</Button.Triggers>
+					</Button>
+				</Grid>
+
+				<Label Text="{loc:T ChooseRecipient_NobodyFound}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+				       IsVisible="{Binding HasNoMatches}" />
+
+				<!-- Admins and moderators in two lists, each alphabetical. -->
+				<VerticalStackLayout IsVisible="{Binding HasAdmins}" Spacing="8">
+					<Label Text="{Binding AdminsHeading}" FontSize="14" FontAttributes="Bold" />
+					<VerticalStackLayout BindableLayout.ItemsSource="{Binding Admins}"
+					                     BindableLayout.ItemTemplate="{StaticResource RecipientTemplate}" />
+				</VerticalStackLayout>
+
+				<VerticalStackLayout IsVisible="{Binding HasModerators}" Spacing="8">
+					<Label Text="{Binding ModeratorsHeading}" FontSize="14" FontAttributes="Bold" />
+					<VerticalStackLayout BindableLayout.ItemsSource="{Binding Moderators}"
+					                     BindableLayout.ItemTemplate="{StaticResource RecipientTemplate}" />
+				</VerticalStackLayout>
+
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<!-- Always in view: write the message to everyone who's ticked. -->
+		<VerticalStackLayout Grid.Row="1" BackgroundColor="{StaticResource SurfaceLight}" Spacing="0">
+			<BoxView HeightRequest="1" Color="{StaticResource Border}" />
+			<Button Margin="20,8,20,12" HeightRequest="52" Text="{Binding WriteButtonText}"
+			        IsEnabled="{Binding CanWrite}" Clicked="OnWriteClicked" />
+		</VerticalStackLayout>
 
 	</Grid>
 

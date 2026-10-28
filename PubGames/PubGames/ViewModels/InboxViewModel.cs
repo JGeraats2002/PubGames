@@ -5,8 +5,21 @@ using PubGames.Services;
 
 namespace PubGames.ViewModels;
 
-/// <summary>Someone a message can be sent to. Detail: their role and email, also searched.</summary>
-public record MessageRecipient(string Email, string Label, string Detail = "");
+/// <summary>
+/// Someone a message can be sent to. Detail: their role and email. IsAdmin: an admin or the owner. Language:
+/// the language they use the app in, when known (its flag shows, and it can be searched for).
+/// </summary>
+public record MessageRecipient(string Email, string Label, string Detail = "", bool IsAdmin = false, AppLanguageInfo? Language = null)
+{
+	/// <summary>The flag of their language; null when not known.</summary>
+	public string? Flag => Language?.Flag;
+
+	/// <summary>Their language is known, so its flag shows.</summary>
+	public bool HasLanguage => Language is not null;
+
+	/// <summary>Their language by name; empty when not known.</summary>
+	public string LanguageName => Language?.Name ?? string.Empty;
+}
 
 /// <summary>
 /// Admin tab > Inbox: short messages between admins and moderators, and the
@@ -81,14 +94,14 @@ public partial class InboxViewModel : ObservableObject
 			{
 				Id = message.Id, ToEmail = message.ToEmail, FromEmail = message.FromEmail, FromName = message.FromName, Text = message.Text,
 				SentAt = message.SentAt, IsRead = message.IsRead, Kind = message.Kind, ReviewRequestId = message.ReviewRequestId,
-				OffersResubmit = message.OffersResubmit
+				OffersResubmit = message.OffersResubmit, GameId = message.GameId, GameName = message.GameName, Language = message.Language
 			});
 		}
 	}
 
 	/// <summary>
-	/// Everyone on the team except yourself - the owner, admins and moderators -
-	/// plus "All admins". Refreshed from the cloud when online.
+	/// Everyone on the team except yourself - the owner, admins and moderators. Refreshed from the cloud when
+	/// online.
 	/// </summary>
 	public async Task<List<MessageRecipient>> GetRecipientsAsync()
 	{
@@ -102,30 +115,50 @@ public partial class InboxViewModel : ObservableObject
 			members = await _team.GetCachedMembersAsync();
 		}
 
-		var recipients = new List<MessageRecipient> { new(InboxMessage.AllAdmins, L.T("All admins"), L.T("Everyone with admin rights")) };
-		recipients.AddRange(members
+		return members
 			.Where(m => m.Email != MyEmail)
-			.Select(m => new MessageRecipient(m.Email,
-				string.IsNullOrWhiteSpace(m.DisplayName) ? m.Email : m.DisplayName,
-				$"{(m.IsBuiltInAdmin ? L.T("Owner") : m.RoleName)} · {m.Email}")));
-		return recipients;
+			.Select(m => new MessageRecipient(m.Email, m.Label,
+				$"{(m.IsBuiltInAdmin ? L.T("Owner") : m.RoleName)} · {m.Email}", m.IsAdmin || m.IsBuiltInAdmin, m.LanguageInfo))
+			.ToList();
 	}
 
-	/// <summary>Returns true when sent (StatusMessage says why not otherwise).</summary>
-	public async Task<bool> SendAsync(string toEmail, string text)
+	/// <summary>
+	/// Sends the message to each recipient, as a message of their own. Returns true when it reached everyone
+	/// (StatusMessage says who it didn't reach otherwise).
+	/// </summary>
+	public async Task<bool> SendAsync(IReadOnlyList<MessageRecipient> recipients, string text)
 	{
 		StatusMessage = L.T("Sending...");
-		try
+		var failed = new List<string>();
+		string? error = null;
+		foreach (var recipient in recipients)
 		{
-			await _messages.SendAsync(toEmail, text);
-			StatusMessage = L.T("Message sent.");
+			try
+			{
+				await _messages.SendAsync(recipient.Email, text);
+			}
+			catch (InvalidOperationException ex)
+			{
+				// Empty or too long: the same for everyone.
+				StatusMessage = ex.Message;
+				return false;
+			}
+			catch (Exception ex)
+			{
+				failed.Add(recipient.Label);
+				error ??= ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
+			}
+		}
+
+		if (failed.Count == 0)
+		{
+			StatusMessage = recipients.Count == 1 ? L.T("Message sent.") : L.F("Message sent to {0} people.", recipients.Count);
 			return true;
 		}
-		catch (Exception ex)
-		{
-			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
-			return false;
-		}
+		StatusMessage = failed.Count == recipients.Count
+			? error!
+			: L.F("Not sent to {0}: {1}", string.Join(", ", failed), error);
+		return false;
 	}
 
 	/// <summary>Deletes a message from the user's Inbox.</summary>

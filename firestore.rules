@@ -159,13 +159,16 @@ service cloud.firestore {
       allow read: if isOnTeam() || (isSignedIn() && email == myEmail());
       allow create: if isBuiltInAdmin()
         || (isAdmin() && request.resource.data.role == 'Moderator');
-      // Members may change their own name on the list (from their profile), and nothing else.
+      // Members may change their own name on the list (from their profile) and the language they use the
+      // app in (shown as a flag on the Team page), and nothing else.
       allow update: if isBuiltInAdmin()
         || (isAdmin() && resource.data.role == 'Moderator' && request.resource.data.role == 'Moderator')
         || (isSignedIn() && email == myEmail()
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
-            && request.resource.data.displayName is string
-            && request.resource.data.displayName.size() <= 40);
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'language'])
+            && request.resource.data.get('displayName', '') is string
+            && request.resource.data.get('displayName', '').size() <= 40
+            && request.resource.data.get('language', '') is string
+            && request.resource.data.get('language', '').size() <= 5);
       allow delete: if isBuiltInAdmin()
         || (isAdmin() && resource.data.role == 'Moderator');
     }

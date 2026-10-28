@@ -339,11 +339,37 @@
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="8" />
 					</Border.StrokeShape>
-					<Label Text="{Binding TranslationStatus}" FontSize="13" />
+					<VerticalStackLayout Spacing="6">
+						<Label Text="{Binding TranslationStatus}" FontSize="13" />
+						<!-- Whether a person has checked it: green when checked against the original as it is now. -->
+						<Label Text="{Binding CheckStatus}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Warning}">
+							<Label.Triggers>
+								<DataTrigger TargetType="Label" Binding="{Binding IsChecked}" Value="True">
+									<Setter Property="TextColor" Value="{StaticResource Accent}" />
+								</DataTrigger>
+							</Label.Triggers>
+						</Label>
+					</VerticalStackLayout>
 				</Border>
 
 				<Label Text="{loc:T AdminCreateGame_GameName}" Style="{StaticResource SectionTitle}" />
 				<Entry Text="{Binding TranslatedName}" />
+
+				<!-- Text on the cover picture, when it was made with Create image: the cover with the texts in this language. -->
+				<VerticalStackLayout Spacing="8" IsVisible="{Binding HasCoverTexts}">
+					<Label Text="{loc:T AdminCreateGame_TextOnTheCover}" Style="{StaticResource SectionTitle}" />
+					<views:RulesImage ImageRef="{Binding CoverPreviewRef}" HorizontalOptions="Center" WidthRequest="200" />
+					<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding CoverTexts}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="vm:PictureText">
+								<VerticalStackLayout Spacing="2">
+									<Label Text="{Binding Original}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+									<Entry Text="{Binding Text}" />
+								</VerticalStackLayout>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+				</VerticalStackLayout>
 
 				<Label Text="{loc:T AdminCreateGame_HowToPlay}" Style="{StaticResource SectionTitle}" />
 				<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
@@ -353,10 +379,25 @@
 					<VerticalStackLayout Spacing="0" BindableLayout.ItemsSource="{Binding TranslatedBlocks}">
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="vm:TranslationBlock">
-								<Grid>
+								<VerticalStackLayout>
 									<views:PlainEditor Text="{Binding Text}" IsVisible="{Binding IsText}" AutoSize="TextChanges" />
-									<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" Margin="0,14" />
-								</Grid>
+									<!-- The picture with the texts in this language, drawn again as they're corrected. -->
+									<views:RulesImage ImageRef="{Binding PreviewRef}" IsVisible="{Binding IsImage}" Margin="0,14,0,6" />
+									<!-- The texts in the picture: the original small, the translation to correct below it. -->
+									<VerticalStackLayout Spacing="8" Margin="0,0,0,14" IsVisible="{Binding HasTexts}">
+										<Label Text="{loc:T AdminCreateGame_TextInThePicture}" FontSize="13" FontAttributes="Bold" />
+										<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Texts}">
+											<BindableLayout.ItemTemplate>
+												<DataTemplate x:DataType="vm:PictureText">
+													<VerticalStackLayout Spacing="2">
+														<Label Text="{Binding Original}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+														<Entry Text="{Binding Text}" />
+													</VerticalStackLayout>
+												</DataTemplate>
+											</BindableLayout.ItemTemplate>
+										</VerticalStackLayout>
+									</VerticalStackLayout>
+								</VerticalStackLayout>
 							</DataTemplate>
 						</BindableLayout.ItemTemplate>
 					</VerticalStackLayout>
@@ -364,6 +405,16 @@
 
 				<Button Text="{loc:T AdminCreateGame_UseTheAutomaticTranslationAgain}" Command="{Binding UseAutomaticTranslationCommand}"
 				        IsVisible="{Binding CanUseAutomaticTranslation}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+
+				<!-- A person has read it against the original and it's right. -->
+				<Button Text="{loc:T AdminCreateGame_TranslationIsFine}" Command="{Binding ApproveTranslationCommand}"
+				        IsVisible="{Binding CanApproveTranslation}" />
+
+				<!-- This language becomes the original, so the game can be changed in it. -->
+				<Button Text="{loc:T AdminCreateGame_MakeThisTheOriginal}" Clicked="OnMakeOriginalClicked"
+				        IsVisible="{Binding CanMakeOriginal}"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>

@@ -11,12 +11,15 @@ namespace PubGames.Views;
 /// </summary>
 public partial class ImageEditorPage : ContentPage
 {
-	/// <summary>In alphabetical order, the two marks last.</summary>
+	/// <summary>In alphabetical order in the app's language, the two marks last.</summary>
 	private static (DrawKind Kind, string Text)[] AddChoices =>
 	[
-		(DrawKind.Arrow, L.T("Arrow")), (DrawKind.Card, L.T("Card")), (DrawKind.Coaster, L.T("Coaster")), (DrawKind.Coin, L.T("Coin")),
-		(DrawKind.Die, L.T("Die")), (DrawKind.Drink, L.T("Drink")), (DrawKind.Hand, L.T("Hand")), (DrawKind.Number, L.T("Number")),
-		(DrawKind.Person, L.T("Person")), (DrawKind.Table, L.T("Table")), (DrawKind.Text, L.T("Text")),
+		.. new (DrawKind Kind, string Text)[]
+		{
+			(DrawKind.Arrow, L.T("Arrow")), (DrawKind.Card, L.T("Card")), (DrawKind.Coaster, L.T("Coaster")), (DrawKind.Coin, L.T("Coin")),
+			(DrawKind.Die, L.T("Die")), (DrawKind.Drink, L.T("Drink")), (DrawKind.Hand, L.T("Hand")), (DrawKind.Number, L.T("Number")),
+			(DrawKind.Person, L.T("Person")), (DrawKind.Table, L.T("Table")), (DrawKind.Text, L.T("Text"))
+		}.OrderBy(choice => choice.Text, StringComparer.CurrentCultureIgnoreCase),
 		(DrawKind.Check, "✓"), (DrawKind.Cross, "✕")
 	];
 
@@ -135,21 +138,20 @@ public partial class ImageEditorPage : ContentPage
 			return;
 		}
 
+		// Rude gestures are misuse of the app and of admin or moderator rights.
+		if (_board.HasRudeHand)
+		{
+			await DisplayAlertAsync(L.T("This image can't be used"),
+				L.T("A hand showing only the middle finger is offensive and not allowed in Pub Games. Change the fingers or remove the hand. Misuse of the app can cost you your admin or moderator rights."), "OK");
+			return;
+		}
+
 		_result.TrySetResult(new EditedImage(Render(), _board.ToJson()));
 		await Navigation.PopModalAsync();
 	}
 
 	/// <summary>The drawing as a PNG, without the selection frame.</summary>
-	private byte[] Render()
-	{
-		_board.Selected = null;
-		var height = (int)(ExportWidth * _board.Height / DrawingBoard.Width);
-		using var context = new PlatformBitmapExportContext(ExportWidth, height, 1f);
-		_board.Draw(context.Canvas, new RectF(0, 0, ExportWidth, height));
-		using var stream = new MemoryStream();
-		context.WriteToStream(stream);
-		return stream.ToArray();
-	}
+	private byte[] Render() => _board.ToPng();
 
 	/// <summary>
 	/// Adds something to the drawing and selects it: a table goes under everything, the rest a little apart
@@ -318,7 +320,7 @@ public partial class ImageEditorPage : ContentPage
 			Options.Add(Hint(_board.Items.Count == 0
 				? L.T("Add something with the buttons at the top. Then drag it into place.")
 				: L.T("Tap something on the image to change it, or add more with the buttons at the top.")));
-			Options.Add(Chips(L.T("Shape of the image"), [L.T("Square"), L.T("Wide")], i => _board.IsSquare == (i == 0), i =>
+			Options.Add(SortedChips(L.T("Shape of the image"), [L.T("Square"), L.T("Wide")], i => _board.IsSquare == (i == 0), i =>
 			{
 				_board.IsSquare = i == 0;
 				foreach (var placed in _board.Items)
@@ -391,11 +393,11 @@ public partial class ImageEditorPage : ContentPage
 				break;
 
 			case DrawKind.Coin:
-				Options.Add(Chips(L.T("Side"), DrawItem.CoinSides, i => item.Side == i, i => item.Side = i));
+				Options.Add(SortedChips(L.T("Side"), DrawItem.CoinSides, i => item.Side == i, i => item.Side = i));
 				break;
 
 			case DrawKind.Coaster:
-				Options.Add(Chips(L.T("Shape"), DrawItem.CoasterShapes, i => item.Shape == i, i => item.Shape = i));
+				Options.Add(SortedChips(L.T("Shape"), DrawItem.CoasterShapes, i => item.Shape == i, i => item.Shape = i));
 				Options.Add(ColorChips(item));
 				break;
 
@@ -418,7 +420,7 @@ public partial class ImageEditorPage : ContentPage
 				break;
 
 			case DrawKind.Table:
-				Options.Add(Chips(L.T("Shape"), DrawItem.TableShapes, i => item.Shape == i, i => item.Shape = i));
+				Options.Add(SortedChips(L.T("Shape"), DrawItem.TableShapes, i => item.Shape == i, i => item.Shape = i));
 				Options.Add(SortedChips(L.T("Surface"), DrawItem.TableSurfaces, i => item.Side == i, i => item.Side = i));
 				break;
 

@@ -151,7 +151,8 @@ public partial class AdminTeamViewModel : ObservableObject
 		var matches = _members
 			.Where(member => search.Length == 0
 				|| member.Label.Contains(search, StringComparison.CurrentCultureIgnoreCase)
-				|| member.Email.Contains(search, StringComparison.OrdinalIgnoreCase))
+				|| member.Email.Contains(search, StringComparison.OrdinalIgnoreCase)
+				|| (member.HasLanguage && member.LanguageName.Contains(search, StringComparison.CurrentCultureIgnoreCase)))
 			.OrderBy(member => member.Label, StringComparer.CurrentCultureIgnoreCase)
 			.ToList();
 

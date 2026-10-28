@@ -37,11 +37,13 @@
 								</Border>
 							</Grid>
 							<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
-							<Label Text="{Binding Text}" FontSize="14" />
+							<Label Text="{Binding ShownText}" FontSize="14" />
 							<HorizontalStackLayout Spacing="8">
 								<Button Text="{loc:T Inbox_EditAndSubmitAgain}" Clicked="OnResubmitClicked" IsVisible="{Binding OffersResubmit}"
 								        FontSize="12" Padding="10,0" HeightRequest="48" />
-								<Button Text="{loc:T Inbox_Reply}" Clicked="OnReplyClicked"
+								<Button Text="{loc:T Inbox_CheckTranslation}" Clicked="OnCheckTranslationClicked" IsVisible="{Binding IsTranslationCheck}"
+								        FontSize="12" Padding="10,0" HeightRequest="48" />
+								<Button Text="{loc:T Inbox_Reply}" Clicked="OnReplyClicked" IsVisible="{Binding CanReply}"
 								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="{loc:T Inbox_Delete}" Clicked="OnDeleteClicked"

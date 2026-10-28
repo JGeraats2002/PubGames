@@ -79,11 +79,15 @@ public static class AppLanguage
 	public static void Set(AppLanguageInfo language, bool notify = true)
 	{
 		Preferences.Default.Set(PreferenceKey, language.Code);
+		Chosen?.Invoke(null, EventArgs.Empty);
 		var changed = language != Current;
 		Apply(language);
 		if (changed && notify)
 			Changed?.Invoke(null, EventArgs.Empty);
 	}
+
+	/// <summary>A language was chosen (also the same one again, and on the first language screen).</summary>
+	public static event EventHandler? Chosen;
 
 	/// <summary>Tells the app the language changed, so the screens are built again in it.</summary>
 	public static void RaiseChanged() => Changed?.Invoke(null, EventArgs.Empty);

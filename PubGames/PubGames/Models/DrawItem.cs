@@ -34,7 +34,8 @@ public class DrawItem
 	public static string[] ColorNames => [L.T("Dark"), L.T("Red"), L.T("Blue"), L.T("Green"), L.T("Orange"), L.T("White"), L.T("Yellow"), L.T("Purple")];
 	public static string[] Suits => [L.T("♠ Spades"), L.T("♥ Hearts"), L.T("♦ Diamonds"), L.T("♣ Clubs")];
 	public static readonly string[] Ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-	public static string[] FingerNames => [L.T("Thumb"), L.T("Index"), L.T("Middle"), L.T("Ring"), L.T("Pinky")];
+	// "Middle finger" rather than "Middle": that one is the middle of the image (Place across).
+	public static string[] FingerNames => [L.T("Thumb"), L.T("Index finger"), L.T("Middle finger"), L.T("Ring finger"), L.T("Pinky")];
 	public static string[] DrinkShapes => [L.T("Cup"), L.T("Mug"), L.T("Shot glass"), L.T("Bottle")];
 	public static string[] FillNames => [L.T("Empty"), "¼", "½", "¾", L.T("Full")];
 	public static string[] DiceShapes => [L.T("Die"), L.T("Cup with dice"), L.T("Cup upside down")];
@@ -115,6 +116,14 @@ public class DrawItem
 
 	/// <summary>Which fingers stick out when not neutral; same order as FingerNames.</summary>
 	public bool[] Fingers { get; set; } = new bool[5];
+
+	/// <summary>
+	/// A hand showing only the middle finger (with or without the thumb): an insult, never allowed in a
+	/// picture. Must match isRudeHand in functions/index.js.
+	/// </summary>
+	[System.Text.Json.Serialization.JsonIgnore]
+	public bool IsRudeHand =>
+		Kind == DrawKind.Hand && !Neutral && Fingers is { Length: 5 } && Fingers[2] && !Fingers[1] && !Fingers[3] && !Fingers[4];
 
 	/// <summary>A left hand instead of a right one.</summary>
 	public bool Mirrored { get; set; }
@@ -997,6 +1006,27 @@ public class DrawingBoard : IDrawable
 			return false;
 		}
 	}
+
+	/// <summary>The width pictures are saved at, in pixels.</summary>
+	public const int ExportWidth = 1200;
+
+	/// <summary>The drawing as a PNG, without a selection frame.</summary>
+	public byte[] ToPng()
+	{
+		Selected = null;
+		var height = (int)(ExportWidth * Height / Width);
+		using var context = new Microsoft.Maui.Graphics.Platform.PlatformBitmapExportContext(ExportWidth, height, 1f);
+		Draw(context.Canvas, new RectF(0, 0, ExportWidth, height));
+		using var stream = new MemoryStream();
+		context.WriteToStream(stream);
+		return stream.ToArray();
+	}
+
+	/// <summary>The drawing has a hand showing the middle finger (see DrawItem.IsRudeHand): it can't be saved.</summary>
+	public bool HasRudeHand => Items.Any(i => i.IsRudeHand);
+
+	/// <summary>The texts on the drawing (Text items), in their order.</summary>
+	public List<string> Texts() => Items.Where(i => i.Kind == DrawKind.Text).Select(i => i.Text).ToList();
 
 	/// <summary>A drawing as it's saved: its shape, items and background colour.</summary>
 	private record Saved(bool IsSquare, List<DrawItem> Items, int Background = 0);

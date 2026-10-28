@@ -4,52 +4,41 @@ using PubGames.ViewModels;
 namespace PubGames.Views;
 
 /// <summary>
-/// Pick who a message goes to, searching by name or email. Await
-/// ChooseAsync: it returns the chosen recipient, or null after going back.
+/// Pick who a message goes to: whole groups, or people found by name or email, as many as you like. Await
+/// ChooseAsync: it returns the people ticked, or null after going back.
 /// </summary>
 public partial class ChooseRecipientPage : ContentPage
 {
-	private readonly List<MessageRecipient> _all;
-	private readonly TaskCompletionSource<MessageRecipient?> _result = new();
+	private readonly ChooseRecipientsViewModel _vm;
+	private readonly TaskCompletionSource<List<MessageRecipient>?> _result = new();
 
-	/// <summary>Shows every possible recipient, to search and tap.</summary>
+	/// <summary>Shows every possible recipient, to search and tick.</summary>
 	private ChooseRecipientPage(List<MessageRecipient> recipients)
 	{
 		InitializeComponent();
-		_all = recipients;
-		List.ItemsSource = _all;
+		BindingContext = _vm = new ChooseRecipientsViewModel(recipients);
 		InfoButton.Attach(this, () => Help.ChooseRecipient);
 	}
 
 	/// <summary>
-	/// Shows the list of people to message over the page; returns the one tapped, or null when cancelled.
+	/// Shows the list of people to message over the page; returns the ones ticked, or null when cancelled.
 	/// </summary>
-	public static async Task<MessageRecipient?> ChooseAsync(Page from, List<MessageRecipient> recipients)
+	public static async Task<List<MessageRecipient>?> ChooseAsync(Page from, List<MessageRecipient> recipients)
 	{
 		var page = new ChooseRecipientPage(recipients);
 		await from.Navigation.PushAsync(page);
 		return await page._result.Task;
 	}
 
-	/// <summary>Shows the people whose name or email contains the search text.</summary>
-	private void OnSearchChanged(object? sender, TextChangedEventArgs e)
+	/// <summary>Write message: the ticked people are chosen; the list closes.</summary>
+	private async void OnWriteClicked(object? sender, EventArgs e)
 	{
-		var text = e.NewTextValue?.Trim() ?? string.Empty;
-		List.ItemsSource = text.Length == 0
-			? _all
-			: _all.Where(r => r.Label.Contains(text, StringComparison.CurrentCultureIgnoreCase)
-				|| r.Detail.Contains(text, StringComparison.CurrentCultureIgnoreCase)).ToList();
-	}
-
-	/// <summary>The tapped person is chosen; the list closes.</summary>
-	private async void OnRecipientTapped(object? sender, TappedEventArgs e)
-	{
-		if (e.Parameter is not MessageRecipient recipient) return;
-		_result.TrySetResult(recipient);
+		if (_vm.Selected is not { Count: > 0 } chosen) return;
+		_result.TrySetResult(chosen);
 		await Navigation.PopAsync();
 	}
 
-	/// <summary>Back without choosing: no recipient. (Opening the ⓘ page on top doesn't count.)</summary>
+	/// <summary>Back without choosing: no recipients. (Opening the ⓘ page on top doesn't count.)</summary>
 	protected override void OnNavigatedFrom(NavigatedFromEventArgs args)
 	{
 		base.OnNavigatedFrom(args);

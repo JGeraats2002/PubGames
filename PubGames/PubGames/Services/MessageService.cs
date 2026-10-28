@@ -122,7 +122,7 @@ public class MessageService : IMessageService
 	/// <summary>Saves a message in the cloud and on the phone.</summary>
 	private async Task SaveAsync(InboxMessage m)
 	{
-		await _firestore.SetAsync(Collection, m.Id, new Dictionary<string, object?>
+		var fields = new Dictionary<string, object?>
 		{
 			["id"] = m.Id,
 			["toEmail"] = m.ToEmail,
@@ -134,7 +134,16 @@ public class MessageService : IMessageService
 			["kind"] = m.Kind.ToString(),
 			["reviewRequestId"] = m.ReviewRequestId,
 			["offersResubmit"] = m.OffersResubmit
-		});
+		};
+		// Only for translation checks: the rules let the recipient change nothing but isRead, so older messages
+		// must be written back without fields they never had.
+		if (m.Kind == MessageKind.TranslationCheck)
+		{
+			fields["gameId"] = m.GameId;
+			fields["gameName"] = m.GameName;
+			fields["language"] = m.Language;
+		}
+		await _firestore.SetAsync(Collection, m.Id, fields);
 		await _local.SaveMessageAsync(m);
 	}
 
@@ -154,7 +163,10 @@ public class MessageService : IMessageService
 			IsRead = f.GetValueOrDefault("isRead") as bool? ?? false,
 			Kind = Enum.TryParse<MessageKind>(f.GetValueOrDefault("kind") as string, out var k) ? k : MessageKind.Message,
 			ReviewRequestId = f.GetValueOrDefault("reviewRequestId") as string,
-			OffersResubmit = f.GetValueOrDefault("offersResubmit") as bool? ?? false
+			OffersResubmit = f.GetValueOrDefault("offersResubmit") as bool? ?? false,
+			GameId = f.GetValueOrDefault("gameId") as string,
+			GameName = f.GetValueOrDefault("gameName") as string,
+			Language = f.GetValueOrDefault("language") as string
 		};
 	}
 }

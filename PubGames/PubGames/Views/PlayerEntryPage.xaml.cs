@@ -44,29 +44,26 @@ public partial class PlayerEntryPage : ContentPage
 
 		if (!player.IsLinked)
 		{
-			var delete = await DisplayAlertAsync("Delete player?",
-				$"{player.Name} will be removed from your saved players. Earlier games will keep their name.", "Yes", "No");
+			var delete = await DisplayAlertAsync(L.T("Delete player?"),
+				L.F("{0} will be removed from your saved players. Earlier games will keep their name.", player.Name), L.T("Yes"), L.T("No"));
 			if (delete)
 				await _vm.DeleteSavedPlayerAsync(player);
 			return;
 		}
 
 		// Added by their code: the link can go both ways, and they can be blocked.
-		const string onlyHere = "Only from my players";
-		const string bothWays = "Remove the link both ways";
-		const string block = "Remove and block";
-		var choice = await DisplayActionSheetAsync($"Delete {player.Name}?", "Cancel", null, onlyHere, bothWays, block);
-		var removal = choice switch
-		{
-			onlyHere => PlayerRemoval.OnlyHere,
-			bothWays => PlayerRemoval.BothWays,
-			block => PlayerRemoval.Block,
-			_ => (PlayerRemoval?)null
-		};
+		var onlyHere = L.T("Only from my players");
+		var bothWays = L.T("Remove the link both ways");
+		var block = L.T("Remove and block");
+		var choice = await DisplayActionSheetAsync(L.F("Delete {0}?", player.Name), L.T("Cancel"), null, onlyHere, bothWays, block);
+		PlayerRemoval? removal = choice == onlyHere ? PlayerRemoval.OnlyHere
+			: choice == bothWays ? PlayerRemoval.BothWays
+			: choice == block ? PlayerRemoval.Block
+			: null;
 		if (removal is null) return;
-		if (removal == PlayerRemoval.Block && !await DisplayAlertAsync($"Block {player.Name}?",
-				$"{player.Name} is removed from your players and you from theirs, and they can't add you by your code any more. Earlier games keep their names. You can unblock them under Account > Blocked players.",
-				"Block", "Cancel"))
+		if (removal == PlayerRemoval.Block && !await DisplayAlertAsync(L.F("Block {0}?", player.Name),
+				L.F("{0} is removed from your players and you from theirs, and they can't add you by your code any more. Earlier games keep their names. You can unblock them under Account > Blocked players.", player.Name),
+				L.T("Block"), L.T("Cancel")))
 			return;
 		await _vm.DeleteSavedPlayerAsync(player, removal.Value);
 	}
@@ -76,10 +73,10 @@ public partial class PlayerEntryPage : ContentPage
 	{
 		if (sender is not BindableObject { BindingContext: Models.Player player }) return;
 
-		var name = await DisplayPromptAsync("Name", player.IsLinked
-				? "What do you call this player? Only on your phone - it doesn't change their profile."
-				: "What's this player's name?",
-			"Save", "Cancel", initialValue: player.Name, maxLength: 30, keyboard: Keyboard.Text);
+		var name = await DisplayPromptAsync(L.T("Name"), player.IsLinked
+				? L.T("What do you call this player? Only on your phone - it doesn't change their profile.")
+				: L.T("What's this player's name?"),
+			L.T("Save"), L.T("Cancel"), initialValue: player.Name, maxLength: 30, keyboard: Keyboard.Text);
 		if (name is not null)
 			await _vm.RenameAsync(player, name);
 	}
@@ -103,7 +100,7 @@ public partial class PlayerEntryPage : ContentPage
 	{
 		if (_vm.SelectedPlayers.Count == 0)
 		{
-			await DisplayAlertAsync("Who's playing?", "Add at least one player first.", "OK");
+			await DisplayAlertAsync(L.T("Who's playing?"), L.T("Add at least one player first."), "OK");
 			return;
 		}
 

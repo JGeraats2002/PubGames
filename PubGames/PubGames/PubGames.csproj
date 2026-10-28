@@ -13,8 +13,8 @@
 
 		<ApplicationTitle>Pub Games</ApplicationTitle>
 		<ApplicationId>com.pubgems.pubgames</ApplicationId>
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>1.1</ApplicationDisplayVersion>
+		<ApplicationVersion>2</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
@@ -42,6 +42,11 @@
 		     (plus .ConfigureFonts in MauiProgram.cs) once you have real font
 		     files - left out so the project builds with nothing missing. -->
 		<!-- <MauiFont Include="Resources\Fonts\*" /> -->
+	</ItemGroup>
+
+	<!-- The app's texts per language (see Services/L.cs). -->
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\Strings\*.json" LogicalName="PubGames.Strings.%(Filename).json" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -27,7 +27,7 @@ public class ComposeEmailSender : IEmailSender
 	public async Task SendAsync(string to, string subject, string body, string replyTo)
 	{
 		if (!Email.Default.IsComposeSupported)
-			throw new InvalidOperationException("No email app found on this phone - install Gmail to send the email.");
+			throw new InvalidOperationException(L.T("No email app found on this phone - install Gmail to send the email."));
 
 		await Email.Default.ComposeAsync(new EmailMessage
 		{

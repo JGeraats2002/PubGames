@@ -56,9 +56,9 @@ public static class InfoButton
 			Order = ToolbarItemOrder.Primary,
 			Command = new Command(async () =>
 			{
-				const string howTo = "How to use this page";
-				const string gameRules = "Rules of the game";
-				var choice = await page.DisplayActionSheetAsync("Info", "Cancel", null, howTo, gameRules);
+				var howTo = L.T("How to use this page");
+				var gameRules = L.T("Rules of the game");
+				var choice = await page.DisplayActionSheetAsync(L.T("Info"), L.T("Cancel"), null, howTo, gameRules);
 				if (choice == howTo)
 					await ShowAsync(page, help());
 				else if (choice == gameRules && rules() is { } r)
@@ -69,7 +69,7 @@ public static class InfoButton
 	/// <summary>Screen readers (TalkBack) read "Help" for the ⓘ instead of the symbol.</summary>
 	private static ToolbarItem Described(ToolbarItem item)
 	{
-		SemanticProperties.SetDescription(item, "Help");
+		SemanticProperties.SetDescription(item, L.T("Help"));
 		return item;
 	}
 

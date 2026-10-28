@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:views="clr-namespace:PubGames.Views"
              xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.GameLibraryPage"
              x:DataType="vm:GameLibraryViewModel"
-             Title="Choose a game">
+             Title="{loc:T GameLibrary_ChooseAGame}">
 
 	<VerticalStackLayout Padding="20" Spacing="12">
 
 		<!-- Search by name; the Filter button opens the filters (number of players, categories) and says how many are set. -->
 		<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-			<SearchBar Placeholder="Search games" Text="{Binding SearchText}" />
+			<SearchBar Placeholder="{loc:T GameLibrary_SearchGames}" Text="{Binding SearchText}" />
 			<Button Grid.Column="1" Text="{Binding Filters.ButtonText}" Clicked="OnFilterClicked"
 			        HeightRequest="48" Padding="14,0" FontSize="13" VerticalOptions="Center"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
@@ -24,7 +25,7 @@
 
 		<CollectionView ItemsSource="{Binding VisibleGames}">
 			<CollectionView.EmptyView>
-				<Label Text="No games match yet." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<Label Text="{loc:T GameLibrary_NoGamesMatchYet}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="models:PubGame">

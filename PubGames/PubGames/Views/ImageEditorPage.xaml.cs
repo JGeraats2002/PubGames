@@ -12,11 +12,11 @@ namespace PubGames.Views;
 public partial class ImageEditorPage : ContentPage
 {
 	/// <summary>In alphabetical order, the two marks last.</summary>
-	private static readonly (DrawKind Kind, string Text)[] AddChoices =
+	private static (DrawKind Kind, string Text)[] AddChoices =>
 	[
-		(DrawKind.Arrow, "Arrow"), (DrawKind.Card, "Card"), (DrawKind.Coaster, "Coaster"), (DrawKind.Coin, "Coin"),
-		(DrawKind.Die, "Die"), (DrawKind.Drink, "Drink"), (DrawKind.Hand, "Hand"), (DrawKind.Number, "Number"),
-		(DrawKind.Person, "Person"), (DrawKind.Table, "Table"), (DrawKind.Text, "Text"),
+		(DrawKind.Arrow, L.T("Arrow")), (DrawKind.Card, L.T("Card")), (DrawKind.Coaster, L.T("Coaster")), (DrawKind.Coin, L.T("Coin")),
+		(DrawKind.Die, L.T("Die")), (DrawKind.Drink, L.T("Drink")), (DrawKind.Hand, L.T("Hand")), (DrawKind.Number, L.T("Number")),
+		(DrawKind.Person, L.T("Person")), (DrawKind.Table, L.T("Table")), (DrawKind.Text, L.T("Text")),
 		(DrawKind.Check, "✓"), (DrawKind.Cross, "✕")
 	];
 
@@ -61,7 +61,7 @@ public partial class ImageEditorPage : ContentPage
 		if (drawing is not null && _board.Load(drawing))
 		{
 			_opened = _board.ToJson();
-			Title = Heading.Text = "Edit image";
+			Title = Heading.Text = L.T("Edit image");
 		}
 		// A rules picture is always on cream, so it's clear in the text where it begins and ends.
 		if (!cover)
@@ -114,9 +114,9 @@ public partial class ImageEditorPage : ContentPage
 	{
 		var nothingToLose = _opened is not null ? _board.ToJson() == _opened : _board.Items.Count == 0;
 		if (!nothingToLose && !await DisplayAlertAsync(
-				_opened is null ? "Discard this image?" : "Discard your changes?",
-				_opened is null ? "What you made here will be lost." : "The image stays as it was.",
-				"Discard", "Keep editing"))
+				_opened is null ? L.T("Discard this image?") : L.T("Discard your changes?"),
+				_opened is null ? L.T("What you made here will be lost.") : L.T("The image stays as it was."),
+				L.T("Discard"), L.T("Keep editing")))
 			return;
 
 		_result.TrySetResult(null);
@@ -131,7 +131,7 @@ public partial class ImageEditorPage : ContentPage
 	{
 		if (_board.Items.Count == 0)
 		{
-			await DisplayAlertAsync("Nothing to use yet", "Add something to the image first, with the buttons at the top.", "OK");
+			await DisplayAlertAsync(L.T("Nothing to use yet"), L.T("Add something to the image first, with the buttons at the top."), "OK");
 			return;
 		}
 
@@ -316,9 +316,9 @@ public partial class ImageEditorPage : ContentPage
 		if (_board.Selected is not { } item)
 		{
 			Options.Add(Hint(_board.Items.Count == 0
-				? "Add something with the buttons at the top. Then drag it into place."
-				: "Tap something on the image to change it, or add more with the buttons at the top."));
-			Options.Add(Chips("Shape of the image", ["Square", "Wide"], i => _board.IsSquare == (i == 0), i =>
+				? L.T("Add something with the buttons at the top. Then drag it into place.")
+				: L.T("Tap something on the image to change it, or add more with the buttons at the top.")));
+			Options.Add(Chips(L.T("Shape of the image"), [L.T("Square"), L.T("Wide")], i => _board.IsSquare == (i == 0), i =>
 			{
 				_board.IsSquare = i == 0;
 				foreach (var placed in _board.Items)
@@ -326,7 +326,7 @@ public partial class ImageEditorPage : ContentPage
 				OnSizeAllocated(Width, Height);
 			}));
 			if (_cover)
-				Options.Add(SortedChips("Background colour", DrawingBoard.BackgroundNames, i => _board.Background == i, i => _board.Background = i));
+				Options.Add(SortedChips(L.T("Background colour"), DrawingBoard.BackgroundNames, i => _board.Background == i, i => _board.Background = i));
 			return;
 		}
 
@@ -335,7 +335,7 @@ public partial class ImageEditorPage : ContentPage
 		switch (item.Kind)
 		{
 			case DrawKind.Text:
-				var entry = new Entry { Text = item.Text, Placeholder = "Type the text", MaxLength = 40 };
+				var entry = new Entry { Text = item.Text, Placeholder = L.T("Type the text"), MaxLength = 40 };
 				// One step back for Undo per time the text is typed in, not per letter.
 				var typing = false;
 				entry.TextChanged += (_, args) =>
@@ -354,63 +354,63 @@ public partial class ImageEditorPage : ContentPage
 				break;
 
 			case DrawKind.Arrow:
-				Options.Add(Chips("Shape", ["Straight", "Curved", "Bent"],
+				Options.Add(Chips(L.T("Shape"), [L.T("Straight"), L.T("Curved"), L.T("Bent")],
 					i => i == (item.Bent ? 2 : item.Curved ? 1 : 0),
 					i => (item.Curved, item.Bent) = (i == 1, i == 2)));
-				Options.Add(Chips("Points", ["One way", "Both ways"], i => item.BothEnds == (i == 1), i => item.BothEnds = i == 1));
+				Options.Add(Chips(L.T("Points"), [L.T("One way"), L.T("Both ways")], i => item.BothEnds == (i == 1), i => item.BothEnds = i == 1));
 				if (item.Bent)
 				{
 					// The corner stays put; Turn below turns the whole arrow around it.
-					Options.Add(Hint("Arm 1 points right from the corner, arm 2 is the angle further round (clockwise). One way: the head is on arm 2. Both ways: two hands, like a clock."));
-					Options.Add(SliderRow("Angle", "°", 0, 359, (int)MathF.Round(item.BendAngle), value => item.BendAngle = value));
-					Options.Add(SliderRow("Arm 1", string.Empty, 30, 500, (int)MathF.Round(item.Arm1Length), value => item.Arm1Length = value));
-					Options.Add(SliderRow("Arm 2", string.Empty, 30, 500, (int)MathF.Round(item.Arm2Length), value => item.Arm2Length = value));
+					Options.Add(Hint(L.T("Arm 1 points right from the corner, arm 2 is the angle further round (clockwise). One way: the head is on arm 2. Both ways: two hands, like a clock.")));
+					Options.Add(SliderRow(L.T("Angle"), "°", 0, 359, (int)MathF.Round(item.BendAngle), value => item.BendAngle = value));
+					Options.Add(SliderRow(L.T("Arm 1"), string.Empty, 30, 500, (int)MathF.Round(item.Arm1Length), value => item.Arm1Length = value));
+					Options.Add(SliderRow(L.T("Arm 2"), string.Empty, 30, 500, (int)MathF.Round(item.Arm2Length), value => item.Arm2Length = value));
 				}
 				else
-					Options.Add(SliderRow("Length", string.Empty, 60, 1000, (int)MathF.Round(item.ArrowLength), value => item.ArrowLength = value));
-				Options.Add(SliderRow("Thickness", string.Empty, 4, 40, (int)MathF.Round(item.ArrowThickness), value => item.ArrowThickness = value));
+					Options.Add(SliderRow(L.T("Length"), string.Empty, 60, 1000, (int)MathF.Round(item.ArrowLength), value => item.ArrowLength = value));
+				Options.Add(SliderRow(L.T("Thickness"), string.Empty, 4, 40, (int)MathF.Round(item.ArrowThickness), value => item.ArrowThickness = value));
 				Options.Add(ColorChips(item));
 				break;
 
 			case DrawKind.Card:
-				Options.Add(Chips("What", ["One card", "Deck"], i => item.Deck == (i == 1), i => item.Deck = i == 1));
-				Options.Add(Chips(item.Deck ? "Deck" : "Side", item.Deck ? ["Open", "Closed"] : ["Face up", "Face down"],
+				Options.Add(Chips(L.T("What"), [L.T("One card"), L.T("Deck")], i => item.Deck == (i == 1), i => item.Deck = i == 1));
+				Options.Add(Chips(item.Deck ? L.T("Deck") : L.T("Side"), item.Deck ? [L.T("Open"), L.T("Closed")] : [L.T("Face up"), L.T("Face down")],
 					i => item.FaceDown == (i == 1), i => item.FaceDown = i == 1));
 				if (!item.FaceDown)
 				{
-					Options.Add(SortedChips(item.Deck ? "Suit of the card on top" : "Suit", DrawItem.Suits, i => item.Suit == i, i => item.Suit = i));
-					Options.Add(Chips(item.Deck ? "Value of the card on top" : "Value", DrawItem.Ranks, i => item.Rank == i, i => item.Rank = i));
+					Options.Add(SortedChips(item.Deck ? L.T("Suit of the card on top") : L.T("Suit"), DrawItem.Suits, i => item.Suit == i, i => item.Suit = i));
+					Options.Add(Chips(item.Deck ? L.T("Value of the card on top") : L.T("Value"), DrawItem.Ranks, i => item.Rank == i, i => item.Rank = i));
 				}
 				break;
 
 			case DrawKind.Die:
-				Options.Add(Chips("What", DrawItem.DiceShapes, i => item.Shape == i, i => item.Shape = i));
+				Options.Add(Chips(L.T("What"), DrawItem.DiceShapes, i => item.Shape == i, i => item.Shape = i));
 				if (item.Shape != 2)
-					Options.Add(Chips(item.Shape == 0 ? "Number" : "Number on the left die", ["1", "2", "3", "4", "5", "6"],
+					Options.Add(Chips(item.Shape == 0 ? L.T("Number") : L.T("Number on the left die"), ["1", "2", "3", "4", "5", "6"],
 						i => item.Value == i + 1, i => item.Value = i + 1));
 				break;
 
 			case DrawKind.Coin:
-				Options.Add(Chips("Side", DrawItem.CoinSides, i => item.Side == i, i => item.Side = i));
+				Options.Add(Chips(L.T("Side"), DrawItem.CoinSides, i => item.Side == i, i => item.Side = i));
 				break;
 
 			case DrawKind.Coaster:
-				Options.Add(Chips("Shape", DrawItem.CoasterShapes, i => item.Shape == i, i => item.Shape = i));
+				Options.Add(Chips(L.T("Shape"), DrawItem.CoasterShapes, i => item.Shape == i, i => item.Shape = i));
 				Options.Add(ColorChips(item));
 				break;
 
 			case DrawKind.Hand:
-				Options.Add(Chips("Hand", ["Neutral (open hand)", "Choose fingers"], i => item.Neutral == (i == 0), i => item.Neutral = i == 0));
+				Options.Add(Chips(L.T("Hand"), [L.T("Neutral (open hand)"), L.T("Choose fingers")], i => item.Neutral == (i == 0), i => item.Neutral = i == 0));
 				if (!item.Neutral)
 					// Starts as a fist; every finger tapped here sticks out.
-					Options.Add(Chips("Fingers sticking out (none: a fist)", DrawItem.FingerNames,
+					Options.Add(Chips(L.T("Fingers sticking out (none: a fist)"), DrawItem.FingerNames,
 						i => item.Fingers[i], i => item.Fingers[i] = !item.Fingers[i]));
-				Options.Add(Chips("Which hand", ["Right", "Left"], i => item.Mirrored == (i == 1), i => item.Mirrored = i == 1));
+				Options.Add(Chips(L.T("Which hand"), [L.T("Right"), L.T("Left")], i => item.Mirrored == (i == 1), i => item.Mirrored = i == 1));
 				break;
 
 			case DrawKind.Drink:
-				Options.Add(SortedChips("Kind", DrawItem.DrinkShapes, i => item.Shape == i, i => item.Shape = i));
-				Options.Add(Chips("How full", DrawItem.FillNames, i => item.Fill == i, i => item.Fill = i));
+				Options.Add(SortedChips(L.T("Kind"), DrawItem.DrinkShapes, i => item.Shape == i, i => item.Shape = i));
+				Options.Add(Chips(L.T("How full"), DrawItem.FillNames, i => item.Fill == i, i => item.Fill = i));
 				break;
 
 			case DrawKind.Person:
@@ -418,21 +418,21 @@ public partial class ImageEditorPage : ContentPage
 				break;
 
 			case DrawKind.Table:
-				Options.Add(Chips("Shape", DrawItem.TableShapes, i => item.Shape == i, i => item.Shape = i));
-				Options.Add(SortedChips("Surface", DrawItem.TableSurfaces, i => item.Side == i, i => item.Side = i));
+				Options.Add(Chips(L.T("Shape"), DrawItem.TableShapes, i => item.Shape == i, i => item.Shape = i));
+				Options.Add(SortedChips(L.T("Surface"), DrawItem.TableSurfaces, i => item.Side == i, i => item.Side = i));
 				break;
 
 			case DrawKind.Number:
-				Options.Add(Chips("Number", ["1", "2", "3", "4", "5", "6", "7", "8", "9"], i => item.Value == i + 1, i => item.Value = i + 1));
+				Options.Add(Chips(L.T("Number"), ["1", "2", "3", "4", "5", "6", "7", "8", "9"], i => item.Value == i + 1, i => item.Value = i + 1));
 				Options.Add(ColorChips(item));
 				break;
 		}
 
 		// Help with lining things up; dragging on the image stays free.
-		Options.Add(Chips("Place across", ["Left", "¼", "Middle", "¾", "Right"],
+		Options.Add(Chips(L.T("Place across"), [L.T("Left"), "¼", L.T("Middle"), "¾", L.T("Right")],
 			i => Math.Abs(item.FrameCentre.X - AlignedPlace(i, DrawingBoard.Width, Extent(item).Width)) < 1,
 			i => MoveFrameCentre(item, true, AlignedPlace(i, DrawingBoard.Width, Extent(item).Width)), keepAligned: false));
-		Options.Add(Chips("Place up and down", ["Top", "¼", "Middle", "¾", "Bottom"],
+		Options.Add(Chips(L.T("Place up and down"), [L.T("Top"), "¼", L.T("Middle"), "¾", L.T("Bottom")],
 			i => Math.Abs(item.FrameCentre.Y - AlignedPlace(i, _board.Height, Extent(item).Height)) < 1,
 			i => MoveFrameCentre(item, false, AlignedPlace(i, _board.Height, Extent(item).Height)), keepAligned: false));
 
@@ -442,12 +442,12 @@ public partial class ImageEditorPage : ContentPage
 		Options.Add(PlaceRow(item, across: false));
 
 		// Size as a percentage of the normal size, turn in degrees: whole numbers, so two items can be made exactly alike.
-		Options.Add(SliderRow("Size", "%", (int)(MinScale * 100), (int)(MaxScale * 100), (int)MathF.Round(item.Scale * 100), value => item.Scale = value / 100f));
-		Options.Add(SliderRow("Turn", "°", 0, 360, (int)MathF.Round(item.Rotation), value => item.Rotation = value % 360));
-		Options.Add(Chips(null, ["Turn ↺ 45°", "Turn ↻ 45°", "Upright"], _ => false, i =>
+		Options.Add(SliderRow(L.T("Size"), "%", (int)(MinScale * 100), (int)(MaxScale * 100), (int)MathF.Round(item.Scale * 100), value => item.Scale = value / 100f));
+		Options.Add(SliderRow(L.T("Turn"), "°", 0, 360, (int)MathF.Round(item.Rotation), value => item.Rotation = value % 360));
+		Options.Add(Chips(null, [L.T("Turn ↺ 45°"), L.T("Turn ↻ 45°"), L.T("Upright")], _ => false, i =>
 			item.Rotation = i == 2 ? 0 : (MathF.Round(item.Rotation / 45) * 45 + (i == 0 ? 315 : 45)) % 360));
 
-		Options.Add(Chips(null, ["Copy", "To front", "To back"], keepAligned: false, isOn: _ => false, choose: i =>
+		Options.Add(Chips(null, [L.T("Copy"), L.T("To front"), L.T("To back")], keepAligned: false, isOn: _ => false, choose: i =>
 		{
 			if (i == 0)
 			{
@@ -464,7 +464,7 @@ public partial class ImageEditorPage : ContentPage
 
 		var delete = new Button
 		{
-			Text = "Remove from image", HeightRequest = 48, FontSize = 13, HorizontalOptions = LayoutOptions.Start,
+			Text = L.T("Remove from image"), HeightRequest = 48, FontSize = 13, HorizontalOptions = LayoutOptions.Start,
 			BackgroundColor = Colors.Transparent, TextColor = Resource("Danger"), BorderColor = Resource("Danger"), BorderWidth = 1
 		};
 		delete.Clicked += (_, _) =>
@@ -526,7 +526,7 @@ public partial class ImageEditorPage : ContentPage
 			}));
 		}
 		var (minimum, maximum) = Range(item, across);
-		var slider = SliderRow(across ? "Across" : "Down", string.Empty, (int)MathF.Ceiling(minimum), (int)MathF.Floor(maximum),
+		var slider = SliderRow(across ? L.T("Across") : L.T("Down"), string.Empty, (int)MathF.Ceiling(minimum), (int)MathF.Floor(maximum),
 			(int)MathF.Round(Measured(item, across)), value => PlaceAt(item, across, value), keepAligned: false);
 		return new VerticalStackLayout
 		{
@@ -610,7 +610,7 @@ public partial class ImageEditorPage : ContentPage
 		var tap = new TapGestureRecognizer();
 		tap.Tapped += (_, _) => tapped();
 		chip.GestureRecognizers.Add(tap);
-		string[] names = across ? ["Align left", "Align centre", "Align right"] : ["Align top", "Align middle", "Align bottom"];
+		string[] names = across ? [L.T("Align left"), L.T("Align centre"), L.T("Align right")] : [L.T("Align top"), L.T("Align middle"), L.T("Align bottom")];
 		SemanticProperties.SetDescription(chip, names[align]);
 		return chip;
 	}
@@ -665,7 +665,7 @@ public partial class ImageEditorPage : ContentPage
 
 	/// <summary>The colour choices of an item.</summary>
 	private View ColorChips(DrawItem item) =>
-		SortedChips("Colour", DrawItem.ColorNames, i => item.ColorIndex == i, i => item.ColorIndex = i);
+		SortedChips(L.T("Colour"), DrawItem.ColorNames, i => item.ColorIndex == i, i => item.ColorIndex = i);
 
 	/// <summary>
 	/// Chips in alphabetical order, whatever order the choices are kept in:

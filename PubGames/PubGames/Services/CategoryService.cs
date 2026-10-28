@@ -127,6 +127,7 @@ public class CategoryService : ICategoryService
 			{
 				Id = (string)f["id"]!,
 				Name = f.GetValueOrDefault("name") as string ?? string.Empty,
+				TranslationsText = ReadTranslations(f),
 				GroupId = f.GetValueOrDefault("groupId") as string ?? string.Empty,
 				SortOrder = f.GetValueOrDefault("sortOrder") is long place ? (int)place : 0,
 				CreatedAt = f.GetValueOrDefault("createdAt") as DateTime? ?? DateTime.UtcNow
@@ -156,6 +157,7 @@ public class CategoryService : ICategoryService
 			{
 				Id = (string)f["id"]!,
 				Name = f.GetValueOrDefault("name") as string ?? string.Empty,
+				TranslationsText = ReadTranslations(f),
 				SortOrder = f.GetValueOrDefault("sortOrder") is long place ? (int)place : 0,
 				CreatedAt = f.GetValueOrDefault("createdAt") as DateTime? ?? DateTime.UtcNow
 			})
@@ -347,7 +349,7 @@ public class CategoryService : ICategoryService
 			TeamId = CurrentTeamId,
 			SubmittedByUserId = admin.Uid,
 			SubmittedByEmail = TeamMember.NormalizeEmail(admin.Email),
-			SubmittedByName = "Pub Games (automatic)"
+			SubmittedByName = L.T("Pub Games (automatic)")
 		});
 	}
 
@@ -445,6 +447,11 @@ public class CategoryService : ICategoryService
 		{
 			["id"] = category.Id,
 			["name"] = category.Name,
+			// The language the name is written in: the app's language of whoever saves it.
+			["sourceLanguage"] = AppLanguage.Current.Code,
+			// Kept while the name stays; the cloud translates a new name again (translateCategory).
+			["translations"] = TranslationsToKeep(category.Name, category.TranslationsText),
+			["translatedFrom"] = TranslatedFrom(category.Name, category.TranslationsText),
 			["groupId"] = category.GroupId ?? string.Empty,
 			["sortOrder"] = category.SortOrder,
 			["createdAt"] = category.CreatedAt
@@ -491,6 +498,34 @@ public class CategoryService : ICategoryService
 		await _local.DeleteCategoryGroupAsync(group.Id);
 	}
 
+	/// <summary>
+	/// The translations to save with a category: the ones it has, as long as they're of this name. The cloud
+	/// translates again when the name was changed (translatedFrom no longer matches).
+	/// </summary>
+	private static Dictionary<string, object?> TranslationsToKeep(string name, string? translationsText) =>
+		GameTranslation.NamesFromJson(translationsText)
+			.Where(t => t.Key != TranslatedFromKey)
+			.ToDictionary(t => t.Key, t => (object?)t.Value);
+
+	/// <summary>A category's translated names from its cloud document, with the name they belong to (under "_from").</summary>
+	private static string ReadTranslations(Dictionary<string, object?> f)
+	{
+		var names = GameTranslation.NamesFromMap(f.GetValueOrDefault("translations"));
+		if (f.GetValueOrDefault("translatedFrom") is string from)
+			names[TranslatedFromKey] = from;
+		return GameTranslation.NamesToJson(names);
+	}
+
+	/// <summary>
+	/// The name the saved translations belong to: this name while there are translations; the cloud compares
+	/// it with the name and translates again when they differ. The phone remembers it next to the names.
+	/// </summary>
+	private static string TranslatedFrom(string name, string? translationsText) =>
+		GameTranslation.NamesFromJson(translationsText).GetValueOrDefault(TranslatedFromKey) ?? string.Empty;
+
+	/// <summary>Where the phone keeps translatedFrom among a category's translated names.</summary>
+	internal const string TranslatedFromKey = "_from";
+
 	/// <summary>Saves a main category in the cloud and on the phone.</summary>
 	private async Task SaveGroupAsync(CategoryGroup group)
 	{
@@ -498,6 +533,9 @@ public class CategoryService : ICategoryService
 		{
 			["id"] = group.Id,
 			["name"] = group.Name,
+			["sourceLanguage"] = AppLanguage.Current.Code,
+			["translations"] = TranslationsToKeep(group.Name, group.TranslationsText),
+			["translatedFrom"] = TranslatedFrom(group.Name, group.TranslationsText),
 			["sortOrder"] = group.SortOrder,
 			["createdAt"] = group.CreatedAt
 		});
@@ -509,11 +547,11 @@ public class CategoryService : ICategoryService
 	{
 		name = GameCategory.NormalizeName(name);
 		if (name.Length == 0)
-			return "Give the category a name.";
+			return L.T("Give the category a name.");
 		if (name.Length > 30)
-			return "Keep category names short (30 characters at most).";
+			return L.T("Keep category names short (30 characters at most).");
 		if (existing.Any(c => c.GroupId == groupId && c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-			return $"There's already a category called \"{name}\" in this main category.";
+			return L.F("There's already a category called \"{0}\" in this main category.", name);
 		return null;
 	}
 
@@ -522,18 +560,18 @@ public class CategoryService : ICategoryService
 	{
 		name = GameCategory.NormalizeName(name);
 		if (name.Length == 0)
-			return "Give the main category a name.";
+			return L.T("Give the main category a name.");
 		if (name.Length > 30)
-			return "Keep main category names short (30 characters at most).";
+			return L.T("Keep main category names short (30 characters at most).");
 		if (existing.Any(g => g.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-			return $"There's already a main category called \"{name}\".";
+			return L.F("There's already a main category called \"{0}\".", name);
 		return null;
 	}
 
 	/// <inheritdoc />
 	public string LabelFor(IEnumerable<string> categoryIds, IEnumerable<GameCategory> categories)
 	{
-		var names = categories.ToDictionary(c => c.Id, c => c.Name);
+		var names = categories.ToDictionary(c => c.Id, c => c.ShownName);
 		return string.Join(", ", categoryIds.Where(names.ContainsKey).Select(id => names[id]).Order(StringComparer.CurrentCultureIgnoreCase));
 	}
 }

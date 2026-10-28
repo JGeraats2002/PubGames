@@ -138,7 +138,7 @@ public class ProfileService(FirestoreClient firestore, IAuthService auth, IImage
 				// Taken by someone else: try another.
 			}
 		}
-		throw new InvalidOperationException("Couldn't make your personal code. Check that the latest firestore.rules are published.");
+		throw new InvalidOperationException(L.T("Couldn't make your personal code. Check that the latest firestore.rules are published."));
 	}
 
 	/// <summary>The profile as saved on this phone, for when there's no connection.</summary>

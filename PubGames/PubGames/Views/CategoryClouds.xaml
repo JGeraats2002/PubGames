@@ -37,7 +37,7 @@
 						<Border.GestureRecognizers>
 							<TapGestureRecognizer Tapped="OnCloudTapped" CommandParameter="{Binding .}" />
 						</Border.GestureRecognizers>
-						<Label Text="{Binding Category.Name}" FontSize="13">
+						<Label Text="{Binding Category.ShownName}" FontSize="13">
 							<Label.Triggers>
 								<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
 									<Setter Property="TextColor" Value="White" />

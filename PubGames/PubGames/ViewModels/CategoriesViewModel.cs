@@ -12,7 +12,7 @@ public record CategoryRow(GameCategory Category, int GameCount, bool CanReorder)
 	/// <summary>The category's name.</summary>
 	public string Name => Category.Name;
 	/// <summary>"1 game" or "4 games": how many games are in it.</summary>
-	public string CountLabel => GameCount == 1 ? "1 game" : $"{GameCount} games";
+	public string CountLabel => GameCount == 1 ? L.T("1 game") : L.F("{0} games", GameCount);
 }
 
 /// <summary>A main category with its categories; Group is null for the categories that aren't filed under one yet.</summary>
@@ -21,7 +21,7 @@ public class CategorySection(CategoryGroup? group, IEnumerable<CategoryRow> rows
 	/// <summary>The main category, or null for categories without one.</summary>
 	public CategoryGroup? Group { get; } = group;
 	/// <summary>The main category's name.</summary>
-	public string Name => Group?.Name ?? "No main category yet";
+	public string Name => Group?.Name ?? L.T("No main category yet");
 	/// <summary>Whether the main category has no categories yet.</summary>
 	public bool IsEmpty => Count == 0;
 
@@ -63,10 +63,10 @@ public partial class CategoriesViewModel : ObservableObject
 	private bool isAdmin;
 
 	/// <summary>"+ New category" for admins, "+ Propose a new category" for moderators.</summary>
-	public string AddButtonText => IsAdmin ? "+ New category" : "+ Propose a new category";
+	public string AddButtonText => IsAdmin ? L.T("+ New category") : L.T("+ Propose a new category");
 
 	/// <summary>"+ New main category" for admins, "+ Propose a new main category" for moderators.</summary>
-	public string AddGroupButtonText => IsAdmin ? "+ New main category" : "+ Propose a new main category";
+	public string AddGroupButtonText => IsAdmin ? L.T("+ New main category") : L.T("+ Propose a new main category");
 
 	/// <summary>What happened, or why it couldn't.</summary>
 	[ObservableProperty]
@@ -109,8 +109,8 @@ public partial class CategoriesViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			StatusMessage = ex is HttpRequestException
-				? "Offline - showing the categories saved on this phone."
-				: $"Couldn't refresh categories: {ex.Message}";
+				? L.T("Offline - showing the categories saved on this phone.")
+				: L.F("Couldn't refresh categories: {0}", ex.Message);
 		}
 	}
 
@@ -130,7 +130,7 @@ public partial class CategoriesViewModel : ObservableObject
 	/// <summary>Whether the name can be used for a new category in this main category (null: not chosen yet); if not, StatusMessage says why.</summary>
 	public bool CheckNewName(string name, CategoryGroup? group)
 	{
-		StatusMessage = _categories.ValidateNewName(name, group?.Id ?? "(not chosen yet)", _allCategories) ?? string.Empty;
+		StatusMessage = _categories.ValidateNewName(name, group?.Id ?? L.T("(not chosen yet)"), _allCategories) ?? string.Empty;
 		return StatusMessage.Length == 0;
 	}
 
@@ -145,7 +145,7 @@ public partial class CategoriesViewModel : ObservableObject
 		name = GameCategory.NormalizeName(name);
 		var groupId = group?.Id ?? string.Empty;
 
-		StatusMessage = IsAdmin ? "Adding category..." : "Submitting for review...";
+		StatusMessage = IsAdmin ? L.T("Adding category...") : L.T("Submitting for review...");
 		try
 		{
 			if (IsAdmin)
@@ -153,7 +153,7 @@ public partial class CategoriesViewModel : ObservableObject
 				await _categories.AddAsync(name, groupId);
 				await ShowCachedAsync();
 				StatusMessage = string.Empty;
-				return $"\"{name}\" has been added. Choose its games via the request on the Requests page, or by tapping the category here.";
+				return L.F("\"{0}\" has been added. Choose its games via the request on the Requests page, or by tapping the category here.", name);
 			}
 
 			await SubmitAsync(new ReviewRequest
@@ -166,11 +166,11 @@ public partial class CategoriesViewModel : ObservableObject
 				SubjectName = name
 			});
 			StatusMessage = string.Empty;
-			return $"\"{name}\" has been submitted for review. You'll get the admin's decision in your Inbox.";
+			return L.F("\"{0}\" has been submitted for review. You'll get the admin's decision in your Inbox.", name);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return null;
 		}
 	}
@@ -188,7 +188,7 @@ public partial class CategoriesViewModel : ObservableObject
 		}
 		name = GameCategory.NormalizeName(name);
 
-		StatusMessage = IsAdmin ? "Adding main category..." : "Submitting for review...";
+		StatusMessage = IsAdmin ? L.T("Adding main category...") : L.T("Submitting for review...");
 		try
 		{
 			if (IsAdmin)
@@ -196,7 +196,7 @@ public partial class CategoriesViewModel : ObservableObject
 				await _categories.AddGroupAsync(name);
 				await ShowCachedAsync();
 				StatusMessage = string.Empty;
-				return $"\"{name}\" has been added. Add categories to it with + New category. Once it has categories, every game needs at least one of them.";
+				return L.F("\"{0}\" has been added. Add categories to it with + New category. Once it has categories, every game needs at least one of them.", name);
 			}
 
 			await SubmitAsync(new ReviewRequest
@@ -208,11 +208,11 @@ public partial class CategoriesViewModel : ObservableObject
 				SubjectName = name
 			});
 			StatusMessage = string.Empty;
-			return $"\"{name}\" has been submitted for review. You'll get the admin's decision in your Inbox.";
+			return L.F("\"{0}\" has been submitted for review. You'll get the admin's decision in your Inbox.", name);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return null;
 		}
 	}
@@ -237,9 +237,9 @@ public partial class CategoriesViewModel : ObservableObject
 				SubjectName = category.Name,
 				ProposedGroupId = group.Id,
 				ProposedName = group.Name
-			}, $"Moving \"{category.Name}\" to \"{group.Name}\"");
+			}, L.F("Moving \"{0}\" to \"{1}\"", category.Name, group.Name));
 
-		await RunAsync("Moving category...", () => _categories.MoveAsync(category, group.Id));
+		await RunAsync(L.T("Moving category..."), () => _categories.MoveAsync(category, group.Id));
 		return null;
 	}
 
@@ -259,9 +259,9 @@ public partial class CategoriesViewModel : ObservableObject
 				CategoryId = category.Id,
 				SubjectName = category.Name,
 				ProposedName = GameCategory.NormalizeName(name)
-			}, $"Renaming \"{category.Name}\"");
+			}, L.F("Renaming \"{0}\"", category.Name));
 
-		await RunAsync("Renaming category...", () => _categories.RenameAsync(category, name));
+		await RunAsync(L.T("Renaming category..."), () => _categories.RenameAsync(category, name));
 		return null;
 	}
 
@@ -274,25 +274,25 @@ public partial class CategoriesViewModel : ObservableObject
 				Type = ReviewRequestType.DeleteCategory,
 				CategoryId = category.Id,
 				SubjectName = category.Name
-			}, $"Deleting \"{category.Name}\"");
+			}, L.F("Deleting \"{0}\"", category.Name));
 
-		await RunAsync("Deleting category...", () => _categories.DeleteAsync(category));
+		await RunAsync(L.T("Deleting category..."), () => _categories.DeleteAsync(category));
 		return null;
 	}
 
 	/// <summary>Moderators: sends a change to the admins. Returns what to tell the moderator, or null when it failed (StatusMessage says why).</summary>
 	private async Task<string?> ProposeAsync(ReviewRequest request, string what)
 	{
-		StatusMessage = "Submitting for review...";
+		StatusMessage = L.T("Submitting for review...");
 		try
 		{
 			await SubmitAsync(request);
 			StatusMessage = string.Empty;
-			return $"{what} has been submitted for review. Nothing changes until an admin approves it; you'll get the decision in your Inbox.";
+			return L.F("{0} has been submitted for review. Nothing changes until an admin approves it; you'll get the decision in your Inbox.", what);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return null;
 		}
 	}
@@ -309,7 +309,7 @@ public partial class CategoriesViewModel : ObservableObject
 		var order = section.Select(r => r.Category).ToList();
 		var from = order.IndexOf(row.Category);
 		(order[from], order[from + direction]) = (order[from + direction], order[from]);
-		return RunAsync("Moving category...", () => _categories.ReorderAsync(order));
+		return RunAsync(L.T("Moving category..."), () => _categories.ReorderAsync(order));
 	}
 
 	/// <summary>Runs a change and shows the result. False when it didn't work (StatusMessage says why).</summary>
@@ -325,7 +325,7 @@ public partial class CategoriesViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 		// Also after a failure: part of it may have been saved already.
 		await ShowCachedAsync();
@@ -348,9 +348,9 @@ public partial class CategoriesViewModel : ObservableObject
 				CategoryId = group.Id,
 				SubjectName = group.Name,
 				ProposedName = GameCategory.NormalizeName(name)
-			}, $"Renaming \"{group.Name}\"");
+			}, L.F("Renaming \"{0}\"", group.Name));
 
-		await RunAsync("Renaming main category...", () => _categories.RenameGroupAsync(group, name));
+		await RunAsync(L.T("Renaming main category..."), () => _categories.RenameGroupAsync(group, name));
 		return null;
 	}
 
@@ -366,9 +366,9 @@ public partial class CategoriesViewModel : ObservableObject
 				Type = ReviewRequestType.DeleteCategoryGroup,
 				CategoryId = group.Id,
 				SubjectName = group.Name
-			}, $"Deleting \"{group.Name}\"");
+			}, L.F("Deleting \"{0}\"", group.Name));
 
-		await RunAsync("Deleting main category...", () => _categories.DeleteGroupAsync(group));
+		await RunAsync(L.T("Deleting main category..."), () => _categories.DeleteGroupAsync(group));
 		return null;
 	}
 

@@ -186,7 +186,7 @@ public partial class EditableRulesBlock : ObservableObject
 	private static void ShowPlaceholders(IList<EditableRulesBlock> blocks)
 	{
 		foreach (var block in blocks)
-			block.Placeholder = blocks.Count == 1 ? "Explain the rules..." : string.Empty;
+			block.Placeholder = blocks.Count == 1 ? L.T("Explain the rules...") : string.Empty;
 	}
 }
 

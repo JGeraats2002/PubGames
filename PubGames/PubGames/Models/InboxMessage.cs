@@ -72,8 +72,8 @@ public class InboxMessage
 	/// </summary>
 	[Ignore]
 	public string Heading => Kind == MessageKind.ReviewDecision
-		? $"Review decision from {FromLabel}"
-		: ToEmail == AllAdmins ? $"{FromLabel} to all admins" : $"From {FromLabel}";
+		? L.F("Review decision from {0}", FromLabel)
+		: ToEmail == AllAdmins ? L.F("{0} to all admins", FromLabel) : L.F("From {0}", FromLabel);
 
 	/// <summary>When it was sent, in the phone's time: "27 Oct, 14:05".</summary>
 	[Ignore]

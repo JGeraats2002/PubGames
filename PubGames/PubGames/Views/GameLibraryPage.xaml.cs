@@ -28,7 +28,7 @@ public partial class GameLibraryPage : ContentPage
 		base.OnAppearing();
 		await _vm.LoadAsync();
 		if (_vm.PassNotice() is { } notice)
-			await DisplayAlertAsync("Pub Games Pass", notice, "OK");
+			await DisplayAlertAsync(L.T("Pub Games Pass"), notice, "OK");
 	}
 
 	/// <summary>Opens the filters (number of players, categories).</summary>
@@ -45,7 +45,7 @@ public partial class GameLibraryPage : ContentPage
 		// Every game stays in the list, but it only opens with a number of players it's made for.
 		if (game.PlayerCountProblem(_vm.Players.Count) is { } problem)
 		{
-			await DisplayAlertAsync("Not the right number of players", problem, "OK");
+			await DisplayAlertAsync(L.T("Not the right number of players"), problem, "OK");
 			return;
 		}
 

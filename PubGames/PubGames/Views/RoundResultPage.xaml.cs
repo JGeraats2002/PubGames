@@ -20,8 +20,8 @@ public partial class RoundResultPage : ContentPage
 		InitializeComponent();
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.RoundResult(_vm.Mode, _vm.LowestWins, _vm.Settings));
-		_vm.AskExtraSubgame = tie => DisplayAlertAsync("It's a tie",
-			$"{tie} Play an extra subgame to decide?", "Play extra subgame", "End in a tie");
+		_vm.AskExtraSubgame = tie => DisplayAlertAsync(L.T("It's a tie"),
+			L.F("{0} Play an extra subgame to decide?", tie), L.T("Play extra subgame"), L.T("End in a tie"));
 		_vm.PlayDuel = setup => DuelPage.PlayAsync(this, setup);
 		_vm.Inform = (title, message) => DisplayAlertAsync(title, message, "OK");
 		_vm.Saved += async (_, finished) =>

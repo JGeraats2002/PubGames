@@ -21,7 +21,7 @@ public class GoogleSignInProvider : IGoogleSignInProvider
 	public async Task<string> GetGoogleIdTokenAsync(string webClientId)
 	{
 		var activity = Platform.CurrentActivity
-			?? throw new InvalidOperationException("No foreground activity to show the account picker on.");
+			?? throw new InvalidOperationException(L.T("No foreground activity to show the account picker on."));
 
 		var option = new GetSignInWithGoogleOption.Builder(webClientId).Build();
 		var request = new GetCredentialRequest.Builder().AddCredentialOption(option).Build();
@@ -37,7 +37,7 @@ public class GoogleSignInProvider : IGoogleSignInProvider
 			return GoogleIdTokenCredential.CreateFrom(credential.Data).IdToken;
 		}
 
-		throw new AuthException("Google didn't return an ID token.");
+		throw new AuthException(L.T("Google didn't return an ID token."));
 	}
 
 	/// <summary>
@@ -75,9 +75,9 @@ public class GoogleSignInProvider : IGoogleSignInProvider
 			if (error is GetCredentialCancellationException)
 				_tcs.TrySetCanceled();
 			else if (error is NoCredentialException)
-				_tcs.TrySetException(new AuthException("No Google account found on this device. Add one in Android Settings → Accounts."));
+				_tcs.TrySetException(new AuthException(L.T("No Google account found on this device. Add one in Android Settings → Accounts.")));
 			else
-				_tcs.TrySetException(new AuthException($"Google sign-in failed: {error?.Message}"));
+				_tcs.TrySetException(new AuthException(L.F("Google sign-in failed: {0}", error?.Message)));
 		}
 	}
 

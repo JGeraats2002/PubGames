@@ -37,10 +37,10 @@ public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProf
 	{
 		text = text.Trim();
 		if (text.Length < Feedback.MinLength)
-			throw new InvalidOperationException($"Explain your feedback (at least {Feedback.MinLength} characters).");
+			throw new InvalidOperationException(L.F("Explain your feedback (at least {0} characters).", Feedback.MinLength));
 		if (text.Length > Feedback.MaxLength)
-			throw new InvalidOperationException($"Feedback can be {Feedback.MaxLength} characters at most.");
-		var user = auth.CurrentUser ?? throw new InvalidOperationException("Sign in to send feedback.");
+			throw new InvalidOperationException(L.F("Feedback can be {0} characters at most.", Feedback.MaxLength));
+		var user = auth.CurrentUser ?? throw new InvalidOperationException(L.T("Sign in to send feedback."));
 
 		var feedback = new Feedback
 		{
@@ -75,7 +75,7 @@ public class FeedbackService(FirestoreClient firestore, IAuthService auth, IProf
 	{
 		reply = string.IsNullOrWhiteSpace(reply) ? null : reply.Trim();
 		if (reply?.Length > Feedback.MaxReplyLength)
-			throw new InvalidOperationException($"A reply can be {Feedback.MaxReplyLength} characters at most.");
+			throw new InvalidOperationException(L.F("A reply can be {0} characters at most.", Feedback.MaxReplyLength));
 		var handledBy = auth.CurrentUser?.DisplayName ?? string.Empty;
 		var now = DateTime.UtcNow;
 		await firestore.UpdateFieldsAsync(Collection, feedback.Id, new Dictionary<string, object?>

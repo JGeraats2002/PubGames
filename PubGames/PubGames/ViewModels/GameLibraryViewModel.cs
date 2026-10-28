@@ -85,8 +85,8 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		catch (Exception ex)
 		{
 			SyncMessage = ex is HttpRequestException
-				? "Offline - showing the games saved on this phone."
-				: $"Couldn't refresh games: {ex.Message}";
+				? L.T("Offline - showing the games saved on this phone.")
+				: L.F("Couldn't refresh games: {0}", ex.Message);
 			return;
 		}
 
@@ -99,7 +99,7 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 	/// </summary>
 	private async Task ShowLocalAsync()
 	{
-		_allGames = (await _local.GetGamesAsync()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+		_allGames = (await _local.GetGamesAsync()).Select(g => g.InAppLanguage()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
 		var categories = await _categories.GetCachedAsync();
 
 		// Only categories that have games, so a single cloud never shows an empty list.
@@ -153,9 +153,9 @@ public partial class GameLibraryViewModel : ObservableObject, IQueryAttributable
 		if (e.PassRunsUntil is not { } until || e.Renews) return null;
 		var left = until - DateTime.UtcNow;
 		string? notice = left > TimeSpan.Zero && left <= TimeSpan.FromDays(3)
-			? $"Your Pub Games Pass ends on {until.ToLocalTime():d MMMM} and doesn't renew. Account > Pub Games Pass keeps every game unlocked."
+			? L.F("Your Pub Games Pass ends on {0:d MMMM} and doesn't renew. Account > Pub Games Pass keeps every game unlocked.", until.ToLocalTime())
 			: left <= TimeSpan.Zero && left > TimeSpan.FromDays(-7)
-				? "Your Pub Games Pass has ended. Paid games you didn't buy are locked again; Account > Pub Games Pass unlocks them."
+				? L.T("Your Pub Games Pass has ended. Paid games you didn't buy are locked again; Account > Pub Games Pass unlocks them.")
 				: null;
 		if (notice is null) return null;
 

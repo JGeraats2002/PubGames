@@ -62,7 +62,7 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	private int subgameCount = 1;
 
 	/// <summary>"1 game" or "3 subgames".</summary>
-	public string SubgameCountText => SubgameCount == 1 ? "1 game" : $"{SubgameCount} subgames";
+	public string SubgameCountText => SubgameCount == 1 ? L.T("1 game") : L.F("{0} subgames", SubgameCount);
 
 	/// <summary>One subgame more (+1) or fewer (-1); at least 1.</summary>
 	public void ChangeSubgameCount(int delta) => SubgameCount = Math.Clamp(SubgameCount + delta, 1, 99);
@@ -93,9 +93,9 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 			_game = game;
 			GameName = game.Name;
 			CoverImageRef = game.CoverImageUrl;
-			PlayerCountLabel = $"Players: {game.PlayersLabel}";
+			PlayerCountLabel = L.F("Players: {0}", game.PlayersLabel);
 			RulesBlocks = string.IsNullOrWhiteSpace(game.RulesText)
-				? [new RulesBlock("No rules written for this game yet.", null)]
+				? [new RulesBlock(L.T("No rules written for this game yet."), null)]
 				: RulesBlock.Parse(game.RulesText);
 			IsLocked = !_store.Owns(game);
 		}
@@ -103,7 +103,7 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 		if (query.TryGetValue("players", out var p) && p is List<Player> players)
 		{
 			_players = players;
-			PlayersSummary = "Playing: " + string.Join(", ", players.Select(pl => pl.Name));
+			PlayersSummary = L.T("Playing: ") + string.Join(", ", players.Select(pl => pl.Name));
 		}
 
 		// Play again: the same number of subgames as last time.

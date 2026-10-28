@@ -92,7 +92,7 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 			Rows.Add(new ParticipantRow
 			{
 				Participant = participant,
-				Player = players.GetValueOrDefault(participant.PlayerId) ?? new Player { Id = participant.PlayerId, Name = "Unknown player" }
+				Player = players.GetValueOrDefault(participant.PlayerId) ?? new Player { Id = participant.PlayerId, Name = L.T("Unknown player") }
 			});
 
 		var playingIds = active.Select(p => p.PlayerId).ToHashSet();
@@ -128,7 +128,7 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	{
 		await SeatAsync(player, seat: Rows.Count, startScore: null);
 		await LoadAsync();
-		StatusMessage = $"{player.Name} joined the game.";
+		StatusMessage = L.F("{0} joined the game.", player.Name);
 	}
 
 	/// <summary>Adds someone who isn't a saved player yet; saved to "Saved players" only when SaveNewPlayer is on.</summary>
@@ -137,12 +137,12 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 		name = name.Trim();
 		if (name.Length == 0)
 		{
-			StatusMessage = "Type the new player's name first.";
+			StatusMessage = L.T("Type the new player's name first.");
 			return null;
 		}
 		if (Rows.Any(r => r.Player.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
 		{
-			StatusMessage = $"{name} is already playing.";
+			StatusMessage = L.F("{0} is already playing.", name);
 			return null;
 		}
 
@@ -182,7 +182,7 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 		await _local.TransferRoundResultsAsync(_sessionId, row.Player.Id, replacement.Id);
 		await SeatAsync(replacement, seat, startScore: score);
 		await LoadAsync();
-		StatusMessage = $"{replacement.Name} took {row.Player.Name}'s seat, score and results.";
+		StatusMessage = L.F("{0} took {1}'s seat, score and results.", replacement.Name, row.Player.Name);
 	}
 
 	/// <summary>

@@ -72,6 +72,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<BlockedPlayersViewModel>();
 		builder.Services.AddTransient<SubscriptionViewModel>();
 		builder.Services.AddTransient<LoginViewModel>();
+		builder.Services.AddTransient<LanguageViewModel>();
 
 		// --- Pages ---
 		builder.Services.AddTransient<PlayerEntryPage>();
@@ -99,6 +100,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<BlockedPlayersPage>();
 		builder.Services.AddTransient<SubscriptionPage>();
 		builder.Services.AddTransient<LoginPage>();
+		builder.Services.AddTransient<LanguagePage>();
 
 		return builder.Build();
 	}

@@ -21,10 +21,53 @@ public partial class AdminTeamViewModel : ObservableObject
 
 	private string AdminName => _auth.CurrentUser is { } u
 		? (string.IsNullOrWhiteSpace(u.DisplayName) ? u.Email : u.DisplayName)
-		: "An admin";
+		: L.T("An admin");
 
-	/// <summary>The admins and moderators.</summary>
-	public ObservableCollection<TeamMember> Members { get; } = new();
+	/// <summary>Everyone on the team, as last loaded (before search and filter).</summary>
+	private List<TeamMember> _members = [];
+
+	/// <summary>The admins that match the search and filter, in alphabetical order.</summary>
+	public ObservableCollection<TeamMember> Admins { get; } = new();
+
+	/// <summary>The moderators that match the search and filter, in alphabetical order.</summary>
+	public ObservableCollection<TeamMember> Moderators { get; } = new();
+
+	/// <summary>What's typed in the search bar: matches a member's name or email.</summary>
+	[ObservableProperty]
+	private string searchText = string.Empty;
+
+	partial void OnSearchTextChanged(string value) => ApplyFilter();
+
+	/// <summary>Which roles are shown: everyone, only admins or only moderators.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(ShowingAll), nameof(ShowingAdmins), nameof(ShowingModerators))]
+	private TeamFilter filter = TeamFilter.All;
+
+	partial void OnFilterChanged(TeamFilter value) => ApplyFilter();
+
+	/// <summary>The All button is selected.</summary>
+	public bool ShowingAll => Filter == TeamFilter.All;
+
+	/// <summary>The Admins button is selected.</summary>
+	public bool ShowingAdmins => Filter == TeamFilter.Admins;
+
+	/// <summary>The Moderators button is selected.</summary>
+	public bool ShowingModerators => Filter == TeamFilter.Moderators;
+
+	/// <summary>The admins list shows: the filter allows it and someone matches.</summary>
+	public bool HasAdmins => Filter != TeamFilter.Moderators && Admins.Count > 0;
+
+	/// <summary>The moderators list shows: the filter allows it and someone matches.</summary>
+	public bool HasModerators => Filter != TeamFilter.Admins && Moderators.Count > 0;
+
+	/// <summary>Heading above the admins, with how many there are.</summary>
+	public string AdminsHeading => L.F("Admins ({0})", Admins.Count);
+
+	/// <summary>Heading above the moderators, with how many there are.</summary>
+	public string ModeratorsHeading => L.F("Moderators ({0})", Moderators.Count);
+
+	/// <summary>Nobody matches the search and filter.</summary>
+	public bool HasNoMatches => _members.Count > 0 && !HasAdmins && !HasModerators;
 
 	/// <summary>What happened, or why it couldn't.</summary>
 	[ObservableProperty]
@@ -71,8 +114,8 @@ public partial class AdminTeamViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			StatusMessage = ex is HttpRequestException
-				? "Offline - showing the team as last seen on this phone."
-				: $"Couldn't refresh the team: {ex.Message}";
+				? L.T("Offline - showing the team as last seen on this phone.")
+				: L.F("Couldn't refresh the team: {0}", ex.Message);
 		}
 	}
 
@@ -84,14 +127,53 @@ public partial class AdminTeamViewModel : ObservableObject
 	private void ShowMembers(IEnumerable<TeamMember> members)
 	{
 		var owner = IAmOwner;
-		Members.Clear();
-		foreach (var member in members)
+		_members = [.. members];
+		foreach (var member in _members)
 		{
 			member.CanPromote = owner && !member.IsAdmin;
 			member.CanDemote = owner && member.IsAdmin && !member.IsBuiltInAdmin;
 			member.CanRemove = !member.IsBuiltInAdmin && (owner || !member.IsAdmin);
-			Members.Add(member);
 		}
+		ApplyFilter();
+	}
+
+	/// <summary>Shows only the given roles (the All, Admins and Moderators buttons).</summary>
+	[RelayCommand]
+	private void SetFilter(TeamFilter value) => Filter = value;
+
+	/// <summary>
+	/// Fills the two lists with the members that match the search (name or email) and the filter, each sorted
+	/// alphabetically by name, or by email when there's no name.
+	/// </summary>
+	private void ApplyFilter()
+	{
+		var search = SearchText.Trim();
+		var matches = _members
+			.Where(member => search.Length == 0
+				|| member.Label.Contains(search, StringComparison.CurrentCultureIgnoreCase)
+				|| member.Email.Contains(search, StringComparison.OrdinalIgnoreCase))
+			.OrderBy(member => member.Label, StringComparer.CurrentCultureIgnoreCase)
+			.ToList();
+
+		Admins.Clear();
+		Moderators.Clear();
+		foreach (var member in matches)
+		{
+			if (member.IsAdmin)
+			{
+				if (Filter != TeamFilter.Moderators) Admins.Add(member);
+			}
+			else if (Filter != TeamFilter.Admins)
+			{
+				Moderators.Add(member);
+			}
+		}
+
+		OnPropertyChanged(nameof(HasAdmins));
+		OnPropertyChanged(nameof(HasModerators));
+		OnPropertyChanged(nameof(AdminsHeading));
+		OnPropertyChanged(nameof(ModeratorsHeading));
+		OnPropertyChanged(nameof(HasNoMatches));
 	}
 
 	/// <summary>A moderator can be added once an email is typed and nothing else is busy.</summary>
@@ -106,19 +188,19 @@ public partial class AdminTeamViewModel : ObservableObject
 		var email = TeamMember.NormalizeEmail(NewModeratorEmail);
 		if (!IsValidEmail(email))
 		{
-			StatusMessage = "That doesn't look like an email address.";
+			StatusMessage = L.T("That doesn't look like an email address.");
 			return;
 		}
-		if (Members.FirstOrDefault(m => m.Email == email) is { } existing)
+		if (_members.FirstOrDefault(m => m.Email == email) is { } existing)
 		{
-			StatusMessage = $"{email} is already on the team as {existing.RoleName.ToLowerInvariant()}.";
+			StatusMessage = L.F("{0} is already on the team as {1}.", email, existing.RoleName.ToLowerInvariant());
 			return;
 		}
 
 		var member = new TeamMember { Email = email, Role = TeamRole.Moderator };
 
 		IsBusy = true;
-		StatusMessage = "Adding moderator...";
+		StatusMessage = L.T("Adding moderator...");
 		try
 		{
 			// Cloud first: the email promises access, so it must already be real.
@@ -126,7 +208,7 @@ public partial class AdminTeamViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return;
 		}
 		finally
@@ -138,7 +220,7 @@ public partial class AdminTeamViewModel : ObservableObject
 		NewModeratorEmail = string.Empty;
 
 		var (subject, body) = TeamEmails.ModeratorAdded(member, AdminName);
-		await SendEmailAsync(member.Email, subject, body, $"{email} is now a moderator.");
+		await SendEmailAsync(member.Email, subject, body, L.F("{0} is now a moderator.", email));
 	}
 
 	/// <summary>Removes the member in the cloud (their rights end on their next app start), then emails them the reason.</summary>
@@ -147,20 +229,21 @@ public partial class AdminTeamViewModel : ObservableObject
 		if (!IsAllowedToManageTeam() || member.IsBuiltInAdmin) return;
 		if (member.IsAdmin && !IsAllowedToManageAdmins()) return;
 
-		StatusMessage = $"Removing {member.Email}...";
+		StatusMessage = L.F("Removing {0}...", member.Email);
 		try
 		{
 			await _team.RemoveMemberAsync(member);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return;
 		}
 
-		Members.Remove(member);
+		_members.Remove(member);
+		ApplyFilter();
 		var (subject, body) = TeamEmails.MemberRemoved(member, reason, AdminName);
-		await SendEmailAsync(member.Email, subject, body, $"{member.Email} is no longer {member.RoleName.ToLowerInvariant()}.");
+		await SendEmailAsync(member.Email, subject, body, L.F("{0} is no longer {1}.", member.Email, member.RoleName.ToLowerInvariant()));
 	}
 
 	/// <summary>
@@ -172,22 +255,22 @@ public partial class AdminTeamViewModel : ObservableObject
 		{
 			await _email.SendAsync(to, subject, body, _auth.CurrentUser?.Email ?? string.Empty);
 			StatusMessage = _email.SendsAutomatically
-				? $"{done} They've been emailed."
-				: $"{done} Tap Send in your mail app to email them.";
+				? L.F("{0} They've been emailed.", done)
+				: L.F("{0} Tap Send in your mail app to email them.", done);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = $"{done} But the email couldn't be sent: {ex.Message}";
+			StatusMessage = L.F("{0} But the email couldn't be sent: {1}", done, ex.Message);
 		}
 	}
 
 	/// <summary>Owner only. Promotion adds a peer admin - it does not replace/remove the promoter.</summary>
 	[RelayCommand]
-	private Task MakeAdminAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Admin, $"{member.Label} is now an admin.");
+	private Task MakeAdminAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Admin, L.F("{0} is now an admin.", member.Label));
 
 	/// <summary>Owner only: an admin goes back to being a moderator.</summary>
 	[RelayCommand]
-	private Task MakeModeratorAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Moderator, $"{member.Label} is now a moderator.");
+	private Task MakeModeratorAsync(TeamMember member) => ChangeRoleAsync(member, TeamRole.Moderator, L.F("{0} is now a moderator.", member.Label));
 
 	/// <summary>The owner makes a moderator admin or an admin moderator, in the cloud.</summary>
 	private async Task ChangeRoleAsync(TeamMember member, TeamRole role, string done)
@@ -204,7 +287,7 @@ public partial class AdminTeamViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			member.Role = previous;
-			StatusMessage = ex is HttpRequestException ? "No connection - the change wasn't saved." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - the change wasn't saved.") : ex.Message;
 		}
 		// Re-read so the page shows what's actually stored.
 		ShowMembers(await _team.GetCachedMembersAsync());
@@ -215,7 +298,7 @@ public partial class AdminTeamViewModel : ObservableObject
 	{
 		if (_team.Me is { } me && _permissions.CanManageTeam(me)) return true;
 
-		StatusMessage = "Only admins can manage the team.";
+		StatusMessage = L.T("Only admins can manage the team.");
 		return false;
 	}
 
@@ -226,11 +309,24 @@ public partial class AdminTeamViewModel : ObservableObject
 	{
 		if (IAmOwner) return true;
 
-		StatusMessage = "Only the owner of the app can make someone admin, turn an admin back into a moderator or remove an admin. If you'd like a change, send the owner a message from your Inbox.";
+		StatusMessage = L.T("Only the owner of the app can make someone admin, turn an admin back into a moderator or remove an admin. If you'd like a change, send the owner a message from your Inbox.");
 		return false;
 	}
 
 	/// <summary>Whether the text is a whole email address (with a dot in the domain).</summary>
 	private static bool IsValidEmail(string email) =>
 		MailAddress.TryCreate(email, out var parsed) && parsed.Address == email && email.Contains('.', StringComparison.Ordinal);
+}
+
+/// <summary>Which roles the Team page shows.</summary>
+public enum TeamFilter
+{
+	/// <summary>Admins and moderators.</summary>
+	All,
+
+	/// <summary>Only admins.</summary>
+	Admins,
+
+	/// <summary>Only moderators.</summary>
+	Moderators
 }

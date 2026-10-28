@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.RoundResultPage"
              x:DataType="vm:RoundResultViewModel"
@@ -56,11 +57,11 @@
 
 								<!-- Ranking mode: − place + -->
 								<HorizontalStackLayout Grid.Column="1" IsVisible="{Binding IsRanking}" Spacing="6" VerticalOptions="Center">
-									<Button SemanticProperties.Description="Better place" Text="−" Clicked="OnBetterPlaceClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
+									<Button SemanticProperties.Description="{loc:T RoundResult_BetterPlace}" Text="−" Clicked="OnBetterPlaceClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 									<Label Text="{Binding PlaceLabel}" FontSize="20" FontAttributes="Bold" WidthRequest="56"
 									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
-									<Button SemanticProperties.Description="Worse place" Text="+" Clicked="OnWorsePlaceClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
+									<Button SemanticProperties.Description="{loc:T RoundResult_WorsePlace}" Text="+" Clicked="OnWorsePlaceClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</HorizontalStackLayout>
 							</Grid>

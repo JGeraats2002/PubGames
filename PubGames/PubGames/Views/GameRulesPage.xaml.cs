@@ -41,10 +41,10 @@ public partial class GameRulesPage : ContentPage
 	/// <summary>Buy the game once, a friend code, or the Pub Games Pass. Nothing is charged unless a purchase is completed.</summary>
 	private async void OnUnlockClicked(object? sender, EventArgs e)
 	{
-		var buy = $"Buy {await _vm.PriceAsync()}";
-		const string pass = "Pub Games Pass";
-		const string code = "I have a code";
-		var choice = await ChoicePopup.AskAsync(this, $"Unlock {_vm.GameName}", null, "Cancel", code, pass, buy);
+		var buy = L.F("Buy {0}", await _vm.PriceAsync());
+		var pass = L.T("Pub Games Pass");
+		var code = L.T("I have a code");
+		var choice = await ChoicePopup.AskAsync(this, L.F("Unlock {0}", _vm.GameName), null, L.T("Cancel"), code, pass, buy);
 		if (choice == pass)
 		{
 			await Shell.Current.GoToAsync(nameof(SubscriptionPage));
@@ -59,19 +59,19 @@ public partial class GameRulesPage : ContentPage
 
 		var (outcome, problem) = await _vm.BuyAsync();
 		if (outcome == PurchaseOutcome.Pending)
-			await DisplayAlertAsync("Payment pending", $"{_vm.GameName} unlocks as soon as Google Play confirms the payment.", "OK");
+			await DisplayAlertAsync(L.T("Payment pending"), L.F("{0} unlocks as soon as Google Play confirms the payment.", _vm.GameName), "OK");
 		else if (outcome == PurchaseOutcome.Failed)
-			await DisplayAlertAsync("Not bought", problem ?? "The purchase didn't go through.", "OK");
+			await DisplayAlertAsync(L.T("Not bought"), problem ?? L.T("The purchase didn't go through."), "OK");
 	}
 
 	/// <summary>Asks for a friend code and unlocks the game with it, or says why it didn't work.</summary>
 	private async Task RedeemAsync()
 	{
-		var typed = await DisplayPromptAsync("Code", "Type the code you were given.", "Use code", "Cancel",
+		var typed = await DisplayPromptAsync(L.T("Code"), L.T("Type the code you were given."), L.T("Use code"), L.T("Cancel"),
 			placeholder: "XXXX-XXXX", maxLength: 9, keyboard: Keyboard.Text);
 		if (string.IsNullOrWhiteSpace(typed)) return;
 		if (await _vm.RedeemAsync(typed) is { } problem)
-			await DisplayAlertAsync("Code not used", problem, "OK");
+			await DisplayAlertAsync(L.T("Code not used"), problem, "OK");
 	}
 
 	/// <summary>One subgame fewer.</summary>

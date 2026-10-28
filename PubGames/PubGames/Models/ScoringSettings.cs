@@ -45,9 +45,9 @@ public sealed record ScoringSettings
 	/// <summary>The two choices for LowestWins (false, true), worded for the result type.</summary>
 	public static List<string> ScoreDirectionOptions(ResultMode mode) => mode switch
 	{
-		ResultMode.Loser => ["Lowest score loses", "Highest score loses"],
-		ResultMode.Ranking => ["Highest score is 1st", "Lowest score is 1st"],
-		_ => ["Highest score wins", "Lowest score wins"]
+		ResultMode.Loser => [L.T("Lowest score loses"), L.T("Highest score loses")],
+		ResultMode.Ranking => [L.T("Highest score is 1st"), L.T("Lowest score is 1st")],
+		_ => [L.T("Highest score wins"), L.T("Lowest score wins")]
 	};
 
 	/// <summary>Which score wins, in words, for the help: "the highest score wins".</summary>
@@ -125,12 +125,12 @@ public sealed record ScoringSettings
 	{
 		get
 		{
-			var margin = DuelMargin is > 1 ? $", winning by at least {DuelMargin}" : string.Empty;
+			var margin = DuelMargin is > 1 ? L.F(", winning by at least {0}", DuelMargin) : string.Empty;
 			return EffectiveDuelEnd switch
 			{
-				Models.DuelEnd.Score => $"rounds until someone reaches {EndScore}, best score wins{margin}",
-				Models.DuelEnd.BestOf => $"best of {DuelRounds} rounds",
-				_ => $"each player plays {DuelTurns} {(DuelTurns == 1 ? "turn" : "turns")}, best score wins{margin}; a tie plays another turn"
+				Models.DuelEnd.Score => L.F("rounds until someone reaches {0}, best score wins{1}", EndScore, margin),
+				Models.DuelEnd.BestOf => L.F("best of {0} rounds", DuelRounds),
+				_ => L.F("each player plays {0} {1}, best score wins{2}; a tie plays another turn", DuelTurns, (DuelTurns == 1 ? L.T("turn") : L.T("turns")), margin)
 			};
 		}
 	}
@@ -138,10 +138,10 @@ public sealed record ScoringSettings
 	/// <summary>Why a duel's end can't work, or null when it's fine.</summary>
 	private string? DuelEndProblem() => EffectiveDuelEnd switch
 	{
-		Models.DuelEnd.Score when EndScore is null => "Enter the score the duel goes to.",
-		Models.DuelEnd.Turns when DuelTurns < 1 => "Each player needs at least 1 turn.",
-		Models.DuelEnd.BestOf when DuelRounds < 1 => "The duel needs at least 1 round.",
-		_ when DuelMargin is < 1 => "The lead needed to win must be at least 1.",
+		Models.DuelEnd.Score when EndScore is null => L.T("Enter the score the duel goes to."),
+		Models.DuelEnd.Turns when DuelTurns < 1 => L.T("Each player needs at least 1 turn."),
+		Models.DuelEnd.BestOf when DuelRounds < 1 => L.T("The duel needs at least 1 round."),
+		_ when DuelMargin is < 1 => L.T("The lead needed to win must be at least 1."),
 		_ => null
 	};
 
@@ -156,12 +156,12 @@ public sealed record ScoringSettings
 		{
 			var parts = new List<string>();
 			if (StartRotation != StartRotation.None)
-				parts.Add($"next subgame starts with: {StartRotationOption.LabelFor(StartRotation).ToLowerInvariant()}");
-			if (FixedTurnOrder) parts.Add("fixed input order");
+				parts.Add(L.F("next subgame starts with: {0}", StartRotationOption.LabelFor(StartRotation).ToLowerInvariant()));
+			if (FixedTurnOrder) parts.Add(L.T("fixed input order"));
 			if (EndScore is { } end)
 				parts.Add(EndMode == EndMode.Automatic
-					? $"subgame ends automatically at {end}{(EqualizingTurn ? " with an equalizing turn" : string.Empty)}"
-					: $"subgame can end at {end}");
+					? L.F("subgame ends automatically at {0}{1}", end, (EqualizingTurn ? L.T(" with an equalizing turn") : string.Empty))
+					: L.F("subgame can end at {0}", end));
 			return string.Join(" · ", parts);
 		}
 	}
@@ -181,14 +181,14 @@ public sealed record ScoringSettings
 	/// <summary>"ties allowed" or "no ties: duel after every subgame and the final total, for 1st place / the loser, same scoring as the game".</summary>
 	public string TieSummaryFor(ScoringType gameType)
 	{
-		if (AllowTies) return "ties allowed";
+		if (AllowTies) return L.T("ties allowed");
 		var (type, duel) = DuelScoring(gameType);
-		var scoring = DuelSameScoring ? "same rules as the game"
+		var scoring = DuelSameScoring ? L.T("same rules as the game")
 			: type is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
-				? $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {duel.SummaryFor(type, withResult: false)}, {(duel.LowestWins ? "lowest" : "highest")} score wins"
-				: $"duel scoring: {ScoringTypeOption.LabelFor(type).ToLowerInvariant()}, {(duel.LowestWins ? "lowest" : "highest")} score wins";
+				? L.F("duel scoring: {0}, {1}, {2} score wins", ScoringTypeOption.LabelFor(type).ToLowerInvariant(), duel.SummaryFor(type, withResult: false), (duel.LowestWins ? L.T("lowest") : L.T("highest")))
+				: L.F("duel scoring: {0}, {1} score wins", ScoringTypeOption.LabelFor(type).ToLowerInvariant(), (duel.LowestWins ? L.T("lowest") : L.T("highest")));
 		scoring += $", {duel.DuelEndSummary}";
-		return $"no ties: duel {TieBreakMomentOption.LabelFor(TieBreakMoment).ToLowerInvariant()}, {TieBreakScopeOption.LabelFor(TieBreakScope, ResultMode).ToLowerInvariant()}, {scoring}";
+		return L.F("no ties: duel {0}, {1}, {2}", TieBreakMomentOption.LabelFor(TieBreakMoment).ToLowerInvariant(), TieBreakScopeOption.LabelFor(TieBreakScope, ResultMode).ToLowerInvariant(), scoring);
 	}
 
 	/// <summary>The settings of a game that has none saved.</summary>
@@ -202,13 +202,13 @@ public sealed record ScoringSettings
 	public string SummaryFor(ScoringType type, bool withResult = true)
 	{
 		var parts = new List<string>();
-		if (type == ScoringType.PlusMinus) parts.Add($"steps of {Step}");
+		if (type == ScoringType.PlusMinus) parts.Add(L.F("steps of {0}", Step));
 		if (type == ScoringType.ManualPlusMinus)
-			parts.Add(AmountRules.Count == 0 ? "any amount" : $"amounts {AmountRulesText}");
-		parts.Add($"start at {StartScore}");
-		if (MinScore is { } min) parts.Add($"min {min}");
-		if (MaxScore is { } max) parts.Add($"max {max}");
-		if (WarningScore is { } warning) parts.Add($"warning at {warning}");
+			parts.Add(AmountRules.Count == 0 ? L.T("any amount") : L.F("amounts {0}", AmountRulesText));
+		parts.Add(L.F("start at {0}", StartScore));
+		if (MinScore is { } min) parts.Add(L.F("min {0}", min));
+		if (MaxScore is { } max) parts.Add(L.F("max {0}", max));
+		if (WarningScore is { } warning) parts.Add(L.F("warning at {0}", warning));
 		if (withResult) parts.Add(ResultSummary);
 		if (withResult && TurnSummary.Length > 0) parts.Add(TurnSummary);
 		return string.Join(" · ", parts);
@@ -257,43 +257,43 @@ public sealed record ScoringSettings
 		var (amounts, complete) = AllowedAmounts(12);
 		if (complete && amounts.Count > 0)
 			return amounts.Count == 1
-				? $"You can enter {amounts[0]}."
-				: $"You can enter {string.Join(", ", amounts.SkipLast(1))} or {amounts[^1]}.";
-		return AmountRules.Count == 0 ? "Any amount." : $"The amount must be {AmountRulesText}.";
+				? L.F("You can enter {0}.", amounts[0])
+				: L.F("You can enter {0} or {1}.", string.Join(", ", amounts.SkipLast(1)), amounts[^1]);
+		return AmountRules.Count == 0 ? L.T("Any amount.") : L.F("The amount must be {0}.", AmountRulesText);
 	}
 
 	/// <summary>Why these settings can't be used with this scoring type, or null when they're fine.</summary>
 	public string? Problem(ScoringType type)
 	{
 		if (type == ScoringType.PlusMinus && Step < 1)
-			return "The step must be at least 1.";
+			return L.T("The step must be at least 1.");
 		if (MinScore is { } min && MaxScore is { } max && min >= max)
-			return "The minimum score must be lower than the maximum score.";
+			return L.T("The minimum score must be lower than the maximum score.");
 		if (MaxScore is { } maxScore && StartScore > maxScore)
-			return "The starting score can't be higher than the maximum score.";
+			return L.T("The starting score can't be higher than the maximum score.");
 		if (MinScore is { } minScore && StartScore < minScore)
-			return "The starting score can't be lower than the minimum score.";
+			return L.T("The starting score can't be lower than the minimum score.");
 		if (WarningScore is { } warning)
 		{
 			if (warning == StartScore)
-				return "The warning can't be the same as the starting score - everyone would start with a warning.";
+				return L.T("The warning can't be the same as the starting score - everyone would start with a warning.");
 			if (MaxScore is { } m && warning > m || MinScore is { } n && warning < n)
-				return "The warning must be between the minimum and maximum score.";
+				return L.T("The warning must be between the minimum and maximum score.");
 		}
 		if (EndScore is { } end)
 		{
 			if (end == StartScore)
-				return "The end score can't be the same as the starting score - every subgame would end at once.";
+				return L.T("The end score can't be the same as the starting score - every subgame would end at once.");
 			if (MaxScore is { } m && end > m || MinScore is { } n && end < n)
-				return "The end score must be between the minimum and maximum score.";
+				return L.T("The end score must be between the minimum and maximum score.");
 		}
 		if (EqualizingTurn && (EndScore is null || EndMode != EndMode.Automatic || !FixedTurnOrder))
-			return "An equalizing turn needs an end score that ends the subgame automatically, and a fixed input order (so the app knows whose turn it is).";
+			return L.T("An equalizing turn needs an end score that ends the subgame automatically, and a fixed input order (so the app knows whose turn it is).");
 		if (type == ScoringType.ManualPlusMinus && AmountRulesProblem() is { } amountProblem)
 			return amountProblem;
 		if (!AllowTies && !DuelSameScoring && DuelSettings is { } duelSettings
 			&& (duelSettings.DuelEndProblem() ?? duelSettings.Problem(DuelScoringType)) is { } duelProblem)
-			return $"Duel: {duelProblem}";
+			return L.F("Duel: {0}", duelProblem);
 		return null;
 	}
 
@@ -309,11 +309,11 @@ public sealed record ScoringSettings
 		{
 			// Tell apart "the rules clash" from "only amounts too big for the score range".
 			return AllowedAmounts(1, ignoreScoreRange: true).Amounts.Count == 0
-				? $"No amount can ever be entered: an amount can't be {AmountRulesText}. Change a rule, or link rules with OR instead of AND."
-				: $"Every amount the rules allow is bigger than the whole range from the minimum to the maximum score ({MinScore} to {MaxScore}), so it could never count.";
+				? L.F("No amount can ever be entered: an amount can't be {0}. Change a rule, or link rules with OR instead of AND.", AmountRulesText)
+				: L.F("Every amount the rules allow is bigger than the whole range from the minimum to the maximum score ({0} to {1}), so it could never count.", MinScore, MaxScore);
 		}
 		if (amounts is [0])
-			return "With these rules only 0 can be entered, so scores would never change. Change or remove a rule.";
+			return L.T("With these rules only 0 can be entered, so scores would never change. Change or remove a rule.");
 		return null;
 	}
 

@@ -278,9 +278,9 @@ public class LocalDatabaseService : ILocalDatabaseService
 		{
 			foreach (var id in ids)
 			{
-				tx.Execute($"DELETE FROM {nameof(RoundResult)} WHERE {nameof(RoundResult.SessionId)} = ?", id);
-				tx.Execute($"DELETE FROM {nameof(SessionParticipant)} WHERE {nameof(SessionParticipant.SessionId)} = ?", id);
-				tx.Execute($"DELETE FROM {nameof(GameSession)} WHERE {nameof(GameSession.Id)} = ?", id);
+				tx.Execute(string.Format(System.Globalization.CultureInfo.InvariantCulture, "DELETE FROM {0} WHERE {1} = ?", nameof(RoundResult), nameof(RoundResult.SessionId)), id);
+				tx.Execute(string.Format(System.Globalization.CultureInfo.InvariantCulture, "DELETE FROM {0} WHERE {1} = ?", nameof(SessionParticipant), nameof(SessionParticipant.SessionId)), id);
+				tx.Execute(string.Format(System.Globalization.CultureInfo.InvariantCulture, "DELETE FROM {0} WHERE {1} = ?", nameof(GameSession), nameof(GameSession.Id)), id);
 			}
 		});
 	}
@@ -326,7 +326,7 @@ public class LocalDatabaseService : ILocalDatabaseService
 		var list = results.ToList();
 		await db.RunInTransactionAsync(tx =>
 		{
-			tx.Execute($"DELETE FROM {nameof(RoundResult)} WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.Round)} = ?", sessionId, round);
+			tx.Execute(string.Format(System.Globalization.CultureInfo.InvariantCulture, "DELETE FROM {0} WHERE {1} = ? AND {2} = ?", nameof(RoundResult), nameof(RoundResult.SessionId), nameof(RoundResult.Round)), sessionId, round);
 			foreach (var roundResult in list)
 				tx.Insert(roundResult);
 		});
@@ -337,10 +337,10 @@ public class LocalDatabaseService : ILocalDatabaseService
 	{
 		var db = await DbAsync();
 		await db.ExecuteAsync(
-			$"UPDATE {nameof(RoundResult)} SET {nameof(RoundResult.PlayerId)} = ? " +
-			$"WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.PlayerId)} = ? " +
-			$"AND {nameof(RoundResult.Round)} NOT IN (SELECT {nameof(RoundResult.Round)} FROM {nameof(RoundResult)} " +
-			$"WHERE {nameof(RoundResult.SessionId)} = ? AND {nameof(RoundResult.PlayerId)} = ?)",
+			string.Format(System.Globalization.CultureInfo.InvariantCulture, "UPDATE {0} SET {1} = ? ", nameof(RoundResult), nameof(RoundResult.PlayerId)) +
+			string.Format(System.Globalization.CultureInfo.InvariantCulture, "WHERE {0} = ? AND {1} = ? ", nameof(RoundResult.SessionId), nameof(RoundResult.PlayerId)) +
+			string.Format(System.Globalization.CultureInfo.InvariantCulture, "AND {0} NOT IN (SELECT {1} FROM {2} ", nameof(RoundResult.Round), nameof(RoundResult.Round), nameof(RoundResult)) +
+			string.Format(System.Globalization.CultureInfo.InvariantCulture, "WHERE {0} = ? AND {1} = ?)", nameof(RoundResult.SessionId), nameof(RoundResult.PlayerId)),
 			toPlayerId, sessionId, fromPlayerId, sessionId, toPlayerId);
 	}
 
@@ -419,6 +419,6 @@ public class LocalDatabaseService : ILocalDatabaseService
 		var sessions = await GetSessionsAsync(accountId);
 		await DeleteSessionsAsync(sessions.Select(session => session.Id));
 		var db = await DbAsync();
-		await db.ExecuteAsync($"DELETE FROM {nameof(Player)} WHERE {nameof(Player.OwnerAccountId)} = ?", accountId);
+		await db.ExecuteAsync(string.Format(System.Globalization.CultureInfo.InvariantCulture, "DELETE FROM {0} WHERE {1} = ?", nameof(Player), nameof(Player.OwnerAccountId)), accountId);
 	}
 }

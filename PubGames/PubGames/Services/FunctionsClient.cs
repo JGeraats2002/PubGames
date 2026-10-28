@@ -22,7 +22,7 @@ public class FunctionsClient(IAuthService auth)
 	/// </summary>
 	public async Task<JsonNode?> CallAsync(string function, JsonObject data)
 	{
-		var token = await auth.GetIdTokenAsync() ?? throw new StoreException("Sign in first.");
+		var token = await auth.GetIdTokenAsync() ?? throw new StoreException(L.T("Sign in first."));
 		HttpResponseMessage? response = null;
 		// Very busy (every server spot taken): wait a moment and try once more.
 		for (var attempt = 0; attempt < 2; attempt++)
@@ -40,9 +40,9 @@ public class FunctionsClient(IAuthService auth)
 		using var finished = response!;
 		var body = JsonNode.Parse(await finished.Content.ReadAsStringAsync());
 		if (body?["error"] is { } error)
-			throw new StoreException(error["message"]?.GetValue<string>() ?? "The server refused this.");
+			throw new StoreException(error["message"]?.GetValue<string>() ?? L.T("The server refused this."));
 		if (!finished.IsSuccessStatusCode)
-			throw new StoreException("The server couldn't be reached right now. Try again later.");
+			throw new StoreException(L.T("The server couldn't be reached right now. Try again later."));
 		return body?["result"];
 	}
 }

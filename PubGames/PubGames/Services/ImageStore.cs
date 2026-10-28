@@ -82,7 +82,7 @@ public partial class FirestoreImageStore : IImageStore
 	public async Task<string?> TakePhotoAndUploadAsync()
 	{
 		if (!MediaPicker.Default.IsCaptureSupported)
-			throw new InvalidOperationException("This phone can't take photos from the app - upload a picture instead.");
+			throw new InvalidOperationException(L.T("This phone can't take photos from the app - upload a picture instead."));
 
 		var photo = await MediaPicker.Default.CapturePhotoAsync(PickerOptions(MaxSide));
 		return photo is null ? null : await StoreAsync(await ShrinkAsync(photo, MaxSide, MaxBytes), drawing: null);
@@ -211,13 +211,13 @@ public partial class FirestoreImageStore : IImageStore
 			: reference.StartsWith(PhotoScheme) ? (PhotoCollection, reference[PhotoScheme.Length..])
 			: (null, string.Empty);
 		if (collection is null || !IdPattern().IsMatch(id))
-			throw new ArgumentException($"Not an image reference: {reference}");
+			throw new ArgumentException(L.F("Not an image reference: {0}", reference));
 
 		var path = CachePath(id);
 		if (!File.Exists(path))
 		{
 			var doc = await _firestore.GetAsync(collection, id, ct)
-				?? throw new FileNotFoundException($"Image {id} no longer exists.");
+				?? throw new FileNotFoundException(L.F("Image {0} no longer exists.", id));
 			await File.WriteAllBytesAsync(path, (byte[])doc["data"]!, ct);
 		}
 		return File.OpenRead(path);
@@ -258,7 +258,7 @@ public partial class FirestoreImageStore : IImageStore
 			side *= 0.75f;
 			quality = Math.Max(0.5f, quality - 0.1f);
 		}
-		throw new InvalidOperationException("This image is too large to upload - try a smaller one.");
+		throw new InvalidOperationException(L.T("This image is too large to upload - try a smaller one."));
 	}
 
 	/// <summary>

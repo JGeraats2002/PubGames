@@ -94,13 +94,13 @@ public partial class ScoringEditor : ObservableObject
 	{
 		get
 		{
-			if (AmountRules.Count == 0) return "No rules: any amount can be entered.";
+			if (AmountRules.Count == 0) return L.T("No rules: any amount can be entered.");
 			if (AmountRules.Any(r => r.Kind is null))
-				return "Choose what each rule checks to see what's allowed.";
+				return L.T("Choose what each rule checks to see what's allowed.");
 			var rules = AmountRules.Select(r => r.ToRule()!).ToList();
 			if (rules.Any(r => r.NeedsValue && r.Value is null || r.NeedsSecondValue && r.Value2 is null))
-				return "Fill in the numbers to see what's allowed.";
-			return $"Allowed: amounts that are {AmountRuleSet.Describe(rules)}.";
+				return L.T("Fill in the numbers to see what's allowed.");
+			return L.F("Allowed: amounts that are {0}.", AmountRuleSet.Describe(rules));
 		}
 	}
 
@@ -225,7 +225,7 @@ public partial class ScoringEditor : ObservableObject
 			// Some keyboards type a real minus sign (−) instead of a hyphen.
 			if (int.TryParse(text.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var value))
 				return value;
-			error = $"Enter a whole number for the {what}.";
+			error = L.F("Enter a whole number for the {0}.", what);
 			return null;
 		}
 
@@ -236,7 +236,7 @@ public partial class ScoringEditor : ObservableObject
 		}
 		if (IsManual && AmountRules.Select((r, i) => (r, i)).FirstOrDefault(x => x.r.Kind is null) is { r: not null } missing)
 		{
-			problem = $"{_messagePrefix}Rule {missing.i + 1}: choose what it checks.";
+			problem = L.F("{0}Rule {1}: choose what it checks.", _messagePrefix, missing.i + 1);
 			return null;
 		}
 		if (!HasScoreSettings) return settings;
@@ -244,9 +244,9 @@ public partial class ScoringEditor : ObservableObject
 		var step = 1;
 		int? start = null, max = null, min = null, warning = null;
 		if (IsPlusMinus && Number(ScoreStep, "step") is { } typedStep) step = typedStep;
-		if (error is null) start = Number(StartScore, "starting score");
-		if (error is null && HasMaxScore) max = Number(MaxScore, "maximum score");
-		if (error is null && HasMinScore) min = Number(MinScore, "minimum score");
+		if (error is null) start = Number(StartScore, L.T("starting score"));
+		if (error is null && HasMaxScore) max = Number(MaxScore, L.T("maximum score"));
+		if (error is null && HasMinScore) min = Number(MinScore, L.T("minimum score"));
 		if (error is null && HasWarningScore) warning = Number(WarningScore, "warning");
 		if (error is not null)
 		{

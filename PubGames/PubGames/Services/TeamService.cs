@@ -151,7 +151,7 @@ public class TeamService : ITeamService
 	public async Task RemoveMemberAsync(TeamMember member)
 	{
 		if (member.IsBuiltInAdmin)
-			throw new InvalidOperationException("Built-in admins can only be removed in AuthConfig.AdminEmails.");
+			throw new InvalidOperationException(L.T("Built-in admins can only be removed in AuthConfig.AdminEmails."));
 
 		await _firestore.DeleteAsync(Collection, member.Email);
 		await _local.DeleteTeamMemberAsync(member.Email);

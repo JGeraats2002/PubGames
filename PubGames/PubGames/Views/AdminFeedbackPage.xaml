@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.AdminFeedbackPage"
              x:DataType="vm:AdminFeedbackViewModel"
-             Title="Feedback">
+             Title="{loc:T AdminFeedback_Feedback}">
 
 	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="10">
 
-		<Picker Title="Show" ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" />
+		<Picker Title="{loc:T AdminFeedback_Show}" ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" />
 
 		<Label Grid.Row="1" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
 		<RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Refreshing="OnRefreshing">
 			<CollectionView ItemsSource="{Binding Items}">
 				<CollectionView.EmptyView>
-					<Label Text="No feedback here." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+					<Label Text="{loc:T AdminFeedback_NoFeedbackHere}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 				</CollectionView.EmptyView>
 				<CollectionView.ItemTemplate>
 					<DataTemplate x:DataType="models:Feedback">
@@ -32,14 +33,14 @@
 								<Label Text="{Binding Text}" FontSize="14" />
 								<Border IsVisible="{Binding HasReply}" BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0"
 								        Padding="10,6" StrokeShape="RoundRectangle 6">
-									<Label Text="{Binding Reply, StringFormat='Reply: {0}'}" FontSize="13" />
+									<Label Text="{Binding Reply, StringFormat={loc:T AdminFeedback_Reply0}}" FontSize="13" />
 								</Border>
 								<HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
-									<Button Text="Handle" Clicked="OnHandleClicked" FontSize="12" Padding="12,0" HeightRequest="48" />
-									<Button Text="Open game" Clicked="OnOpenGameClicked" IsVisible="{Binding HasGame}"
+									<Button Text="{loc:T AdminFeedback_Handle}" Clicked="OnHandleClicked" FontSize="12" Padding="12,0" HeightRequest="48" />
+									<Button Text="{loc:T AdminFeedback_OpenGame}" Clicked="OnOpenGameClicked" IsVisible="{Binding HasGame}"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
-									<Button Text="Delete" Clicked="OnDeleteClicked"
+									<Button Text="{loc:T AdminFeedback_Delete}" Clicked="OnDeleteClicked"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
 									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
 								</HorizontalStackLayout>

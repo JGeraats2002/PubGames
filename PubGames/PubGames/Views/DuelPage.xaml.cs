@@ -57,7 +57,7 @@ public partial class DuelPage : ContentPage
 	/// <summary>The duel ended by itself: the players check the result, or take back the last turn if something was entered wrong.</summary>
 	private async Task FinishAsync()
 	{
-		if (await DisplayAlertAsync("Duel over - is this right?", _vm.ScoreLines, "Yes, it's right", "Undo last turn"))
+		if (await DisplayAlertAsync(L.T("Duel over - is this right?"), _vm.ScoreLines, L.T("Yes, it's right"), L.T("Undo last turn")))
 			_result.TrySetResult(_vm.Scores());
 		else
 			_vm.Undo();
@@ -70,7 +70,7 @@ public partial class DuelPage : ContentPage
 	/// <summary>Stops the duel without a result, after asking.</summary>
 	private async void OnCancelClicked(object? sender, EventArgs e)
 	{
-		if (await DisplayAlertAsync("Stop the duel?", "The tie isn't decided and nothing is saved yet.", "Stop the duel", "Keep playing"))
+		if (await DisplayAlertAsync(L.T("Stop the duel?"), L.T("The tie isn't decided and nothing is saved yet."), L.T("Stop the duel"), L.T("Keep playing")))
 			_result.TrySetResult(null);
 	}
 

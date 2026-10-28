@@ -41,9 +41,9 @@ public partial class InboxPage : ContentPage
 	/// <summary>Asks for the message's text and sends it.</summary>
 	private async Task WriteAndSendAsync(string toEmail, string toLabel)
 	{
-		var text = await DisplayPromptAsync($"Message to {toLabel}",
-			$"Keep it short ({InboxMessage.MaxLength} characters at most):",
-			"Send", "Cancel", maxLength: InboxMessage.MaxLength, keyboard: Keyboard.Chat);
+		var text = await DisplayPromptAsync(L.F("Message to {0}", toLabel),
+			L.F("Keep it short ({0} characters at most):", InboxMessage.MaxLength),
+			L.T("Send"), L.T("Cancel"), maxLength: InboxMessage.MaxLength, keyboard: Keyboard.Chat);
 		if (string.IsNullOrWhiteSpace(text)) return;
 		await _vm.SendAsync(toEmail, text);
 	}
@@ -53,8 +53,8 @@ public partial class InboxPage : ContentPage
 	{
 		if (sender is not Button { BindingContext: InboxMessage message }) return;
 
-		var confirmed = await DisplayAlertAsync("Delete message?",
-			"It will be removed from your Inbox. This can't be undone.", "Delete", "Keep");
+		var confirmed = await DisplayAlertAsync(L.T("Delete message?"),
+			L.T("It will be removed from your Inbox. This can't be undone."), L.T("Delete"), L.T("Keep"));
 		if (confirmed)
 			await _vm.DeleteAsync(message);
 	}

@@ -34,7 +34,11 @@ public interface IStoreService
 	/// <summary>Fresh from the server when online; otherwise the copy on this phone.</summary>
 	Task<Entitlements> RefreshAsync();
 
-	bool Owns(PubGame game) => Current.Owns(game);
+	/// <summary>
+	/// Whether the account may play the game: free games, bought ones, with the pass - and every paid game for
+	/// admins and moderators while they're on the team. Games bought before stay theirs after that.
+	/// </summary>
+	bool Owns(PubGame game);
 
 	/// <summary>The game's price as Google Play shows it, or the fixed price when Play can't be reached.</summary>
 	Task<string> GamePriceAsync(PubGame game);
@@ -63,8 +67,11 @@ public interface IStoreService
 }
 
 /// <inheritdoc />
-public partial class StoreService(FirestoreClient firestore, IAuthService auth, FunctionsClient functions) : IStoreService
+public partial class StoreService(FirestoreClient firestore, IAuthService auth, FunctionsClient functions, ITeamService team) : IStoreService
 {
+	/// <inheritdoc />
+	public bool Owns(PubGame game) => team.Me is not null || Current.Owns(game);
+
 	/// <inheritdoc />
 	public Entitlements Current { get; private set; } = Entitlements.None;
 
@@ -154,7 +161,7 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth, 
 		}
 		catch (Exception ex) when (ex is StoreException or HttpRequestException)
 		{
-			return ex is HttpRequestException ? "No connection - a code needs internet." : ex.Message;
+			return ex is HttpRequestException ? L.T("No connection - a code needs internet.") : ex.Message;
 		}
 		await RefreshAsync();
 		return null;
@@ -190,7 +197,7 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth, 
 	/// <summary>A message the player understands for what went wrong with a purchase.</summary>
 	private static string Problem(Exception ex) => ex switch
 	{
-		HttpRequestException => "No connection - try again when you're online. Nothing was charged twice: Restore purchases picks it up later.",
+		HttpRequestException => L.T("No connection - try again when you're online. Nothing was charged twice: Restore purchases picks it up later."),
 		StoreException store => store.Message,
 		_ => ex.Message
 	};
@@ -205,11 +212,11 @@ public partial class StoreService(FirestoreClient firestore, IAuthService auth, 
 
 	/// <inheritdoc />
 	public Task<(PurchaseOutcome Outcome, string? Problem)> BuyGameAsync(PubGame game) =>
-		Task.FromResult<(PurchaseOutcome, string?)>((PurchaseOutcome.Failed, "Buying is only possible in the Android app."));
+		Task.FromResult<(PurchaseOutcome, string?)>((PurchaseOutcome.Failed, L.T("Buying is only possible in the Android app.")));
 
 	/// <inheritdoc />
 	public Task<(PurchaseOutcome Outcome, string? Problem)> BuyPassAsync(PassPlan plan) =>
-		Task.FromResult<(PurchaseOutcome, string?)>((PurchaseOutcome.Failed, "Buying is only possible in the Android app."));
+		Task.FromResult<(PurchaseOutcome, string?)>((PurchaseOutcome.Failed, L.T("Buying is only possible in the Android app.")));
 
 	/// <inheritdoc />
 	public Task<Entitlements> RestoreAsync(IEnumerable<PubGame> games) => RefreshAsync();

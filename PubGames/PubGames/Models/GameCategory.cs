@@ -20,6 +20,15 @@ public class GameCategory
 	/// <summary>The category's name, e.g. Short.</summary>
 	public string Name { get; set; } = string.Empty;
 
+	/// <summary>The name in other languages, as JSON by language code; made by the cloud (translateCategory).</summary>
+	public string? TranslationsText { get; set; }
+
+	/// <summary>The name in the app's language: the translation when there is one, otherwise the name itself.</summary>
+	[Ignore]
+	public string ShownName =>
+		GameTranslation.NamesFromJson(TranslationsText).TryGetValue(Services.AppLanguage.Current.Code, out var translated)
+		&& !string.IsNullOrWhiteSpace(translated) ? translated : Name;
+
 	/// <summary>The main category (CategoryGroup) this is filed under; empty for none.</summary>
 	public string GroupId { get; set; } = string.Empty;
 

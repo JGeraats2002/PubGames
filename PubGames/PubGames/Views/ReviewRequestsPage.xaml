@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.ReviewRequestsPage"
              x:DataType="vm:ReviewRequestsViewModel"
-             Title="Requests">
+             Title="{loc:T ReviewRequests_Requests}">
 
 	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
 
@@ -13,7 +14,7 @@
 
 		<CollectionView Grid.Row="1" ItemsSource="{Binding Requests}">
 			<CollectionView.EmptyView>
-				<Label Text="No requests waiting for review." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<Label Text="{loc:T ReviewRequests_NoRequestsWaitingForReview}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="models:ReviewRequest">
@@ -29,7 +30,7 @@
 								<Label Text="{Binding Summary}" />
 								<Label Text="{Binding SubmittedLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 							</VerticalStackLayout>
-							<Label Grid.Column="1" Text="Review ›" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
+							<Label Grid.Column="1" Text="{loc:T ReviewRequests_Review}" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
 						</Grid>
 					</Border>
 				</DataTemplate>

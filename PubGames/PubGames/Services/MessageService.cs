@@ -78,9 +78,9 @@ public class MessageService : IMessageService
 	{
 		text = text.Trim();
 		if (text.Length == 0)
-			throw new InvalidOperationException("Write a message first.");
+			throw new InvalidOperationException(L.T("Write a message first."));
 		if (text.Length > InboxMessage.MaxLength)
-			throw new InvalidOperationException($"Messages can be {InboxMessage.MaxLength} characters at most.");
+			throw new InvalidOperationException(L.F("Messages can be {0} characters at most.", InboxMessage.MaxLength));
 
 		var user = _auth.CurrentUser!;
 		var message = new InboxMessage

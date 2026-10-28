@@ -30,9 +30,9 @@ public sealed record TieBreakMomentOption(TieBreakMoment Moment)
 	/// <summary>What a tie-break moment is called in the app.</summary>
 	public static string LabelFor(TieBreakMoment moment) => moment switch
 	{
-		TieBreakMoment.SubgamesOnly => "After every subgame",
-		TieBreakMoment.FinalOnly => "After the final total",
-		_ => "After every subgame and the final total"
+		TieBreakMoment.SubgamesOnly => L.T("After every subgame"),
+		TieBreakMoment.FinalOnly => L.T("After the final total"),
+		_ => L.T("After every subgame and the final total")
 	};
 }
 
@@ -54,8 +54,8 @@ public sealed record TieBreakScopeOption(TieBreakScope Scope, ResultMode Mode)
 	/// </summary>
 	public static string LabelFor(TieBreakScope scope, ResultMode mode) => scope switch
 	{
-		TieBreakScope.Every => "Every shared place",
-		_ => mode == ResultMode.Loser ? "Only a shared loss" : "Only a shared 1st place"
+		TieBreakScope.Every => L.T("Every shared place"),
+		_ => mode == ResultMode.Loser ? L.T("Only a shared loss") : L.T("Only a shared 1st place")
 	};
 }
 
@@ -92,7 +92,7 @@ public static class TieBreak
 
 	/// <summary>"Jan, Sanne and Piet".</summary>
 	public static string Names(IReadOnlyList<string> names) =>
-		names.Count <= 1 ? string.Concat(names) : $"{string.Join(", ", names.SkipLast(1))} and {names[^1]}";
+		names.Count <= 1 ? string.Concat(names) : L.F("{0} and {1}", string.Join(", ", names.SkipLast(1)), names[^1]);
 }
 
 /// <summary>How a tie-break duel ends. Stored as text, so the order may change.</summary>
@@ -109,9 +109,9 @@ public sealed record DuelEndOption(DuelEnd End)
 	/// <summary>How a duel ends, as the picker shows it.</summary>
 	public string Label => End switch
 	{
-		DuelEnd.Score => "First to reach a score",
-		DuelEnd.BestOf => "Best of a number of rounds",
-		_ => "A number of turns each"
+		DuelEnd.Score => L.T("First to reach a score"),
+		DuelEnd.BestOf => L.T("Best of a number of rounds"),
+		_ => L.T("A number of turns each")
 	};
 
 	/// <summary>The Picker shows this.</summary>

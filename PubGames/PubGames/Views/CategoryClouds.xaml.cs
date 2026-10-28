@@ -19,7 +19,7 @@ public partial class CategoryClouds : ContentView
 		propertyChanged: (view, old, items) => ((CategoryClouds)view).OnItemsChanged((IEnumerable?)old, (IEnumerable?)items));
 
 	public static readonly BindableProperty PlaceholderProperty = BindableProperty.Create(
-		nameof(Placeholder), typeof(string), typeof(CategoryClouds), "All categories",
+		nameof(Placeholder), typeof(string), typeof(CategoryClouds), L.T("All categories"),
 		propertyChanged: (view, _, _) => ((CategoryClouds)view).ShowSummary());
 
 	public static readonly BindableProperty AlwaysOpenProperty = BindableProperty.Create(

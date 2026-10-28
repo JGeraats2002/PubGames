@@ -37,9 +37,9 @@ public partial class StandingsPage : ContentPage
 			return;
 		}
 
-		var again = _vm.Game is not null && _vm.Lineup.Count > 0 && await DisplayAlertAsync("Play again?",
-			$"Play {_vm.Game.Name} again with {string.Join(", ", _vm.Lineup.Select(p => p.Name))}, or quit this game?",
-			"Play again", "Quit");
+		var again = _vm.Game is not null && _vm.Lineup.Count > 0 && await DisplayAlertAsync(L.T("Play again?"),
+			L.F("Play {0} again with {1}, or quit this game?", _vm.Game.Name, string.Join(", ", _vm.Lineup.Select(p => p.Name))),
+			L.T("Play again"), L.T("Quit"));
 
 		if (again)
 		{

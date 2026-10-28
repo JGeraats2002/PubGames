@@ -71,5 +71,5 @@ public sealed record GameStats(string Title, int Played, int Won, int Lost, int 
 	public string TiedText => $"{Tied} ({Percent(Tied)})";
 
 	/// <summary>"12 played · 5 won (42%) · 6 lost (50%) · 1 tied (8%)".</summary>
-	public string Summary => $"{Played} played · {Won} won ({Percent(Won)}) · {Lost} lost ({Percent(Lost)}) · {Tied} tied ({Percent(Tied)})";
+	public string Summary => L.F("{0} played · {1} won ({2}) · {3} lost ({4}) · {5} tied ({6})", Played, Won, Percent(Won), Lost, Percent(Lost), Tied, Percent(Tied));
 }

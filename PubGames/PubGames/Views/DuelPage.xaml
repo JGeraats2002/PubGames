@@ -2,6 +2,7 @@
 <!-- The duel popup: the tied players take turns, keeping score like on the scoreboard (+ and −) or typing in their points. -->
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.DuelPage"
              x:DataType="vm:DuelViewModel"
@@ -12,8 +13,8 @@
 		<VerticalStackLayout Spacing="6">
 			<!-- How this duel works is behind ⓘ (the duel has no title bar of its own). -->
 			<Grid ColumnDefinitions="*,Auto">
-				<Label Text="⚔ Duel" FontSize="24" FontAttributes="Bold" VerticalOptions="Center" />
-				<Button SemanticProperties.Description="Help" Grid.Column="1" Text="ⓘ" Clicked="OnInfoClicked" FontSize="20" WidthRequest="48" HeightRequest="48" Padding="0"
+				<Label Text="{loc:T Duel_Duel}" FontSize="24" FontAttributes="Bold" VerticalOptions="Center" />
+				<Button SemanticProperties.Description="{loc:T Duel_Help}" Grid.Column="1" Text="ⓘ" Clicked="OnInfoClicked" FontSize="20" WidthRequest="48" HeightRequest="48" Padding="0"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
 			</Grid>
 			<Label Text="{Binding Reason}" FontSize="15" FontAttributes="Bold" />
@@ -69,11 +70,11 @@
 
 		<!-- The duel ends by itself; Undo takes back a turn, Turn done passes it on. -->
 		<Grid Grid.Row="3" ColumnDefinitions="*,*,2*" ColumnSpacing="8">
-			<Button Text="Cancel" Clicked="OnCancelClicked" Padding="4,0"
+			<Button Text="{loc:T Duel_Cancel}" Clicked="OnCancelClicked" Padding="4,0"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="1" Text="↶ Undo" Clicked="OnUndoClicked" IsEnabled="{Binding CanUndo}" Padding="4,0"
+			<Button Grid.Column="1" Text="{loc:T Duel_Undo}" Clicked="OnUndoClicked" IsEnabled="{Binding CanUndo}" Padding="4,0"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="2" Text="Turn done" Clicked="OnTurnDoneClicked" IsVisible="{Binding HasTurnDone}" />
+			<Button Grid.Column="2" Text="{loc:T Duel_TurnDone}" Clicked="OnTurnDoneClicked" IsVisible="{Binding HasTurnDone}" />
 		</Grid>
 
 	</Grid>

@@ -15,6 +15,12 @@ namespace PubGames.ViewModels;
 /// </summary>
 public partial class AccountViewModel : ObservableObject
 {
+	/// <summary>The flag of the app's language, on the Language row.</summary>
+	public string LanguageFlag => AppLanguage.Current.Flag;
+
+	/// <summary>The app's language, on the Language row.</summary>
+	public string LanguageName => AppLanguage.Current.Name;
+
 	private readonly IAuthService _auth;
 	private readonly ITeamService _team;
 	private readonly IProfileService _profiles;
@@ -48,7 +54,7 @@ public partial class AccountViewModel : ObservableObject
 	private async Task RenewFriendCodeAsync()
 	{
 		ShowFriendCode(await _store.RenewFriendCodeAsync());
-		ProfileMessage = FriendCodeValidUntil is null ? "Couldn't make a new code - check your connection." : "New code: the old one no longer works.";
+		ProfileMessage = FriendCodeValidUntil is null ? L.T("Couldn't make a new code - check your connection.") : L.T("New code: the old one no longer works.");
 	}
 
 	/// <summary>
@@ -61,13 +67,13 @@ public partial class AccountViewModel : ObservableObject
 		{
 			FriendCode = code.Code;
 			FriendCodeValidUntil = code.ValidUntil;
-			FriendCodeValidity = $"Works until {code.ValidUntil.ToLocalTime():HH:mm}";
+			FriendCodeValidity = L.F("Works until {0:HH:mm}", code.ValidUntil.ToLocalTime());
 		}
 		else
 		{
 			FriendCode = "····-····";
 			FriendCodeValidUntil = null;
-			FriendCodeValidity = "Not available offline";
+			FriendCodeValidity = L.T("Not available offline");
 		}
 	}
 
@@ -127,7 +133,7 @@ public partial class AccountViewModel : ObservableObject
 
 	/// <summary>All games together; tapping them opens the stats per game (MyStatsPage).</summary>
 	[ObservableProperty]
-	private GameStats totals = GameStats.From("All games", []);
+	private GameStats totals = GameStats.From(L.T("All games"), []);
 
 	/// <summary>About the stats: offline, or no finished games yet.</summary>
 	[ObservableProperty]
@@ -159,7 +165,7 @@ public partial class AccountViewModel : ObservableObject
 		Email = _auth.CurrentUser?.Email ?? string.Empty;
 		var me = Me = _team.Me;
 		IsTeamMember = me is not null;
-		RoleName = me?.IsBuiltInAdmin == true ? "Owner" : me?.RoleName ?? string.Empty;
+		RoleName = me?.IsBuiltInAdmin == true ? L.T("Owner") : me?.RoleName ?? string.Empty;
 
 		if (_profiles.Mine is { } cached)
 			Show(cached);
@@ -191,7 +197,7 @@ public partial class AccountViewModel : ObservableObject
 	{
 		if (!FriendCode.Contains('-')) return;
 		await Clipboard.Default.SetTextAsync(FriendCode);
-		ProfileMessage = "Friend code copied.";
+		ProfileMessage = L.T("Friend code copied.");
 	}
 
 	/// <summary>Fills the page with a profile: picture, name, nickname and player code.</summary>
@@ -220,10 +226,10 @@ public partial class AccountViewModel : ObservableObject
 		}
 
 		var (games, offline) = await _stats.GetMyGamesAsync();
-		Totals = GameStats.From("All games", games);
+		Totals = GameStats.From(L.T("All games"), games);
 		StatsMessage = offline
-			? "Offline - these are your stats as last seen on this phone."
-			: games.Count == 0 ? "No finished games yet." : string.Empty;
+			? L.T("Offline - these are your stats as last seen on this phone.")
+			: games.Count == 0 ? L.T("No finished games yet.") : string.Empty;
 	}
 
 	/// <summary>Lets the user pick a new profile picture, uploads it and saves the profile.</summary>
@@ -231,20 +237,20 @@ public partial class AccountViewModel : ObservableObject
 	private async Task ChangePhotoAsync()
 	{
 		IsBusy = true;
-		ProfileMessage = "Uploading picture...";
+		ProfileMessage = L.T("Uploading picture...");
 		try
 		{
 			if (await _profiles.PickPhotoAsync() is { } reference)
 			{
 				PhotoRef = reference;
-				await SaveAsync("Picture saved.");
+				await SaveAsync(L.T("Picture saved."));
 			}
 			else
 				ProfileMessage = string.Empty;
 		}
 		catch (Exception ex)
 		{
-			ProfileMessage = ex is HttpRequestException ? "No connection - couldn't upload the picture." : ex.Message;
+			ProfileMessage = ex is HttpRequestException ? L.T("No connection - couldn't upload the picture.") : ex.Message;
 		}
 		finally
 		{
@@ -258,10 +264,10 @@ public partial class AccountViewModel : ObservableObject
 	{
 		if (string.IsNullOrWhiteSpace(ProfileName))
 		{
-			ProfileMessage = "Fill in your name.";
+			ProfileMessage = L.T("Fill in your name.");
 			return;
 		}
-		await SaveAsync("Profile saved.");
+		await SaveAsync(L.T("Profile saved."));
 	}
 
 	/// <summary>
@@ -272,7 +278,7 @@ public partial class AccountViewModel : ObservableObject
 	{
 		if (_profiles.Mine is not { } current)
 		{
-			ProfileMessage = "Your profile hasn't loaded yet - check your connection and try again.";
+			ProfileMessage = L.T("Your profile hasn't loaded yet - check your connection and try again.");
 			return;
 		}
 		try
@@ -289,7 +295,7 @@ public partial class AccountViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			ProfileMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			ProfileMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 	}
 
@@ -298,7 +304,7 @@ public partial class AccountViewModel : ObservableObject
 	private async Task CopyCodeAsync()
 	{
 		await Clipboard.Default.SetTextAsync(Code);
-		ProfileMessage = "Code copied.";
+		ProfileMessage = L.T("Code copied.");
 	}
 
 	/// <summary>
@@ -316,7 +322,7 @@ public partial class AccountViewModel : ObservableObject
 		}
 		catch (Exception ex) when (ex is StoreException or HttpRequestException or TaskCanceledException)
 		{
-			return ex is StoreException ? ex.Message : "No connection - deleting your account needs internet.";
+			return ex is StoreException ? ex.Message : L.T("No connection - deleting your account needs internet.");
 		}
 		await _local.DeleteAccountDataAsync(accountId);
 		// Cached profile, purchases and settings of this phone.

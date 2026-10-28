@@ -19,6 +19,45 @@ public class PubGame
 	/// <summary>Rich-text/markdown explanation of how to play, may reference inline image URLs.</summary>
 	public string RulesText { get; set; } = string.Empty;
 
+	/// <summary>
+	/// The language Name and RulesText are written in (en, nl, ...; see AppLanguage). Empty for games from
+	/// before translations: those are English.
+	/// </summary>
+	public string SourceLanguage { get; set; } = string.Empty;
+
+	/// <summary>The language the game was written in; English for older games.</summary>
+	[Ignore]
+	public string SourceLanguageCode => string.IsNullOrEmpty(SourceLanguage) ? "en" : SourceLanguage;
+
+	/// <summary>The translations into the other languages, as JSON; use Translations.</summary>
+	public string? TranslationsText { get; set; }
+
+	/// <summary>The name and rules in the other languages, by language code (see GameTranslation).</summary>
+	[Ignore]
+	public Dictionary<string, GameTranslation> Translations
+	{
+		get => GameTranslation.FromJson(TranslationsText);
+		set => TranslationsText = GameTranslation.ToJson(value);
+	}
+
+	/// <summary>
+	/// The game as players see it in the app's language: a copy with the translated name and rules, or this
+	/// game itself when it's written in that language or not translated yet. Never save the copy as the game.
+	/// </summary>
+	public PubGame InAppLanguage()
+	{
+		var code = Services.AppLanguage.Current.Code;
+		if (code == SourceLanguageCode
+			|| !Translations.TryGetValue(code, out var translation)
+			|| string.IsNullOrWhiteSpace(translation.Name))
+			return this;
+
+		var copy = (PubGame)MemberwiseClone();
+		copy.Name = translation.Name;
+		copy.RulesText = string.IsNullOrWhiteSpace(translation.RulesText) ? RulesText : translation.RulesText;
+		return copy;
+	}
+
 	/// <summary>The cover picture's reference (see ImageRef), or null without one.</summary>
 	public string? CoverImageUrl { get; set; }
 
@@ -73,19 +112,19 @@ public class PubGame
 	/// </summary>
 	public string? PlayerCountProblem(int players)
 	{
-		static string Players(int n) => n == 1 ? "1 player" : $"{n} players";
+		static string Players(int n) => n == 1 ? L.T("1 player") : L.F("{0} players", n);
 
 		if (MinPlayers is { } least && players < least)
-			return $"{Name} is for {PlayersLabel} players and you have {Players(players)}. Add at least {Players(least - players)} more to play this game.";
+			return L.F("{0} is for {1} players and you have {2}. Add at least {3} more to play this game.", Name, PlayersLabel, Players(players), Players(least - players));
 		if (MaxPlayers is { } most && players > most)
-			return $"{Name} is for {PlayersLabel} players and you have {Players(players)}. Take out at least {Players(players - most)} to play this game.";
+			return L.F("{0} is for {1} players and you have {2}. Take out at least {3} to play this game.", Name, PlayersLabel, Players(players), Players(players - most));
 		return null;
 	}
 
 	/// <summary>"2-6", "2+", "1-3" or "Any": the number of players a game is for.</summary>
 	public static string PlayersLabelFor(int? min, int? max) => (min, max) switch
 	{
-		(null, null) => "Any",
+		(null, null) => L.T("Any"),
 		({ } least, null) => $"{least}+",
 		(null, { } most) => most <= 1 ? "1" : $"1-{most}",
 		({ } least, { } most) => least == most ? $"{least}" : $"{least}-{most}"
@@ -111,7 +150,12 @@ public class PubGame
 	[Ignore]
 	public string InfoLine => string.Join(" · ", new[]
 	{
-		PlayersLabel switch { "Any" => "Any number of players", "1" => "1 player", var players => $"{players} players" },
+		(MinPlayers, MaxPlayers) switch
+		{
+			(null, null) => L.T("Any number of players"),
+			_ when PlayersLabel == "1" => L.T("1 player"),
+			_ => L.F("{0} players", PlayersLabel)
+		},
 		CategoryLabel
 	}.Where(part => part.Length > 0));
 
@@ -144,8 +188,8 @@ public class PubGame
 	public string TakenLabel => TakenBy switch
 	{
 		null => string.Empty,
-		{ Type: ReviewRequestType.Deletion } request => $"🔒 {request.SubmitterLabel} asked to delete this game - waiting for review",
-		var request => $"🔒 {request.SubmitterLabel} submitted changes - waiting for review"
+		{ Type: ReviewRequestType.Deletion } request => L.F("🔒 {0} asked to delete this game - waiting for review", request.SubmitterLabel),
+		var request => L.F("🔒 {0} submitted changes - waiting for review", request.SubmitterLabel)
 	};
 
 	/// <summary>Which team owns/manages this game.</summary>
@@ -167,16 +211,16 @@ public class PubGame
 	[Ignore]
 	public string StatusLabel => Status switch
 	{
-		GameStatus.Published => "Published",
-		GameStatus.Deleted => "Deleted",
-		GameStatus.Draft => "Draft",
+		GameStatus.Published => L.T("Published"),
+		GameStatus.Deleted => L.T("Deleted"),
+		GameStatus.Draft => L.T("Draft"),
 		// Games from before review requests existed.
-		_ => "Waiting for review"
+		_ => L.T("Waiting for review")
 	};
 
 	/// <summary>"€ 0,99" or "Free".</summary>
 	[Ignore]
-	public string PriceLabel => IsPaid ? Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("nl-NL")) : "Free";
+	public string PriceLabel => IsPaid ? Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("nl-NL")) : L.T("Free");
 }
 
 /// <summary>

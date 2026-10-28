@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:models="clr-namespace:PubGames.Models"
              xmlns:views="clr-namespace:PubGames.Views"
              x:Class="PubGames.Views.InfoPage"
@@ -24,7 +25,7 @@
 				</VerticalStackLayout>
 
 				<!-- Game rules only: the game's own "How to play", with its pictures. -->
-				<Label Text="How to play" FontSize="17" FontAttributes="Bold" IsVisible="{Binding HasRules}" />
+				<Label Text="{loc:T Info_HowToPlay}" FontSize="17" FontAttributes="Bold" IsVisible="{Binding HasRules}" />
 				<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding RulesBlocks}">
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="models:RulesBlock">
@@ -39,7 +40,7 @@
 			</VerticalStackLayout>
 		</ScrollView>
 
-		<Button Grid.Row="1" Text="Got it" Clicked="OnCloseClicked" />
+		<Button Grid.Row="1" Text="{loc:T Info_GotIt}" Clicked="OnCloseClicked" />
 
 	</Grid>
 

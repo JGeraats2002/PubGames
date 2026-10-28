@@ -3,6 +3,7 @@
      The binding context is a ScoringEditor. -->
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.ScoringEditorView"
              x:DataType="vm:ScoringEditor">
@@ -19,31 +20,31 @@
 			</Border.StrokeShape>
 			<VerticalStackLayout Spacing="10">
 				<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding IsPlusMinus}">
-					<Label Text="Step (points per tap)" VerticalOptions="Center" />
+					<Label Text="{loc:T ScoringEditorView_StepPointsPerTap}" VerticalOptions="Center" />
 					<Entry Grid.Column="1" Text="{Binding ScoreStep}" Keyboard="Numeric" HorizontalTextAlignment="End" />
 				</Grid>
 
 				<Grid ColumnDefinitions="*,100" ColumnSpacing="12">
-					<Label Text="Starting score" VerticalOptions="Center" />
+					<Label Text="{loc:T ScoringEditorView_StartingScore}" VerticalOptions="Center" />
 					<Entry Grid.Column="1" Text="{Binding StartScore}" Keyboard="Telephone" HorizontalTextAlignment="End" />
 				</Grid>
 
 				<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-					<Label Text="Maximum score" VerticalOptions="Center" />
+					<Label Text="{loc:T ScoringEditorView_MaximumScore}" VerticalOptions="Center" />
 					<Switch Grid.Column="1" IsToggled="{Binding HasMaxScore}" VerticalOptions="Center" />
 					<Entry Grid.Column="2" Text="{Binding MaxScore}" Keyboard="Telephone" Placeholder="e.g. 10"
 					       HorizontalTextAlignment="End" IsVisible="{Binding HasMaxScore}" />
 				</Grid>
 
 				<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-					<Label Text="Minimum score" VerticalOptions="Center" />
+					<Label Text="{loc:T ScoringEditorView_MinimumScore}" VerticalOptions="Center" />
 					<Switch Grid.Column="1" IsToggled="{Binding HasMinScore}" VerticalOptions="Center" />
 					<Entry Grid.Column="2" Text="{Binding MinScore}" Keyboard="Telephone" Placeholder="e.g. 0"
 					       HorizontalTextAlignment="End" IsVisible="{Binding HasMinScore}" />
 				</Grid>
 
 				<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-					<Label Text="Warning at score" VerticalOptions="Center" />
+					<Label Text="{loc:T ScoringEditorView_WarningAtScore}" VerticalOptions="Center" />
 					<Switch Grid.Column="1" IsToggled="{Binding HasWarningScore}" VerticalOptions="Center" />
 					<Entry Grid.Column="2" Text="{Binding WarningScore}" Keyboard="Telephone" Placeholder="e.g. 9"
 					       HorizontalTextAlignment="End" IsVisible="{Binding HasWarningScore}" />
@@ -51,7 +52,7 @@
 
 				<!-- Manual plus / minus: rules every typed amount must meet. -->
 				<VerticalStackLayout Spacing="8" IsVisible="{Binding IsManual}" Margin="0,6,0,0">
-					<Label Text="Rules for entered amounts" FontAttributes="Bold" />
+					<Label Text="{loc:T ScoringEditorView_RulesForEnteredAmounts}" FontAttributes="Bold" />
 					<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding AmountRules}">
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="vm:EditableScoreRule">
@@ -60,12 +61,12 @@
 								        HorizontalOptions="Start" HeightRequest="48" Padding="14,0" FontSize="12" FontAttributes="Bold"
 								        BackgroundColor="{StaticResource PrimaryDark}" TextColor="White" />
 								<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
-									<Picker Title="Choose rule" ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" VerticalOptions="Center" />
+									<Picker Title="{loc:T ScoringEditorView_ChooseRule}" ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" VerticalOptions="Center" />
 									<Entry Grid.Column="1" Text="{Binding Value}" Placeholder="{Binding ValuePlaceholder}" Keyboard="Telephone"
 									       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding NeedsValue}" />
-									<Entry Grid.Column="2" Text="{Binding Value2}" Placeholder="to" Keyboard="Telephone"
+									<Entry Grid.Column="2" Text="{Binding Value2}" Placeholder="{loc:T ScoringEditorView_To}" Keyboard="Telephone"
 									       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding IsBetween}" />
-									<Button SemanticProperties.Description="Remove rule" Grid.Column="3" Text="✕" Clicked="OnRemoveAmountRuleClicked" WidthRequest="48" HeightRequest="48"
+									<Button SemanticProperties.Description="{loc:T ScoringEditorView_RemoveRule}" Grid.Column="3" Text="✕" Clicked="OnRemoveAmountRuleClicked" WidthRequest="48" HeightRequest="48"
 									        Padding="0" FontSize="14" VerticalOptions="Center"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</Grid>
@@ -74,7 +75,7 @@
 						</BindableLayout.ItemTemplate>
 					</VerticalStackLayout>
 					<Label Text="{Binding AmountRulesPreview}" FontSize="12" FontAttributes="Bold" />
-					<Button Text="+ Add rule" Clicked="OnAddAmountRuleClicked" HorizontalOptions="Start"
+					<Button Text="{loc:T ScoringEditorView_AddRule}" Clicked="OnAddAmountRuleClicked" HorizontalOptions="Start"
 					        HeightRequest="48" Padding="14,0" FontSize="13"
 					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
 				</VerticalStackLayout>

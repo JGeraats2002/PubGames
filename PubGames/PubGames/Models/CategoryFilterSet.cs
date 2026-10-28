@@ -34,9 +34,9 @@ public partial class CategoryFilterSet : ObservableObject
 	/// <summary>"Any number of players" or "4 players": the player filter as the slider shows it.</summary>
 	public string PlayersText => Players switch
 	{
-		0 => "Any number of players",
-		1 => "1 player",
-		_ => $"{Players} players"
+		0 => L.T("Any number of players"),
+		1 => L.T("1 player"),
+		_ => L.F("{0} players", Players)
 	};
 
 	/// <summary>How many filters are set: each chosen category, and the number of players.</summary>
@@ -46,7 +46,7 @@ public partial class CategoryFilterSet : ObservableObject
 	public bool IsFiltering => ActiveCount > 0;
 
 	/// <summary>The Filter button's text, which says how many filters are set.</summary>
-	public string ButtonText => ActiveCount == 0 ? "Filter" : $"Filter ({ActiveCount})";
+	public string ButtonText => ActiveCount == 0 ? L.T("Filter") : L.F("Filter ({0})", ActiveCount);
 
 	/// <summary>Shows these categories under their main categories, keeping what was chosen if still there.</summary>
 	public void Show(IEnumerable<CategoryGroup> groups, IEnumerable<GameCategory> categories)

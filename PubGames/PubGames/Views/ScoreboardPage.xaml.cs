@@ -72,7 +72,7 @@ public partial class ScoreboardPage : ContentPage
 		Grid.SetColumnSpan(NextButton, both ? 1 : 2);
 		Grid.SetColumnSpan(FinishButton, both ? 1 : 2);
 
-		StatsButton.Text = _vm.IsFinished ? "Final result" : "Stats";
+		StatsButton.Text = _vm.IsFinished ? L.T("Final result") : L.T("Stats");
 		Grid.SetColumn(StatsButton, _vm.IsFinished ? 0 : 1);
 		Grid.SetColumnSpan(StatsButton, _vm.IsFinished ? 2 : 1);
 	}
@@ -158,10 +158,10 @@ public partial class ScoreboardPage : ContentPage
 		bool finish;
 		if (_vm.CanGoNext && _vm.CanFinish)
 		{
-			const string next = "Next subgame";
-			const string end = "Finish game";
-			var choice = await DisplayActionSheetAsync($"{_vm.EndMessage.Replace("🏁 ", string.Empty)}\nPlay another subgame?", "Not yet", null, next, end);
-			if (choice is not (next or end)) return;
+			var next = L.T("Next subgame");
+			var end = L.T("Finish game");
+			var choice = await DisplayActionSheetAsync(L.F("{0}\nPlay another subgame?", _vm.EndMessage.Replace("🏁 ", string.Empty)), L.T("Not yet"), null, next, end);
+			if (choice != next && choice != end) return;
 			finish = choice == end;
 		}
 		else
@@ -178,10 +178,10 @@ public partial class ScoreboardPage : ContentPage
 	private async void OnFinishClicked(object? sender, EventArgs e)
 	{
 		if (_vm.Session is null) return;
-		var confirmed = await DisplayAlertAsync("Finish the game?",
-			"This will end the whole game. You'll note the result of this last subgame and then see who won" +
-			(_vm.Settings.ResultMode == Models.ResultMode.Loser ? " and who lost." : "."),
-			"Finish game", "Keep playing");
+		var confirmed = await DisplayAlertAsync(L.T("Finish the game?"),
+			L.T("This will end the whole game. You'll note the result of this last subgame and then see who won") +
+			(_vm.Settings.ResultMode == Models.ResultMode.Loser ? L.T(" and who lost.") : "."),
+			L.T("Finish game"), L.T("Keep playing"));
 		if (!confirmed) return;
 
 		await Shell.Current.GoToAsync(nameof(RoundResultPage), new Dictionary<string, object>
@@ -241,7 +241,7 @@ public partial class ScoreboardPage : ContentPage
 		{
 			Board.Children.Add(new Label
 			{
-				Text = "Nobody is playing.",
+				Text = L.T("Nobody is playing."),
 				TextColor = Color("TextSecondary"),
 				HorizontalOptions = LayoutOptions.Center,
 				VerticalOptions = LayoutOptions.Center
@@ -646,7 +646,7 @@ public partial class ScoreboardPage : ContentPage
 		KeyboardBarLabel.Text = row.Player.Name;
 		// With a fixed input order the earlier players already had their turn.
 		PreviousBoxButton.IsEnabled = !_vm.FixedTurnOrder && _vm.Rows.IndexOf(row) > 0;
-		NextBoxButton.Text = row == _vm.Rows.LastOrDefault() ? "Done ✓" : "Next ▶";
+		NextBoxButton.Text = row == _vm.Rows.LastOrDefault() ? L.T("Done ✓") : L.T("Next ▶");
 		Footer.IsVisible = false;
 		KeyboardBar.IsVisible = true;
 
@@ -686,7 +686,7 @@ public partial class ScoreboardPage : ContentPage
 			{
 				if (_vm.FixedTurnOrder)
 				{
-					ShowScoreMessage($"{from.Player.Name}: enter a score first - type 0 for no points.");
+					ShowScoreMessage(L.F("{0}: enter a score first - type 0 for no points.", from.Player.Name));
 					return;
 				}
 			}
@@ -735,19 +735,19 @@ public partial class ScoreboardPage : ContentPage
 
 		if (text.Length == 0)
 		{
-			ShowScoreMessage($"{row.Player.Name}: type an amount first, then tap + or −.");
+			ShowScoreMessage(L.F("{0}: type an amount first, then tap + or −.", row.Player.Name));
 			return false;
 		}
 		// Some keyboards type a real minus sign (−) instead of a hyphen.
 		if (!int.TryParse(text.Replace('−', '-'), System.Globalization.NumberStyles.AllowLeadingSign,
 			System.Globalization.CultureInfo.CurrentCulture, out var amount))
 		{
-			ShowScoreMessage($"{row.Player.Name}: \"{text}\" isn't a whole number.");
+			ShowScoreMessage(L.F("{0}: \"{1}\" isn't a whole number.", row.Player.Name, text));
 			return false;
 		}
 		if (!manual.AllowsAmount(amount) && !(amount == 0 && _vm.FixedTurnOrder))
 		{
-			ShowScoreMessage($"{row.Player.Name}: {amount} isn't allowed. {manual.AllowedAmountsHint()}");
+			ShowScoreMessage(L.F("{0}: {1} isn't allowed. {2}", row.Player.Name, amount, manual.AllowedAmountsHint()));
 			return false;
 		}
 
@@ -763,8 +763,8 @@ public partial class ScoreboardPage : ContentPage
 	private async Task TypeAmountAsync(ParticipantRow row)
 	{
 		var text = await DisplayPromptAsync(row.Player.Name,
-			$"How many {_vm.Rules.Unit} to add? Use a minus sign to subtract.",
-			"Add", "Cancel", placeholder: "0", maxLength: 6, keyboard: Keyboard.Telephone);
+			L.F("How many {0} to add? Use a minus sign to subtract.", _vm.Rules.Unit),
+			L.T("Add"), L.T("Cancel"), placeholder: "0", maxLength: 6, keyboard: Keyboard.Telephone);
 		if (int.TryParse(text?.Trim().Replace('−', '-'), out var amount))
 			await _vm.AdjustScoreAsync(row, amount);
 	}

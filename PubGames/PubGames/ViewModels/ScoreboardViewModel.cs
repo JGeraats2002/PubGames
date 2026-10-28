@@ -88,7 +88,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 
 	/// <summary>The game's name, as the page's title.</summary>
 	[ObservableProperty]
-	private string gameName = "Score";
+	private string gameName = L.T("Score");
 
 	/// <summary>The game being played, for its rules behind the ⓘ.</summary>
 	public PubGame? Game { get; private set; }
@@ -105,10 +105,10 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 	public int CurrentRound => Math.Max(1, Session?.CurrentRound ?? 1);
 
 	/// <summary>"Subgame 2 of 5", or "Subgame 2" when the players decide when to finish.</summary>
-	public string SubgameLabel => IsFinished ? "Game finished"
-		: Session?.SubgameCount is 1 ? "1 game"
-		: Session?.SubgameCount is { } count ? $"Subgame {CurrentRound} of {count}"
-		: $"Subgame {CurrentRound}";
+	public string SubgameLabel => IsFinished ? L.T("Game finished")
+		: Session?.SubgameCount is 1 ? L.T("1 game")
+		: Session?.SubgameCount is { } count ? L.F("Subgame {0} of {1}", CurrentRound, count)
+		: L.F("Subgame {0}", CurrentRound);
 
 	/// <summary>Whether the game is finished.</summary>
 	public bool IsFinished => Session?.EndedAt is not null;
@@ -203,8 +203,8 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		Session = await _local.GetSessionAsync(sessionId);
 		if (Session is null) return;
 
-		var game = Game = await _local.GetGameAsync(Session.GameId);
-		GameName = game?.Name ?? "Score";
+		var game = Game = (await _local.GetGameAsync(Session.GameId))?.InAppLanguage();
+		GameName = game?.Name ?? L.T("Score");
 		Rules = ScoringRules.For(game);
 		Settings = game?.ScoringSettings ?? ScoringSettings.Default;
 		NotifySubgameChanged();
@@ -225,7 +225,7 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		foreach (var participant in participants)
 		{
 			var player = players.GetValueOrDefault(participant.PlayerId)
-				?? new Player { Id = participant.PlayerId, Name = "Unknown player" };
+				?? new Player { Id = participant.PlayerId, Name = L.T("Unknown player") };
 			Rows.Add(new ParticipantRow { Participant = participant, Player = player });
 		}
 		UpdateLeaders();
@@ -322,14 +322,14 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		{
 			var reacher = Rows[from].Player.Name;
 			EndMessage = Session.TurnIndex == 0
-				? $"🏁 {reacher} reached {end} and everyone had their last turn: this subgame is over."
-				: $"🏁 {reacher} reached {end}. Everyone after {reacher} gets one last turn.";
+				? L.F("🏁 {0} reached {1} and everyone had their last turn: this subgame is over.", reacher, end)
+				: L.F("🏁 {0} reached {1}. Everyone after {2} gets one last turn.", reacher, end, reacher);
 			return;
 		}
 		if (reached.Count == 0)
 			EndMessage = string.Empty;
 		else if (Settings.EndMode == EndMode.Manual || _endedRound == (Session?.Id, CurrentRound))
-			EndMessage = $"🏁 {who} {verb} reached {end}. End the subgame with {(CanGoNext ? "Next subgame" : "Finish game")}.";
+			EndMessage = L.F("🏁 {0} {1} reached {2}. End the subgame with {3}.", who, verb, end, (CanGoNext ? L.T("Next subgame") : L.T("Finish game")));
 		else
 			EndMessage = string.Empty;
 	}

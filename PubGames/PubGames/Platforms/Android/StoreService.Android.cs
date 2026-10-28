@@ -43,8 +43,8 @@ public partial class StoreService
 		var result = await _client.StartConnectionAsync();
 		if (result.ResponseCode != BillingResponseCode.Ok)
 			throw new StoreException(result.ResponseCode == BillingResponseCode.BillingUnavailable
-				? "Google Play payments aren't available on this phone. Install the app from Google Play to buy."
-				: "Couldn't reach Google Play. Try again in a moment.");
+				? L.T("Google Play payments aren't available on this phone. Install the app from Google Play to buy.")
+				: L.T("Couldn't reach Google Play. Try again in a moment."));
 		return _client;
 	}
 
@@ -103,7 +103,7 @@ public partial class StoreService
 		try
 		{
 			var details = await DetailsAsync(Prices.ProductIdFor(game.Id), BillingClient.ProductType.Inapp)
-				?? throw new StoreException("This game can't be bought yet. Try again later.");
+				?? throw new StoreException(L.T("This game can't be bought yet. Try again later."));
 			var offer = details.OneTimePurchaseOfferDetailsList?.FirstOrDefault();
 			var product = BillingFlowParams.ProductDetailsParams.NewBuilder().SetProductDetails(details);
 			if (offer?.OfferToken is { Length: > 0 } token)
@@ -122,9 +122,9 @@ public partial class StoreService
 		try
 		{
 			var details = await DetailsAsync(Prices.PassProductId, BillingClient.ProductType.Subs)
-				?? throw new StoreException("The Pub Games Pass isn't available yet. Try again later.");
+				?? throw new StoreException(L.T("The Pub Games Pass isn't available yet. Try again later."));
 			var offer = details.GetSubscriptionOfferDetails()?.FirstOrDefault(o => o.BasePlanId == plan.BasePlanId)
-				?? throw new StoreException($"The {plan.Name.ToLowerInvariant()} pass isn't available yet.");
+				?? throw new StoreException(L.F("The {0} pass isn't available yet.", plan.Name.ToLowerInvariant()));
 			var product = BillingFlowParams.ProductDetailsParams.NewBuilder().SetProductDetails(details).SetOfferToken(offer.OfferToken).Build();
 			return await LaunchAsync(product, purchase => VerifyAsync("pass", purchase.PurchaseToken, null));
 		}
@@ -138,8 +138,8 @@ public partial class StoreService
 	private async Task<(PurchaseOutcome Outcome, string? Problem)> LaunchAsync(BillingFlowParams.ProductDetailsParams product, Func<PlayPurchase, Task> verify)
 	{
 		var client = await ConnectAsync();
-		if (auth.CurrentUser is not { } user) return (PurchaseOutcome.Failed, "Sign in first.");
-		if (Platform.CurrentActivity is not { } activity) return (PurchaseOutcome.Failed, "Try again.");
+		if (auth.CurrentUser is not { } user) return (PurchaseOutcome.Failed, L.T("Sign in first."));
+		if (Platform.CurrentActivity is not { } activity) return (PurchaseOutcome.Failed, L.T("Try again."));
 
 		var flow = BillingFlowParams.NewBuilder()
 			.SetProductDetailsParamsList([product])
@@ -150,15 +150,15 @@ public partial class StoreService
 		var started = client.LaunchBillingFlow(activity, flow);
 		if (started.ResponseCode != BillingResponseCode.Ok)
 			return started.ResponseCode == BillingResponseCode.ItemAlreadyOwned
-				? (PurchaseOutcome.Failed, "You already own this. Tap Restore purchases under Account > Pub Games Pass.")
-				: (PurchaseOutcome.Failed, "Couldn't open Google Play's payment screen.");
+				? (PurchaseOutcome.Failed, L.T("You already own this. Tap Restore purchases under Account > Pub Games Pass."))
+				: (PurchaseOutcome.Failed, L.T("Couldn't open Google Play's payment screen."));
 
 		var (result, purchases) = await _flow.Task;
 		if (result.ResponseCode == BillingResponseCode.UserCancelled) return (PurchaseOutcome.Cancelled, null);
 		if (result.ResponseCode == BillingResponseCode.ItemAlreadyOwned)
-			return (PurchaseOutcome.Failed, "You already own this. Tap Restore purchases under Account > Pub Games Pass.");
+			return (PurchaseOutcome.Failed, L.T("You already own this. Tap Restore purchases under Account > Pub Games Pass."));
 		if (result.ResponseCode != BillingResponseCode.Ok || purchases is not { Count: > 0 })
-			return (PurchaseOutcome.Failed, "The purchase didn't go through.");
+			return (PurchaseOutcome.Failed, L.T("The purchase didn't go through."));
 
 		var purchase = purchases[0];
 		if (purchase.PurchaseState == PurchaseState.Pending) return (PurchaseOutcome.Pending, null);

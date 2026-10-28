@@ -61,8 +61,8 @@ public partial class AdminLibraryViewModel : ObservableObject
 
 		var filtered = text.Length > 0 || Filters.IsFiltering;
 		ResultsText = !filtered ? string.Empty
-			: matches.Count == 0 ? "No games match your search."
-			: $"{matches.Count} of {_allGames.Count} games";
+			: matches.Count == 0 ? L.T("No games match your search.")
+			: L.F("{0} of {1} games", matches.Count, _allGames.Count);
 	}
 
 	/// <summary>
@@ -81,8 +81,8 @@ public partial class AdminLibraryViewModel : ObservableObject
 
 	/// <summary>"1 new message" or "3 new messages".</summary>
 	public string UnreadMessagesText => UnreadMessageCount == 1
-		? "You have 1 new message in your Inbox ›"
-		: $"You have {UnreadMessageCount} new messages in your Inbox ›";
+		? L.T("You have 1 new message in your Inbox ›")
+		: L.F("You have {0} new messages in your Inbox ›", UnreadMessageCount);
 
 	/// <summary>About refreshing from the cloud: offline, or what went wrong.</summary>
 	[ObservableProperty]
@@ -111,11 +111,11 @@ public partial class AdminLibraryViewModel : ObservableObject
 
 	/// <summary>"1 request to review" or "3 requests to review".</summary>
 	public string RequestsToReviewText => RequestsToReviewCount == 1
-		? "1 request is waiting for your review ›"
-		: $"{RequestsToReviewCount} requests are waiting for your review ›";
+		? L.T("1 request is waiting for your review ›")
+		: L.F("{0} requests are waiting for your review ›", RequestsToReviewCount);
 
 	/// <summary>"+ New game" for admins, "+ Propose a new game" for moderators.</summary>
-	public string NewGameButtonText => IsModerator ? "+ Propose a new game" : "+ New game";
+	public string NewGameButtonText => IsModerator ? L.T("+ Propose a new game") : L.T("+ New game");
 
 	/// <summary>
 	/// Gets the services it works with - the phone's database, cloud sync, the team, the permissions, the
@@ -188,8 +188,8 @@ public partial class AdminLibraryViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			SyncMessage = ex is HttpRequestException
-				? "Offline - showing what's saved on this phone."
-				: $"Couldn't refresh: {ex.Message}";
+				? L.T("Offline - showing what's saved on this phone.")
+				: L.F("Couldn't refresh: {0}", ex.Message);
 			return;
 		}
 
@@ -239,8 +239,8 @@ public partial class AdminLibraryViewModel : ObservableObject
 			var filledIn = missing.Count > 0 && waitingChanges.Any(r => r.GameId == game.Id
 				&& Missing(r.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries)).Count == 0);
 			game.MissingLabel = missing.Count == 0 ? string.Empty
-				: filledIn ? "Waiting for review"
-				: $"Still needs: {string.Join(", ", missing)}";
+				: filledIn ? L.T("Waiting for review")
+				: L.F("Still needs: {0}", string.Join(", ", missing));
 		}
 		ApplyFilter();
 
@@ -263,7 +263,7 @@ public partial class AdminLibraryViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			SyncMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			SyncMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return false;
 		}
 		MyRequests.Remove(request);

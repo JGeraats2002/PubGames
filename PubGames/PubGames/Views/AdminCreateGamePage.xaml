@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:views="clr-namespace:PubGames.Views"
              xmlns:models="clr-namespace:PubGames.Models"
@@ -15,16 +16,19 @@
 			<Setter Property="TextColor" Value="{StaticResource Primary}" />
 			<Setter Property="BorderColor" Value="{StaticResource Border}" />
 			<Setter Property="BorderWidth" Value="1" />
-			<Setter Property="Padding" Value="4,0" />
-			<Setter Property="HeightRequest" Value="40" />
-			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Padding" Value="2,0" />
+			<Setter Property="HeightRequest" Value="48" />
+			<Setter Property="FontSize" Value="13" />
+			<Setter Property="LineBreakMode" Value="TailTruncation" />
 		</Style>
 
 		<!-- Section titles, with a ✕ to take the part off the form again. -->
 		<Style x:Key="SectionTitle" TargetType="Label">
-			<Setter Property="FontSize" Value="12" />
-			<Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+			<Setter Property="FontSize" Value="15" />
+			<Setter Property="FontAttributes" Value="Bold" />
+			<Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
 			<Setter Property="VerticalOptions" Value="Center" />
+			<Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
 		</Style>
 		<Style x:Key="RemoveSectionButton" TargetType="Button">
 			<Setter Property="Text" Value="✕" />
@@ -34,7 +38,7 @@
 			<Setter Property="Padding" Value="8,0" />
 			<Setter Property="HeightRequest" Value="48" />
 			<Setter Property="MinimumWidthRequest" Value="48" />
-			<Setter Property="SemanticProperties.Description" Value="Remove this part" />
+			<Setter Property="SemanticProperties.Description" Value="{loc:T AdminCreateGame_RemoveThisPart}" />
 			<Setter Property="FontSize" Value="14" />
 		</Style>
 	</ContentPage.Resources>
@@ -42,8 +46,8 @@
 	<Grid RowDefinitions="Auto,*,Auto">
 
 	<!-- General, Scoring, Rules. Players see none of this: they see the game as before. -->
-	<Grid Padding="20,12,20,8" ColumnDefinitions="*,*,*" ColumnSpacing="8">
-		<Button Text="General" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
+	<Grid Padding="20,12,20,8" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+		<Button Text="{loc:T AdminCreateGame_General}" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsGeneralPage}" Value="True">
 					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
@@ -51,7 +55,7 @@
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
-		<Button Grid.Column="1" Text="Scoring" Style="{StaticResource TabButton}" Clicked="OnScoringTabClicked">
+		<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Scoring}" Style="{StaticResource TabButton}" Clicked="OnScoringTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsScoringPage}" Value="True">
 					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
@@ -59,7 +63,7 @@
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
-		<Button Grid.Column="2" Text="Rules" Style="{StaticResource TabButton}" Clicked="OnRulesTabClicked">
+		<Button Grid.Column="2" Text="{loc:T AdminCreateGame_Rules}" Style="{StaticResource TabButton}" Clicked="OnRulesTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsRulesPage}" Value="True">
 					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
@@ -67,7 +71,17 @@
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
+		<Button Grid.Column="3" Text="{loc:T AdminCreateGame_Languages}" Style="{StaticResource TabButton}" Clicked="OnLanguagesTabClicked">
+			<Button.Triggers>
+				<DataTrigger TargetType="Button" Binding="{Binding IsLanguagesPage}" Value="True">
+					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+					<Setter Property="TextColor" Value="White" />
+				</DataTrigger>
+			</Button.Triggers>
+		</Button>
 	</Grid>
+
+	<BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" VerticalOptions="End" />
 
 	<ScrollView x:Name="FormScroll" Grid.Row="1">
 		<VerticalStackLayout Padding="20,8,20,20" Spacing="14">
@@ -84,11 +98,16 @@
 			<!-- ===== Page 1: general info ===== -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsGeneralPage}">
 
-				<Label Text="Game name" Style="{StaticResource SectionTitle}" />
-				<Entry Placeholder="e.g. Kings cup" Text="{Binding Name}" />
+				<Label Text="{loc:T AdminCreateGame_GameName}" Style="{StaticResource SectionTitle}" />
+				<Entry Placeholder="{loc:T AdminCreateGame_EGKingsCup}" Text="{Binding Name}" />
+
+				<!-- The language the name and rules are written in; the other languages are translated from it. -->
+				<Label Text="{loc:T AdminCreateGame_WrittenIn}" Style="{StaticResource SectionTitle}" />
+				<Picker Title="{loc:T AdminCreateGame_ChooseTheLanguage}" ItemsSource="{Binding Languages}" ItemDisplayBinding="{Binding Name}"
+				        SelectedItem="{Binding SourceLanguage}" />
 
 				<VerticalStackLayout Spacing="14">
-					<Label Text="Cover image" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<Label Text="{loc:T AdminCreateGame_CoverImage}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<!-- Square and as wide as the page, on every phone; the same part of the picture as the icon in the game lists. -->
 					<Border IsVisible="{Binding HasCover}" StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}">
 						<Border.StrokeShape>
@@ -101,33 +120,33 @@
 						        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
 						        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
 						        BorderColor="{StaticResource Border}" BorderWidth="1" />
-						<Button Grid.Column="1" Text="Remove" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}"
+						<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Remove}" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
 						        BorderColor="{StaticResource Border}" BorderWidth="1" />
 					</Grid>
 				</VerticalStackLayout>
 
 				<VerticalStackLayout Spacing="14">
-					<Label Text="Pricing" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
-					<Picker Title="Choose the price" ItemsSource="{Binding PriceOptions}" SelectedItem="{Binding SelectedPriceOption}" />
+					<Label Text="{loc:T AdminCreateGame_Pricing}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<Picker Title="{loc:T AdminCreateGame_ChooseThePrice}" ItemsSource="{Binding PriceOptions}" SelectedItem="{Binding SelectedPriceOption}" />
 				</VerticalStackLayout>
 
 				<!-- Each limit has its own switch. Both off: any number of players. Players filter games by this. -->
 				<VerticalStackLayout Spacing="14">
-					<Label Text="Number of players" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<Label Text="{loc:T AdminCreateGame_NumberOfPlayers}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
 						<VerticalStackLayout Spacing="10">
 							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-								<Label Text="Minimum players" VerticalOptions="Center" />
+								<Label Text="{loc:T AdminCreateGame_MinimumPlayers}" VerticalOptions="Center" />
 								<Switch Grid.Column="1" IsToggled="{Binding HasMinPlayers}" VerticalOptions="Center" />
 								<Entry Grid.Column="2" Text="{Binding MinPlayers}" Keyboard="Numeric" Placeholder="e.g. 2"
 								       HorizontalTextAlignment="End" IsVisible="{Binding HasMinPlayers}" />
 							</Grid>
 							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-								<Label Text="Maximum players" VerticalOptions="Center" />
+								<Label Text="{loc:T AdminCreateGame_MaximumPlayers}" VerticalOptions="Center" />
 								<Switch Grid.Column="1" IsToggled="{Binding HasMaxPlayers}" VerticalOptions="Center" />
 								<Entry Grid.Column="2" Text="{Binding MaxPlayers}" Keyboard="Numeric" Placeholder="e.g. 6"
 								       HorizontalTextAlignment="End" IsVisible="{Binding HasMaxPlayers}" />
@@ -139,13 +158,13 @@
 
 				<!-- Tap to select; at least one per main category. Players filter games by these. -->
 				<VerticalStackLayout Spacing="14">
-					<Label Text="Categories" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<Label Text="{loc:T AdminCreateGame_Categories}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding CategoryChoiceGroups}">
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="models:CategoryChoiceGroup">
 								<VerticalStackLayout Spacing="6">
 									<Label Text="{Binding Title}" FontAttributes="Bold" />
-									<views:CategoryClouds ItemsSource="{Binding Choices}" Placeholder="Choose one or more" CategoryTapped="OnCategoryTapped" />
+									<views:CategoryClouds ItemsSource="{Binding Choices}" Placeholder="{loc:T AdminCreateGame_ChooseOneOrMore}" CategoryTapped="OnCategoryTapped" />
 								</VerticalStackLayout>
 							</DataTemplate>
 						</BindableLayout.ItemTemplate>
@@ -157,12 +176,12 @@
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsScoringPage}">
 
 				<!-- Only the scoring type is always there (a game needs one); this adds the other parts. They always show in the same order. -->
-				<Button Text="+ Add your rules" Clicked="OnAddSectionClicked" IsVisible="{Binding CanAddSection}"
+				<Button Text="{loc:T AdminCreateGame_AddYourRules}" Clicked="OnAddSectionClicked" IsVisible="{Binding CanAddSection}"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
 				<VerticalStackLayout Spacing="14">
-					<Label Text="Scoring type" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
+					<Label Text="{loc:T AdminCreateGame_ScoringType}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<views:ScoringEditorView BindingContext="{Binding Scoring}" />
 				</VerticalStackLayout>
 
@@ -171,7 +190,7 @@
 				     How many subgames to play, the players choose when they start. -->
 				<VerticalStackLayout Spacing="14" IsVisible="{Binding SubgameAdded}">
 					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
-						<Label Text="Subgame" Style="{StaticResource SectionTitle}" />
+						<Label Text="{loc:T AdminCreateGame_Subgame}" Style="{StaticResource SectionTitle}" />
 						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
 						        CommandParameter="{x:Static vm:GameFormSection.Subgame}" />
 					</Grid>
@@ -180,32 +199,32 @@
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
 						<VerticalStackLayout Spacing="10">
-							<Label Text="Result of each subgame" />
-							<Picker Title="Choose result of each subgame" ItemsSource="{Binding ResultModeOptions}" SelectedItem="{Binding SelectedResultModeOption}" />
+							<Label Text="{loc:T AdminCreateGame_ResultOfEachSubgame}" />
+							<Picker Title="{loc:T AdminCreateGame_ChooseResultOfEachSubgame}" ItemsSource="{Binding ResultModeOptions}" SelectedItem="{Binding SelectedResultModeOption}" />
 							<Label Text="{Binding ScoreDirectionTitle}" />
 							<Picker Title="{Binding ScoreDirectionPrompt}" ItemsSource="{Binding BestScoreOptions}" SelectedIndex="{Binding BestScoreIndex}" />
 
-							<Label Text="Who starts the next subgame" />
-							<Picker Title="Choose who starts" ItemsSource="{Binding StartRotationOptions}" SelectedItem="{Binding SelectedStartRotation}" />
+							<Label Text="{loc:T AdminCreateGame_WhoStartsTheNextSubgame}" />
+							<Picker Title="{loc:T AdminCreateGame_ChooseWhoStarts}" ItemsSource="{Binding StartRotationOptions}" SelectedItem="{Binding SelectedStartRotation}" />
 
 							<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
 								<CheckBox IsChecked="{Binding FixedTurnOrder}" VerticalOptions="Center" />
-								<Label Grid.Column="1" Text="Fixed input order"
+								<Label Grid.Column="1" Text="{loc:T AdminCreateGame_FixedInputOrder}"
 								       VerticalOptions="Center" />
 							</Grid>
 
 							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
-								<Label Text="A subgame ends at score" VerticalOptions="Center" />
+								<Label Text="{loc:T AdminCreateGame_ASubgameEndsAtScore}" VerticalOptions="Center" />
 								<Switch Grid.Column="1" IsToggled="{Binding HasEndScore}" VerticalOptions="Center" />
 								<Entry Grid.Column="2" Text="{Binding EndScore}" Keyboard="Telephone" Placeholder="e.g. 100"
 								       HorizontalTextAlignment="End" IsVisible="{Binding HasEndScore}" />
 							</Grid>
 							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasEndScore}">
-								<Label Text="How the subgame ends" />
-								<Picker Title="Choose how it ends" ItemsSource="{Binding EndModeOptions}" SelectedItem="{Binding SelectedEndMode}" />
+								<Label Text="{loc:T AdminCreateGame_HowTheSubgameEnds}" />
+								<Picker Title="{loc:T AdminCreateGame_ChooseHowItEnds}" ItemsSource="{Binding EndModeOptions}" SelectedItem="{Binding SelectedEndMode}" />
 								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding CanHaveEqualizingTurn}">
 									<CheckBox IsChecked="{Binding EqualizingTurn}" VerticalOptions="Center" />
-									<Label Grid.Column="1" Text="Equalizing turn"
+									<Label Grid.Column="1" Text="{loc:T AdminCreateGame_EqualizingTurn}"
 									       VerticalOptions="Center" />
 								</Grid>
 							</VerticalStackLayout>
@@ -216,7 +235,7 @@
 				<!-- Allowed: tied players share the result. Not allowed: they play a duel with its own rules. -->
 				<VerticalStackLayout Spacing="14" IsVisible="{Binding TiesAdded}">
 					<Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
-						<Label Text="Ties" Style="{StaticResource SectionTitle}" />
+						<Label Text="{loc:T AdminCreateGame_Ties}" Style="{StaticResource SectionTitle}" />
 						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
 						        CommandParameter="{x:Static vm:GameFormSection.Ties}" />
 					</Grid>
@@ -227,46 +246,46 @@
 						<VerticalStackLayout Spacing="10">
 							<HorizontalStackLayout Spacing="8">
 								<CheckBox IsChecked="{Binding AllowTies}" />
-								<Label Text="Ties are allowed" VerticalOptions="Center" />
+								<Label Text="{loc:T AdminCreateGame_TiesAreAllowed}" VerticalOptions="Center" />
 							</HorizontalStackLayout>
 
 							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasNoTies}">
-								<Label Text="When is a tie played off" />
-								<Picker Title="Choose when" ItemsSource="{Binding TieBreakMomentOptions}" SelectedItem="{Binding SelectedTieBreakMoment}" />
-								<Label Text="Which ties are played off" />
-								<Picker Title="Choose which ties" ItemsSource="{Binding TieBreakScopeOptions}" SelectedItem="{Binding SelectedTieBreakScope}" />
+								<Label Text="{loc:T AdminCreateGame_WhenIsATiePlayed}" />
+								<Picker Title="{loc:T AdminCreateGame_ChooseWhen}" ItemsSource="{Binding TieBreakMomentOptions}" SelectedItem="{Binding SelectedTieBreakMoment}" />
+								<Label Text="{loc:T AdminCreateGame_WhichTiesArePlayedOff}" />
+								<Picker Title="{loc:T AdminCreateGame_ChooseWhichTies}" ItemsSource="{Binding TieBreakScopeOptions}" SelectedItem="{Binding SelectedTieBreakScope}" />
 							</VerticalStackLayout>
 
 							<!-- The duel's rules, filled in like the game's (or copied from them and changed). -->
 							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasNoTies}">
-								<Label Text="The duel's rules" FontAttributes="Bold" Margin="0,6,0,0" />
-								<Button Text="Copy the game's rules" Clicked="OnCopyGameRulesClicked"
+								<Label Text="{loc:T AdminCreateGame_TheDuelSRules}" FontAttributes="Bold" Margin="0,6,0,0" />
+								<Button Text="{loc:T AdminCreateGame_CopyTheGameSRules}" Clicked="OnCopyGameRulesClicked"
 								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 								        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
-								<Label Text="Duel scoring type" />
+								<Label Text="{loc:T AdminCreateGame_DuelScoringType}" />
 								<views:ScoringEditorView BindingContext="{Binding DuelScoring}" />
 
-								<Label Text="Who wins the duel" />
-								<Picker Title="Choose who wins the duel" ItemsSource="{Binding DuelBestScoreOptions}" SelectedIndex="{Binding DuelBestScoreIndex}" />
+								<Label Text="{loc:T AdminCreateGame_WhoWinsTheDuel}" />
+								<Picker Title="{loc:T AdminCreateGame_ChooseWhoWinsTheDuel}" ItemsSource="{Binding DuelBestScoreOptions}" SelectedIndex="{Binding DuelBestScoreIndex}" />
 
-								<Label Text="How the duel ends" />
-								<Picker Title="Choose how the duel ends" ItemsSource="{Binding DuelEndOptions}" SelectedItem="{Binding SelectedDuelEnd}" />
+								<Label Text="{loc:T AdminCreateGame_HowTheDuelEnds}" />
+								<Picker Title="{loc:T AdminCreateGame_ChooseHowTheDuelEnds}" ItemsSource="{Binding DuelEndOptions}" SelectedItem="{Binding SelectedDuelEnd}" />
 
 								<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding IsDuelTurns}">
-									<Label Text="Turns each" VerticalOptions="Center" />
+									<Label Text="{loc:T AdminCreateGame_TurnsEach}" VerticalOptions="Center" />
 									<Entry Grid.Column="1" Text="{Binding DuelTurns}" Keyboard="Numeric" HorizontalTextAlignment="End" />
 								</Grid>
 								<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding IsDuelScore}">
-									<Label Text="The duel goes to" VerticalOptions="Center" />
+									<Label Text="{loc:T AdminCreateGame_TheDuelGoesTo}" VerticalOptions="Center" />
 									<Entry Grid.Column="1" Text="{Binding DuelEndScore}" Keyboard="Telephone" Placeholder="e.g. 10" HorizontalTextAlignment="End" />
 								</Grid>
 								<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding IsDuelBestOf}">
-									<Label Text="Best of (rounds)" VerticalOptions="Center" />
+									<Label Text="{loc:T AdminCreateGame_BestOfRounds}" VerticalOptions="Center" />
 									<Entry Grid.Column="1" Text="{Binding DuelRounds}" Keyboard="Numeric" HorizontalTextAlignment="End" />
 								</Grid>
 								<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12" IsVisible="{Binding CanHaveDuelMargin}">
-									<Label Text="Win by at least" VerticalOptions="Center" />
+									<Label Text="{loc:T AdminCreateGame_WinByAtLeast}" VerticalOptions="Center" />
 									<Switch Grid.Column="1" IsToggled="{Binding DuelHasMargin}" VerticalOptions="Center" />
 									<Entry Grid.Column="2" Text="{Binding DuelMargin}" Keyboard="Numeric" HorizontalTextAlignment="End"
 									       IsVisible="{Binding DuelHasMargin}" />
@@ -282,7 +301,7 @@
 			     Pieces of text and pictures follow each other without anything in between, inside one box, so it
 			     reads and types as one text. Hold a picture to edit, move or remove it. -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsRulesPage}">
-				<Label Text="How to play" Style="{StaticResource SectionTitle}" />
+				<Label Text="{loc:T AdminCreateGame_HowToPlay}" Style="{StaticResource SectionTitle}" />
 				<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="8" />
@@ -304,20 +323,53 @@
 						</BindableLayout.ItemTemplate>
 					</VerticalStackLayout>
 				</Border>
-				<Button Text="Add picture at the cursor" Clicked="OnInsertRulesImageClicked"
+				<Button Text="{loc:T AdminCreateGame_AddPictureAtTheCursor}" Clicked="OnInsertRulesImageClicked"
 				        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Border}" BorderWidth="1" />
 			</VerticalStackLayout>
 
-			<!-- On every page. -->
-			<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{StaticResource Primary}" />
+			<!-- ===== Page 4: languages =====
+			     The translations the cloud made after saving; correct one here and it's kept as it is. -->
+			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsLanguagesPage}">
+				<Label Text="{loc:T AdminCreateGame_Language}" Style="{StaticResource SectionTitle}" />
+				<Picker Title="{loc:T AdminCreateGame_ChooseALanguage}" ItemsSource="{Binding TranslationLanguages}" ItemDisplayBinding="{Binding Name}"
+				        SelectedItem="{Binding TranslationLanguage}" />
+				<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,10">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="8" />
+					</Border.StrokeShape>
+					<Label Text="{Binding TranslationStatus}" FontSize="13" />
+				</Border>
 
-			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" Margin="0,6,0,0" />
+				<Label Text="{loc:T AdminCreateGame_GameName}" Style="{StaticResource SectionTitle}" />
+				<Entry Text="{Binding TranslatedName}" />
 
-			<Button Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" Margin="0,10,0,0" />
+				<Label Text="{loc:T AdminCreateGame_HowToPlay}" Style="{StaticResource SectionTitle}" />
+				<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="8" />
+					</Border.StrokeShape>
+					<VerticalStackLayout Spacing="0" BindableLayout.ItemsSource="{Binding TranslatedBlocks}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="vm:TranslationBlock">
+								<Grid>
+									<views:PlainEditor Text="{Binding Text}" IsVisible="{Binding IsText}" AutoSize="TextChanges" />
+									<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" Margin="0,14" />
+								</Grid>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+				</Border>
 
-			<Button Text="Withdraw request" Clicked="OnWithdrawClicked" IsVisible="{Binding CanWithdraw}"
+				<Button Text="{loc:T AdminCreateGame_UseTheAutomaticTranslationAgain}" Command="{Binding UseAutomaticTranslationCommand}"
+				        IsVisible="{Binding CanUseAutomaticTranslation}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			</VerticalStackLayout>
+
+			<!-- On every page, away from the save button so they're never tapped by mistake. -->
+			<Button Text="{loc:T AdminCreateGame_WithdrawRequest}" Margin="0,24,0,0" Clicked="OnWithdrawClicked" IsVisible="{Binding CanWithdraw}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 
@@ -328,16 +380,30 @@
 		</VerticalStackLayout>
 	</ScrollView>
 
+	<!-- Always in view at the bottom: what's missing or happening, and the main action. Saving says what to fix
+	     and opens the page it's on. -->
+	<VerticalStackLayout x:Name="SaveBar" Grid.Row="2" BackgroundColor="{StaticResource SurfaceLight}" Spacing="0">
+		<BoxView HeightRequest="1" Color="{StaticResource Border}" />
+		<VerticalStackLayout Padding="20,8,20,12" Spacing="8">
+			<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding HasStatusMessage}">
+				<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{StaticResource Primary}"
+				                   HeightRequest="20" WidthRequest="20" VerticalOptions="Center" />
+				<Label Grid.Column="1" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontSize="13" />
+			</Grid>
+			<Button Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" HeightRequest="52" />
+		</VerticalStackLayout>
+	</VerticalStackLayout>
+
 	<!-- While a picture is being moved; stays in view at the bottom whatever is scrolled. -->
 	<Border x:Name="MoveBar" Grid.Row="2" IsVisible="False" BackgroundColor="{StaticResource SurfaceMuted}"
 	        StrokeThickness="0" Padding="16,10">
 		<VerticalStackLayout Spacing="8">
-			<Label Text="Moving picture" FontSize="13" FontAttributes="Bold" />
+			<Label Text="{loc:T AdminCreateGame_MovingPicture}" FontSize="13" FontAttributes="Bold" />
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-				<Button Text="Cancel" Clicked="OnCancelMoveClicked" HeightRequest="48"
+				<Button Text="{loc:T AdminCreateGame_Cancel}" Clicked="OnCancelMoveClicked" HeightRequest="48"
 				        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
 				        BorderColor="{StaticResource Border}" BorderWidth="1" />
-				<Button Grid.Column="1" Text="Place here" Clicked="OnPlaceHereClicked" HeightRequest="48" />
+				<Button Grid.Column="1" Text="{loc:T AdminCreateGame_PlaceHere}" Clicked="OnPlaceHereClicked" HeightRequest="48" />
 			</Grid>
 		</VerticalStackLayout>
 	</Border>

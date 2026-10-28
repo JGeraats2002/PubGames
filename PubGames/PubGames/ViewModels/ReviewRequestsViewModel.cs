@@ -45,8 +45,8 @@ public partial class ReviewRequestsViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			SyncMessage = ex is HttpRequestException
-				? "Offline - showing the requests saved on this phone."
-				: $"Couldn't refresh requests: {ex.Message}";
+				? L.T("Offline - showing the requests saved on this phone.")
+				: L.F("Couldn't refresh requests: {0}", ex.Message);
 		}
 	}
 

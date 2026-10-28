@@ -32,9 +32,9 @@ public partial class AdminTeamPage : ContentPage
 	{
 		if (sender is not Button { BindingContext: TeamMember member }) return;
 
-		var confirmed = await DisplayAlertAsync("Make admin?",
-			$"{member.Label} will get full rights: publishing, editing and deleting games directly, reviewing requests and managing moderators.",
-			"Make admin", "Cancel");
+		var confirmed = await DisplayAlertAsync(L.T("Make admin?"),
+			L.F("{0} will get full rights: publishing, editing and deleting games directly, reviewing requests and managing moderators.", member.Label),
+			L.T("Make admin"), L.T("Cancel"));
 		if (confirmed)
 			_vm.MakeAdminCommand.Execute(member);
 	}
@@ -44,9 +44,9 @@ public partial class AdminTeamPage : ContentPage
 	{
 		if (sender is not Button { BindingContext: TeamMember member }) return;
 
-		var confirmed = await DisplayAlertAsync("Make moderator?",
-			$"{member.Label} will go back to proposing games, changes and deletions for an admin to review.",
-			"Make moderator", "Cancel");
+		var confirmed = await DisplayAlertAsync(L.T("Make moderator?"),
+			L.F("{0} will go back to proposing games, changes and deletions for an admin to review.", member.Label),
+			L.T("Make moderator"), L.T("Cancel"));
 		if (confirmed)
 			_vm.MakeModeratorCommand.Execute(member);
 	}
@@ -58,14 +58,14 @@ public partial class AdminTeamPage : ContentPage
 
 		var role = member.RoleName.ToLowerInvariant();
 		var reason = await DisplayActionSheetAsync(
-			$"Why are you removing {member.Label} as {role}? They'll receive this reason by email.",
-			"Cancel", null, [.. TeamEmails.RemovalReasons, TeamEmails.OtherReason]);
+			L.F("Why are you removing {0} as {1}? They'll receive this reason by email.", member.Label, role),
+			L.T("Cancel"), null, [.. TeamEmails.RemovalReasons, TeamEmails.OtherReason]);
 
 		if (reason == TeamEmails.OtherReason)
-			reason = await DisplayPromptAsync("Reason", $"Why is {member.Label}'s {role} role ending?",
-				"Remove", "Cancel", maxLength: 300, keyboard: Keyboard.Text);
+			reason = await DisplayPromptAsync(L.T("Reason"), L.F("Why is {0}'s {1} role ending?", member.Label, role),
+				L.T("Remove"), L.T("Cancel"), maxLength: 300, keyboard: Keyboard.Text);
 
-		if (string.IsNullOrWhiteSpace(reason) || reason == "Cancel") return;
+		if (string.IsNullOrWhiteSpace(reason) || reason == L.T("Cancel")) return;
 
 		await _vm.RemoveMemberAsync(member, reason.Trim());
 	}

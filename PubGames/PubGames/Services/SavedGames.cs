@@ -19,12 +19,12 @@ public sealed record SavedGamesRetentionOption(SavedGamesRetention Retention)
 	/// <summary>How long games are kept, as the picker shows it.</summary>
 	public string Label => Retention switch
 	{
-		SavedGamesRetention.DontSave => "Don't save games",
-		SavedGamesRetention.Week => "1 week",
-		SavedGamesRetention.Month => "1 month",
-		SavedGamesRetention.SixMonths => "6 months",
-		SavedGamesRetention.Year => "1 year",
-		_ => "Never delete"
+		SavedGamesRetention.DontSave => L.T("Don't save games"),
+		SavedGamesRetention.Week => L.T("1 week"),
+		SavedGamesRetention.Month => L.T("1 month"),
+		SavedGamesRetention.SixMonths => L.T("6 months"),
+		SavedGamesRetention.Year => L.T("1 year"),
+		_ => L.T("Never delete")
 	};
 
 	/// <summary>The Picker shows this.</summary>
@@ -53,12 +53,12 @@ public sealed class SavedGame
 	{
 		get
 		{
-			var state = IsFinished ? "Finished"
-				: Session.SubgameCount is { } count ? $"Unfinished · subgame {Math.Max(1, Session.CurrentRound)} of {count}"
-				: $"Unfinished · subgame {Math.Max(1, Session.CurrentRound)}";
+			var state = IsFinished ? L.T("Finished")
+				: Session.SubgameCount is { } count ? L.F("Unfinished · subgame {0} of {1}", Math.Max(1, Session.CurrentRound), count)
+				: L.F("Unfinished · subgame {0}", Math.Max(1, Session.CurrentRound));
 			var when = Session.LastActivity.ToLocalTime();
-			var date = when.Date == DateTime.Today ? $"today {when:HH:mm}"
-				: when.Date == DateTime.Today.AddDays(-1) ? $"yesterday {when:HH:mm}"
+			var date = when.Date == DateTime.Today ? L.F("today {0:HH:mm}", when)
+				: when.Date == DateTime.Today.AddDays(-1) ? L.F("yesterday {0:HH:mm}", when)
 				: when.ToString(when.Year == DateTime.Today.Year ? "d MMM" : "d MMM yyyy");
 			return $"{state} · {date}";
 		}
@@ -135,7 +135,7 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 			}
 
 			if (!games.TryGetValue(session.GameId, out var game))
-				games[session.GameId] = game = await local.GetGameAsync(session.GameId);
+				games[session.GameId] = game = (await local.GetGameAsync(session.GameId))?.InAppLanguage();
 			var participants = await local.GetParticipantsAsync(session.Id);
 			var results = await local.GetRoundResultsAsync(session.Id);
 			var startScore = ScoringRules.For(game).StartScore;
@@ -148,11 +148,11 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 
 			var active = participants.Where(p => p.IsActive).ToList();
 			var names = (await local.GetPlayersByIdsAsync(active.Select(p => p.PlayerId))).ToDictionary(p => p.Id, p => p.Name);
-			string Name(SessionParticipant p) => names.GetValueOrDefault(p.PlayerId) ?? "Unknown player";
+			string Name(SessionParticipant p) => names.GetValueOrDefault(p.PlayerId) ?? L.T("Unknown player");
 			saved.Add(new SavedGame
 			{
 				Session = session,
-				GameName = game?.Name ?? "Game",
+				GameName = game?.Name ?? L.T("Game"),
 				Players = session.EndedAt is null
 					? string.Join(" · ", active.Select(p => $"{Name(p)} {p.Score}"))
 					: string.Join(", ", active.Select(Name))

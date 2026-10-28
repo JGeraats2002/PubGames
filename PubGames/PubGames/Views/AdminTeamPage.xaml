@@ -1,59 +1,119 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.AdminTeamPage"
              x:DataType="vm:AdminTeamViewModel"
-             Title="Team">
+             Title="{loc:T AdminTeam_Team}">
+
+	<ContentPage.Resources>
+		<!-- One team member, used by both the admins and the moderators list. -->
+		<DataTemplate x:Key="MemberTemplate" x:DataType="models:TeamMember">
+			<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
+				<VerticalStackLayout Spacing="6">
+					<Label Text="{Binding Label}" />
+					<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
+						<Label.FormattedText>
+							<FormattedString>
+								<Span Text="{Binding RoleName}" />
+								<Span Text=" · " />
+								<Span Text="{Binding Email}" />
+							</FormattedString>
+						</Label.FormattedText>
+					</Label>
+
+					<HorizontalStackLayout Spacing="8" IsVisible="{Binding HasActions}">
+						<Button Text="{loc:T AdminTeam_MakeAdmin}" Clicked="OnMakeAdminClicked" IsVisible="{Binding CanPromote}"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+						        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+						<Button Text="{loc:T AdminTeam_MakeModerator}" Clicked="OnMakeModeratorClicked" IsVisible="{Binding CanDemote}"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+						        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+						<Button Text="{loc:T AdminTeam_Remove}" Clicked="OnRemoveClicked" IsVisible="{Binding CanRemove}"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
+						        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+					</HorizontalStackLayout>
+				</VerticalStackLayout>
+			</Frame>
+		</DataTemplate>
+
+		<!-- The All / Admins / Moderators buttons: outlined, filled when selected. -->
+		<Style x:Key="FilterButton" TargetType="Button">
+			<Setter Property="HeightRequest" Value="48" />
+			<Setter Property="Padding" Value="4,0" />
+			<Setter Property="FontSize" Value="13" />
+			<Setter Property="BackgroundColor" Value="Transparent" />
+			<Setter Property="TextColor" Value="{StaticResource Primary}" />
+			<Setter Property="BorderColor" Value="{StaticResource Primary}" />
+			<Setter Property="BorderWidth" Value="1" />
+		</Style>
+	</ContentPage.Resources>
 
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="16">
 
 			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Danger}" FontSize="12" />
 
-			<Label Text="Add a moderator" FontSize="16" />
+			<Label Text="{loc:T AdminTeam_AddAModerator}" FontSize="16" />
 			<Frame Padding="12" BorderColor="{StaticResource Border}">
 				<VerticalStackLayout Spacing="8">
-					<Entry Placeholder="Their Google account email" Text="{Binding NewModeratorEmail}"
+					<Entry Placeholder="{loc:T AdminTeam_TheirGoogleAccountEmail}" Text="{Binding NewModeratorEmail}"
 					       Keyboard="Email" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
-					<Button Text="Add moderator" Command="{Binding AddModeratorCommand}" />
+					<Button Text="{loc:T AdminTeam_AddModerator}" Command="{Binding AddModeratorCommand}" />
 				</VerticalStackLayout>
 			</Frame>
 
-			<Label Text="Team" FontSize="16" Margin="0,10,0,0" />
-			<CollectionView ItemsSource="{Binding Members}">
-				<CollectionView.ItemTemplate>
-					<DataTemplate x:DataType="models:TeamMember">
-						<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
-							<VerticalStackLayout Spacing="6">
-								<Label Text="{Binding Label}" />
-								<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
-									<Label.FormattedText>
-										<FormattedString>
-											<Span Text="{Binding RoleName}" />
-											<Span Text=" · " />
-											<Span Text="{Binding Email}" />
-										</FormattedString>
-									</Label.FormattedText>
-								</Label>
+			<Label Text="{loc:T AdminTeam_Team}" FontSize="16" Margin="0,10,0,0" />
 
-								<HorizontalStackLayout Spacing="8" IsVisible="{Binding HasActions}">
-									<Button Text="Make admin" Clicked="OnMakeAdminClicked" IsVisible="{Binding CanPromote}"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
-									<Button Text="Make moderator" Clicked="OnMakeModeratorClicked" IsVisible="{Binding CanDemote}"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
-									<Button Text="Remove" Clicked="OnRemoveClicked" IsVisible="{Binding CanRemove}"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-									        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
-								</HorizontalStackLayout>
-							</VerticalStackLayout>
-						</Frame>
-					</DataTemplate>
-				</CollectionView.ItemTemplate>
-			</CollectionView>
+			<!-- Search by name or email, and show everyone, only admins or only moderators. -->
+			<SearchBar Placeholder="{loc:T AdminTeam_SearchByNameOrEmail}" Text="{Binding SearchText}" />
+			<Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+				<Button Text="{loc:T AdminTeam_All}" Style="{StaticResource FilterButton}"
+				        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.All}">
+					<Button.Triggers>
+						<DataTrigger TargetType="Button" Binding="{Binding ShowingAll}" Value="True">
+							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+							<Setter Property="TextColor" Value="White" />
+						</DataTrigger>
+					</Button.Triggers>
+				</Button>
+				<Button Grid.Column="1" Text="{loc:T AdminTeam_Admins}" Style="{StaticResource FilterButton}"
+				        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.Admins}">
+					<Button.Triggers>
+						<DataTrigger TargetType="Button" Binding="{Binding ShowingAdmins}" Value="True">
+							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+							<Setter Property="TextColor" Value="White" />
+						</DataTrigger>
+					</Button.Triggers>
+				</Button>
+				<Button Grid.Column="2" Text="{loc:T AdminTeam_Moderators}" Style="{StaticResource FilterButton}"
+				        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.Moderators}">
+					<Button.Triggers>
+						<DataTrigger TargetType="Button" Binding="{Binding ShowingModerators}" Value="True">
+							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+							<Setter Property="TextColor" Value="White" />
+						</DataTrigger>
+					</Button.Triggers>
+				</Button>
+			</Grid>
+
+			<Label Text="{loc:T AdminTeam_NoOneMatchesYourSearch}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+			       IsVisible="{Binding HasNoMatches}" />
+
+			<!-- Admins and moderators in two lists, each alphabetical. -->
+			<VerticalStackLayout IsVisible="{Binding HasAdmins}" Spacing="8">
+				<Label Text="{Binding AdminsHeading}" FontSize="14" FontAttributes="Bold" />
+				<VerticalStackLayout BindableLayout.ItemsSource="{Binding Admins}"
+				                     BindableLayout.ItemTemplate="{StaticResource MemberTemplate}" />
+			</VerticalStackLayout>
+
+			<VerticalStackLayout IsVisible="{Binding HasModerators}" Spacing="8">
+				<Label Text="{Binding ModeratorsHeading}" FontSize="14" FontAttributes="Bold" />
+				<VerticalStackLayout BindableLayout.ItemsSource="{Binding Moderators}"
+				                     BindableLayout.ItemTemplate="{StaticResource MemberTemplate}" />
+			</VerticalStackLayout>
 
 		</VerticalStackLayout>
 	</ScrollView>

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.CategoriesPage"
              x:DataType="vm:CategoriesViewModel"
-             Title="Categories">
+             Title="{loc:T Categories_Categories}">
 
 	<Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="12">
 
@@ -20,7 +21,7 @@
 		<!-- Categories under their main category. -->
 		<CollectionView Grid.Row="3" ItemsSource="{Binding Sections}" IsGrouped="True">
 			<CollectionView.EmptyView>
-				<Label Text="No categories yet." TextColor="{StaticResource TextSecondary}" />
+				<Label Text="{loc:T Categories_NoCategoriesYet}" TextColor="{StaticResource TextSecondary}" />
 			</CollectionView.EmptyView>
 			<CollectionView.GroupHeaderTemplate>
 				<DataTemplate x:DataType="vm:CategorySection">
@@ -30,9 +31,9 @@
 						</Grid.GestureRecognizers>
 						<Label Text="{Binding Name}" FontAttributes="Bold" VerticalOptions="Center" />
 						<!-- Tap to add a category to it, rename or delete it (moderators: to propose that). -->
-						<Label Grid.Column="1" Text="Edit" FontSize="12" TextColor="{StaticResource Primary}"
+						<Label Grid.Column="1" Text="{loc:T Categories_Edit}" FontSize="12" TextColor="{StaticResource Primary}"
 						       VerticalOptions="Center" Padding="10,0" IsVisible="{Binding CanEdit}" />
-						<Label Grid.Row="1" Grid.ColumnSpan="2" Text="No categories yet." FontSize="12"
+						<Label Grid.Row="1" Grid.ColumnSpan="2" Text="{loc:T Categories_NoCategoriesYet}" FontSize="12"
 						       TextColor="{StaticResource TextSecondary}" IsVisible="{Binding IsEmpty}" />
 					</Grid>
 				</DataTemplate>
@@ -47,10 +48,10 @@
 						<Label Text="{Binding Name}" VerticalOptions="Center" />
 						<Label Grid.Column="1" Text="{Binding CountLabel}" FontSize="12"
 						       TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" Padding="0,0,6,0" />
-						<Button SemanticProperties.Description="Move up" Grid.Column="2" Text="▲" Clicked="OnCategoryUpClicked" IsVisible="{Binding CanReorder}"
+						<Button SemanticProperties.Description="{loc:T Categories_MoveUp}" Grid.Column="2" Text="▲" Clicked="OnCategoryUpClicked" IsVisible="{Binding CanReorder}"
 						        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="12"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-						<Button SemanticProperties.Description="Move down" Grid.Column="3" Text="▼" Clicked="OnCategoryDownClicked" IsVisible="{Binding CanReorder}"
+						<Button SemanticProperties.Description="{loc:T Categories_MoveDown}" Grid.Column="3" Text="▼" Clicked="OnCategoryDownClicked" IsVisible="{Binding CanReorder}"
 						        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="12"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 					</Grid>

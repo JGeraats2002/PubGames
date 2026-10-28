@@ -13,7 +13,7 @@ public sealed record PassPlanRow(PassPlan Plan, string Price, bool IsCurrent)
 	public string Name => Plan.Name;
 
 	/// <summary>The plan's button: its price per period, or "Your plan".</summary>
-	public string ButtonText => IsCurrent ? "Your plan" : $"{Price} / {Plan.Name.ToLowerInvariant()}";
+	public string ButtonText => IsCurrent ? L.T("Your plan") : $"{Price} / {Plan.Name.ToLowerInvariant()}";
 }
 
 /// <summary>
@@ -76,8 +76,8 @@ public partial class SubscriptionViewModel : ObservableObject
 		HasPass = e.HasPass;
 		var until = e.PassRunsUntil?.ToLocalTime().ToString("d MMMM yyyy", CultureInfo.CurrentCulture);
 		Status = !e.HasPass
-			? "You don't have the Pub Games Pass."
-			: e.Renews ? $"Your pass runs and renews on {until}." : $"Your pass runs until {until} and doesn't renew.";
+			? L.T("You don't have the Pub Games Pass.")
+			: e.Renews ? L.F("Your pass runs and renews on {0}.", until) : L.F("Your pass runs until {0} and doesn't renew.", until);
 	}
 
 
@@ -92,9 +92,9 @@ public partial class SubscriptionViewModel : ObservableObject
 			var (outcome, problem) = await _store.BuyPassAsync(row.Plan);
 			StatusMessage = outcome switch
 			{
-				PurchaseOutcome.Bought => "Thanks! Every game is unlocked.",
-				PurchaseOutcome.Pending => "The pass starts as soon as Google Play confirms the payment.",
-				PurchaseOutcome.Failed => problem ?? "The purchase didn't go through.",
+				PurchaseOutcome.Bought => L.T("Thanks! Every game is unlocked."),
+				PurchaseOutcome.Pending => L.T("The pass starts as soon as Google Play confirms the payment."),
+				PurchaseOutcome.Failed => problem ?? L.T("The purchase didn't go through."),
 				_ => string.Empty
 			};
 			await LoadAsync();
@@ -112,18 +112,18 @@ public partial class SubscriptionViewModel : ObservableObject
 	{
 		if (IsBusy) return;
 		IsBusy = true;
-		StatusMessage = "Restoring...";
+		StatusMessage = L.T("Restoring...");
 		try
 		{
 			var owned = await _store.RestoreAsync(await _local.GetGamesAsync());
 			StatusMessage = owned.HasPass || owned.Games.Count > 0
-				? $"Restored: {(owned.HasPass ? "the Pub Games Pass" : string.Empty)}{(owned.HasPass && owned.Games.Count > 0 ? " and " : string.Empty)}{(owned.Games.Count > 0 ? $"{owned.Games.Count} {(owned.Games.Count == 1 ? "game" : "games")}" : string.Empty)}."
-				: "Nothing to restore for this account.";
+				? L.F("Restored: {0}{1}{2}.", (owned.HasPass ? L.T("the Pub Games Pass") : string.Empty), (owned.HasPass && owned.Games.Count > 0 ? " and " : string.Empty), (owned.Games.Count > 0 ? $"{owned.Games.Count} {(owned.Games.Count == 1 ? L.T("game") : L.T("games"))}" : string.Empty))
+				: L.T("Nothing to restore for this account.");
 			await LoadAsync();
 		}
 		catch (Exception ex) when (ex is StoreException or HttpRequestException or CloudException)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 		finally
 		{

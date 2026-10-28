@@ -7,6 +7,9 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 - Repo: GitHub `JGeraats2002/PubGames`, branch `master`
 - Firebase-project: `pubgames-92835` (Auth, Firestore `eur3`, Cloud Functions in `europe-west1`)
 - Eigenaar/admin: `jjh.geraats@gmail.com`; ontwikkelaarsaccount Play: `geraatsdeveloping@gmail.com`
+  (Account owner, ontwikkelaarsnaam PubGems, ID `5864539126255989179`). Payments profile en
+  account group (15% servicekosten) zijn ingesteld; contactadres van de account group is
+  `jjh.geraats@gmail.com`.
 
 ## Mappen
 
@@ -24,8 +27,7 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 
 ## Waar we gebleven zijn (bijgewerkt 28-10-2026)
 
-**Nog niet gecommit:** keystore-instellingen in de csproj, `public/` (website), `PlayStore/`,
-`.gitignore`, `firebase.json` en deze README. Commit alleen als de gebruiker erom vraagt.
+Laatste commit: `22fdba3 latest ideas while publishing the game`. **Stap 5 t/m 8 (28-10-2026) zijn nog niet gecommit.**
 
 ### Gedaan (27 en 28-10-2026)
 
@@ -47,47 +49,60 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 ### Nog te doen – volgorde
 
 **Fase 1 – Play-koppeling (samen, ±30 min, met de gebruiker door de console lopen)**
-1. **D.** Google Play Android Developer API aanzetten in Google Cloud. Het serviceaccount
+1. ~~**D.** Google Play Android Developer API aanzetten in Google Cloud. Het serviceaccount
    `737835893040-compute@developer.gserviceaccount.com` uitnodigen in de Play Console
-   (Users and permissions) met rechten voor financiën/bestellingen en het beheren van producten.
-2. **C.** Abonnement `pubgames_pass` aanmaken met basisplannen `week`, `month`, `year`
-   (€0,99 / €2,99 / €24,99). Mogelijk eerst een payments profile koppelen.
-3. **E.** License testers: Settings → License testing (account-niveau), `jjh.geraats@gmail.com`
+   (Users and permissions) met rechten voor financiën/bestellingen en het beheren van producten.~~
+   **Gedaan 28-10-2026.** De rechten kunnen tot 24 uur nodig hebben voordat ze werken.
+2. ~~**C.** Abonnement `pubgames_pass` aanmaken met basisplannen `week`, `month`, `year`
+   (€0,99 / €2,99 / €24,99). Mogelijk eerst een payments profile koppelen.~~
+   **Gedaan 28-10-2026** (incl. payments profile en account group). Afbeelding van het
+   abonnement: `PlayStore/pass-image-512.png` (32-bit kopie van het icoon).
+3. ~~**E.**~~ **Gedaan 28-10-2026.** License testers: Settings → License testing (account-niveau), `jjh.geraats@gmail.com`
    en de andere testers, RESPOND_NORMALLY.
-4. **API-sleutel beperken:** Google Cloud → APIs & Services → Credentials, de Android-sleutel
-   beperken tot `com.pubgems.pubgames` + de SHA-1's en de gebruikte API's.
+4. ~~**API-sleutel beperken**~~ **Gedaan 28-10-2026:** alleen API restrictions (Identity Toolkit,
+   Token Service, Cloud Firestore). Application restrictions bewust op **None**: de app roept de
+   REST-API's direct aan zonder `X-Android-Package`/`X-Android-Cert`-headers, dus een
+   Android-app-beperking zou inloggen breken.
 
 **Fase 2 – App-aanpassingen, nodig vóórdat de testers worden uitgenodigd**
 (De gebruiker wil deze vóór de closed test. Daarna een nieuwe `.aab` bouwen met
 `ApplicationVersion` 2 en die bij Closed testing uploaden.)
 
-5. **Teampagina – zoeken en sorteren** (voor owner en admins):
-   - Zoekbalk die zoekt op **naam** én **e-mailadres**.
-   - Filter: **Admins** / **Moderators** (bijv. segment- of chipknoppen).
-   - Admins en moderators in **twee aparte lijsten**, elk **alfabetisch** gesorteerd.
-6. **Ingebouwde vertaler voor spellen:**
-   - Een moderator schrijft/bewerkt een spel in zijn eigen taal; het spel onthoudt de brontaal.
-   - Bij opslaan vertaalt een Cloud Function alle tekstvelden (naam, regels, enz.) naar alle
-     ondersteunde talen (Cloud Translation API of een LLM; LLM vertaalt spelregels vaak beter)
-     en bewaart ze per taal in het spel-document (bijv. `translations.nl.rules`).
-   - Eén keer vertalen per spel per taal, niet per speler → kosten blijven heel laag.
-   - De app toont de taal van de gebruiker, met de brontaal als terugval.
-   - Moderators kunnen een vertaling handmatig verbeteren (wordt dan niet meer overschreven).
-7. **Taalkeuze in de app:**
-   - Instelbaar bij **Settings**.
-   - Bij de **eerste keer inloggen** een taalkeuzescherm: per taal de **vlag in een cirkel** met
-     daaronder de **naam van de taal**, geschreven in de taal die op dat moment is ingesteld
-     (bijv. "Spaans" als de app op Nederlands staat, "Spanish" als hij op Engels staat).
-   - Vaste UI-teksten van de app lokaliseren (.resx) en ⓘ-teksten in `PageHelp.cs` ook.
-   - **Input van de gebruiker nodig:** welke talen, en welke vlag bij Engels (VK of VS).
-8. Daarna de Store listing ook in die talen aanbieden (Play kan AI-vertalingen maken; nakijken).
+5. ~~Teampagina – zoeken en sorteren~~ **Gebouwd 28-10-2026**: zoekbalk (naam + e-mail),
+   knoppen All / Admins / Moderators, twee alfabetische lijsten.
+6. ~~Ingebouwde vertaler voor spellen~~ **Gebouwd 28-10-2026**:
+   - Spel heeft `sourceLanguage` en `translations.{taal} = { name, rulesText, manual, sourceHash }`
+     (`Models/GameTranslation.cs`). Editor: "Written in" op General + tabblad **Languages** om
+     vertalingen te verbeteren (`AdminCreateGameViewModel.Languages.cs`). Verbeterd = `manual`,
+     wordt nooit overschreven. Loopt via review requests mee (`proposedTranslations`).
+   - Cloud Functions `translateGame`, `translateCategory`, `translateCategoryGroup`
+     (Cloud Translation API v3, plaatjes-tags blijven staan). Spelers zien `PubGame.InAppLanguage()`,
+     categorieën `ShownName`.
+   - **Nog door de gebruiker te doen:** Cloud Translation API aanzetten
+     (console.cloud.google.com → APIs & Services → Library → "Cloud Translation API" → Enable) en
+     `firebase deploy --only functions --project pubgames-92835`. Bestaande spellen worden vertaald
+     zodra ze een keer worden opgeslagen.
+7. ~~Taalkeuze in de app~~ **Gebouwd 28-10-2026**: 9 talen (en, nl, fr, de, es, it, pt-BR, zh-Hans,
+   ar met rechts-naar-links). Vlaggen in `Resources/Images/flag_*.svg` (Engels half VS/half VK,
+   Chinees = China, Arabisch = VAE, Portugees = Brazilië). Taalscherm bij eerste login en via
+   Account > Language (`Views/LanguagePage`). Teksten: zie "Vertalingen" bij de aantekeningen.
+8. ~~Store listing in die talen~~ **Klaar om te plakken**: `PlayStore/listings.md`.
+   Editor (28-10-2026, UX): tabbladen 48dp, duidelijke sectiekoppen, een vaste balk onderaan met de
+   melding en de opslaan-knop; intrekken en verwijderen staan los daarvan onderaan het formulier.
+   Ook 28-10-2026: admins en moderators spelen alle betaalde spellen gratis zolang ze in het team
+   zitten (`StoreService.Owns`, niet de Pass; eerder gekochte spellen blijven). Crash "No view found
+   for id ... is_pooling_container_tag" aangepakt: taalscherm eerste keer als modal, root-page wissels
+   via `App.SetRootPageAsync` (na de lopende schermwissel). App-icoon = kaart + dobbelsteen (zoals in
+   de Play Store); logo en splash blijven de versie met de beker. Na icoonwijziging `obj/.../resizetizer`
+   weggooien, anders bouwt hij het oude icoon.
+9. Nieuwe `.aab` bouwen met `ApplicationVersion` 2 en bij Closed testing uploaden (na testen).
 
 **Fase 3 – Closed test en productie**
-9. Na goedkeuring door Google: opt-in-link (Closed testing → Testers) naar **15+ testers** sturen
+10. Na goedkeuring door Google: opt-in-link (Closed testing → Testers) naar **15+ testers** sturen
    (minimaal 12 nodig, buffer voor uitvallers). Testers: link openen → Become a tester →
    installeren via Play, 14 dagen laten staan en af en toe gebruiken.
-10. Zodra er 12+ testers opted-in zijn: **14 dagen** laten lopen (persoonlijk ontwikkelaarsaccount).
-11. Daarna op het Dashboard **Apply for production** en de vragen over de test beantwoorden.
+11. Zodra er 12+ testers opted-in zijn: **14 dagen** laten lopen (persoonlijk ontwikkelaarsaccount).
+12. Daarna op het Dashboard **Apply for production** en de vragen over de test beantwoorden.
 
 **Later / niet dringend**
 - **`firebase-functions` bijwerken:** er komen breaking changes; apart doen en testen.
@@ -129,7 +144,19 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 - Lusvariabelen krijgen betekenisvolle namen (geen `i`/`x`). Korte lambda's (`p => p.Name`) mogen.
 - Aanraakdoelen zijn minimaal 48dp. Symboolknoppen krijgen `SemanticProperties.Description`.
 - Pop-ups met meer dan 2 keuzes gebruiken `Views/ChoicePopup.AskAsync`.
-- UI-teksten in de app zijn Engels.
+- UI-teksten worden in het Engels geschreven en vertaald (zie Vertalingen).
+
+**Vertalingen (sinds 28-10-2026)**
+- Elke tekst in C# gaat via `L.T("English text")` of `L.F("Text {0}", value)` (`Services/L.cs`,
+  globale alias in `GlobalUsings.cs`). In XAML: `Text="{loc:T Page_Key}"` met de Engelse tekst in
+  `Resources/Strings/en.json`. Vertalingen staan in `Resources/Strings/{taal}.json`, sleutel =
+  Engelse tekst (of XAML-sleutel). Ontbreekt een vertaling, dan toont de app Engels.
+- **Nieuwe of gewijzigde tekst = ook alle 8 vertalingen bijwerken** (nl, fr, de, es, it, pt, zh, ar).
+  Gewijzigde Engelse tekst is een nieuwe sleutel.
+- Geen vaste tekst in `const` of `case`: die kunnen niet vertaald worden. Lijsten met teksten zijn
+  eigenschappen (`=>`), zodat ze na een taalwissel opnieuw vertaald worden.
+- E-mails aan teamleden (`TeamEmails.cs`) en standaardcategorieën blijven bewust Engels.
+- Berichten in de Inbox worden opgeslagen in de taal van de afzender.
 
 **Architectuur in het kort**
 - MVVM met CommunityToolkit.Mvvm, Shell-navigatie, DI in `MauiProgram.cs`.

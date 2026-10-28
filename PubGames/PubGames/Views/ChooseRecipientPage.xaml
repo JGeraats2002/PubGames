@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.ChooseRecipientPage"
-             Title="Send a message to">
+             Title="{loc:T ChooseRecipient_SendAMessageTo}">
 
 	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
 
-		<SearchBar x:Name="Search" Placeholder="Search by name or email" TextChanged="OnSearchChanged" />
+		<SearchBar x:Name="Search" Placeholder="{loc:T ChooseRecipient_SearchByNameOrEmail}" TextChanged="OnSearchChanged" />
 
 		<CollectionView Grid.Row="1" x:Name="List">
 			<CollectionView.EmptyView>
-				<Label Text="Nobody found." TextColor="{StaticResource TextSecondary}" />
+				<Label Text="{loc:T ChooseRecipient_NobodyFound}" TextColor="{StaticResource TextSecondary}" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="vm:MessageRecipient">

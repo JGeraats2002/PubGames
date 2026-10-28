@@ -2,9 +2,10 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
+             xmlns:loc="clr-namespace:PubGames.Services"
              x:Class="PubGames.Views.AccountPage"
              x:DataType="vm:AccountViewModel"
-             Title="Settings">
+             Title="{loc:T Account_Settings}">
 
 	<!-- The Account tab's main page: one row per heading, each opening its own page. -->
 	<ContentPage.Resources>
@@ -34,9 +35,9 @@
 						</Grid>
 					</Border>
 					<VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-						<Label Text="Profile" FontSize="18" FontAttributes="Bold" />
+						<Label Text="{loc:T Account_Profile}" FontSize="18" FontAttributes="Bold" />
 						<Label Text="{Binding ProfileName}" FontSize="13" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
-						<Label Text="{Binding Code, StringFormat='Player code {0}'}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding Code, StringFormat={loc:T Account_PlayerCode0}}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 					</VerticalStackLayout>
 					<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
 				</Grid>
@@ -49,7 +50,7 @@
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
 					<VerticalStackLayout Spacing="2">
-						<Label Text="My stats" FontSize="18" FontAttributes="Bold" />
+						<Label Text="{loc:T Account_MyStats}" FontSize="18" FontAttributes="Bold" />
 						<Label Text="{Binding Totals.Summary}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 						<Label Text="{Binding StatsMessage}" FontSize="12" TextColor="{StaticResource TextSecondary}"
 						       IsVisible="{Binding HasStatsMessage}" />
@@ -64,8 +65,26 @@
 					<TapGestureRecognizer Tapped="OnPassTapped" />
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
-					<Label Text="Pub Games Pass" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
+					<Label Text="{loc:T Account_PubGamesPass}" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
 					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+				</Grid>
+			</Border>
+
+			<!-- The app's language: its flag and name. -->
+			<Border Style="{StaticResource SettingsRow}">
+				<Border.GestureRecognizers>
+					<TapGestureRecognizer Tapped="OnLanguageTapped" />
+				</Border.GestureRecognizers>
+				<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+					<Border WidthRequest="32" HeightRequest="32" StrokeThickness="1" Stroke="{StaticResource Border}"
+					        StrokeShape="Ellipse" VerticalOptions="Center">
+						<Image Source="{Binding LanguageFlag}" Aspect="AspectFill" />
+					</Border>
+					<VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+						<Label Text="{loc:T Account_Language}" FontSize="18" FontAttributes="Bold" />
+						<Label Text="{Binding LanguageName}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+					</VerticalStackLayout>
+					<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
@@ -76,7 +95,7 @@
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
 					<VerticalStackLayout Spacing="2">
-						<Label Text="Blocked players" FontSize="18" FontAttributes="Bold" />
+						<Label Text="{loc:T Account_BlockedPlayers}" FontSize="18" FontAttributes="Bold" />
 					</VerticalStackLayout>
 					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
 				</Grid>
@@ -89,19 +108,19 @@
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
 					<VerticalStackLayout Spacing="2">
-						<Label Text="Feedback" FontSize="18" FontAttributes="Bold" />
+						<Label Text="{loc:T Account_Feedback}" FontSize="18" FontAttributes="Bold" />
 					</VerticalStackLayout>
 					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
 			<!-- Signing out, on its own. -->
-			<Button Text="Sign out" Clicked="OnSignOutClicked" Margin="0,16,0,0"
+			<Button Text="{loc:T Account_SignOut}" Clicked="OnSignOutClicked" Margin="0,16,0,0"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 
 			<!-- Deleting the account and its data for good (required by Google Play for apps with accounts). -->
-			<Button Text="Delete account" Clicked="OnDeleteAccountClicked"
+			<Button Text="{loc:T Account_DeleteAccount}" Clicked="OnDeleteAccountClicked"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderWidth="0" FontSize="13" />
 
 		</VerticalStackLayout>

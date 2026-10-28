@@ -126,7 +126,7 @@ public class AuthService : IAuthService
 	public async Task SignInWithGoogleAsync()
 	{
 		if (!AuthConfig.IsConfigured)
-			throw new AuthException("Sign-in isn't configured yet: fill in Services/AuthConfig.cs.");
+			throw new AuthException(L.T("Sign-in isn't configured yet: fill in Services/AuthConfig.cs."));
 
 		var googleIdToken = await _google.GetGoogleIdTokenAsync(AuthConfig.GoogleWebClientId);
 
@@ -224,7 +224,7 @@ public class AuthService : IAuthService
 		if (!response.IsSuccessStatusCode)
 		{
 			var error = await response.Content.ReadAsStringAsync();
-			throw new AuthException($"Firebase sign-in failed ({(int)response.StatusCode}): {error}");
+			throw new AuthException(L.F("Firebase sign-in failed ({0}): {1}", (int)response.StatusCode, error));
 		}
 		return (await response.Content.ReadFromJsonAsync<T>())!;
 	}

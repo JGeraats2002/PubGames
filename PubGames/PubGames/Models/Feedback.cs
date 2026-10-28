@@ -93,21 +93,21 @@ public sealed class Feedback
 	/// <summary>What a subject is called in the app.</summary>
 	public static string CategoryLabel(FeedbackCategory category) => category switch
 	{
-		FeedbackCategory.Bug => "Bug - something doesn't work",
-		FeedbackCategory.Typo => "Typo",
-		FeedbackCategory.RulesMistake => "Mistake in a game's rules",
-		FeedbackCategory.ScoringProblem => "Scoring doesn't add up",
-		FeedbackCategory.Idea => "Idea or wish",
-		_ => "Other"
+		FeedbackCategory.Bug => L.T("Bug - something doesn't work"),
+		FeedbackCategory.Typo => L.T("Typo"),
+		FeedbackCategory.RulesMistake => L.T("Mistake in a game's rules"),
+		FeedbackCategory.ScoringProblem => L.T("Scoring doesn't add up"),
+		FeedbackCategory.Idea => L.T("Idea or wish"),
+		_ => L.T("Other")
 	};
 
 	/// <summary>What a status is called in the app.</summary>
 	public static string StatusLabel(FeedbackStatus status) => status switch
 	{
-		FeedbackStatus.InProgress => "Being worked on",
-		FeedbackStatus.Resolved => "Resolved",
-		FeedbackStatus.Declined => "Won't be changed",
-		_ => "New"
+		FeedbackStatus.InProgress => L.T("Being worked on"),
+		FeedbackStatus.Resolved => L.T("Resolved"),
+		FeedbackStatus.Declined => L.T("Won't be changed"),
+		_ => L.T("New")
 	};
 
 	/// <summary>The subject, as the app shows it.</summary>
@@ -123,7 +123,7 @@ public sealed class Feedback
 	public bool HasGame => !string.IsNullOrEmpty(GameId);
 
 	/// <summary>"Game: Kings cup" or "Not about a game".</summary>
-	public string GameText => HasGame ? $"Game: {GameName}" : "Not about a game";
+	public string GameText => HasGame ? L.F("Game: {0}", GameName) : L.T("Not about a game");
 
 	/// <summary>Whether an admin wrote a reply.</summary>
 	public bool HasReply => !string.IsNullOrWhiteSpace(Reply);

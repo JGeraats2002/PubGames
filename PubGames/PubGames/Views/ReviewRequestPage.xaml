@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
              xmlns:views="clr-namespace:PubGames.Views"
@@ -21,7 +22,7 @@
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
 				<VerticalStackLayout Spacing="4">
-					<Label Text="What changes" FontAttributes="Bold" />
+					<Label Text="{loc:T ReviewRequest_WhatChanges}" FontAttributes="Bold" />
 					<VerticalStackLayout Spacing="2" BindableLayout.ItemsSource="{Binding Changes}">
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="x:String">
@@ -36,14 +37,14 @@
 
 			<!-- A moderator looking at another moderator's request: nothing to decide, but they can get in touch. -->
 			<VerticalStackLayout Spacing="8" IsVisible="{Binding IsReadOnly}">
-				<Label Text="🔒 This is waiting for an admin's review. Until then only the moderator who submitted it can change it." FontSize="13" />
-				<Button Text="Send them a message" Clicked="OnMessageClicked"
+				<Label Text="{loc:T ReviewRequest_ThisIsWaitingForAn}" FontSize="13" />
+				<Button Text="{loc:T ReviewRequest_SendThemAMessage}" Clicked="OnMessageClicked"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>
 
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding CanDecide}">
-				<Button Text="Reject" Clicked="OnRejectClicked"
+				<Button Text="{loc:T ReviewRequest_Reject}" Clicked="OnRejectClicked"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
 				        BorderColor="{StaticResource Danger}" BorderWidth="1" />
 				<Button Grid.Column="1" Text="{Binding ApproveButtonText}" Clicked="OnApproveClicked"
@@ -54,7 +55,7 @@
 			<VerticalStackLayout Spacing="12" IsVisible="{Binding HasGamePreview}">
 			<!-- Changes to a game: switch the preview between the game as it is and with the changes. -->
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,16,0,0" IsVisible="{Binding CanSwitch}">
-				<Button Text="Original" Clicked="OnShowOriginalClicked" HeightRequest="48"
+				<Button Text="{loc:T ReviewRequest_Original}" Clicked="OnShowOriginalClicked" HeightRequest="48"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1">
 					<Button.Triggers>
@@ -64,7 +65,7 @@
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
-				<Button Grid.Column="1" Text="With changes" Clicked="OnShowChangedClicked" HeightRequest="48"
+				<Button Grid.Column="1" Text="{loc:T ReviewRequest_WithChanges}" Clicked="OnShowChangedClicked" HeightRequest="48"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1">
 					<Button.Triggers>
@@ -96,18 +97,18 @@
 			<Label FontSize="13" TextColor="{StaticResource TextSecondary}">
 				<Label.FormattedText>
 					<FormattedString>
-						<Span Text="Players: " />
+						<Span Text="{loc:T ReviewRequest_Players}" />
 						<Span Text="{Binding Preview.PlayersLabel}" />
-						<Span Text=" · Categories: " />
+						<Span Text="{loc:T ReviewRequest_Categories}" />
 						<Span Text="{Binding PreviewCategories}" />
 					</FormattedString>
 				</Label.FormattedText>
 			</Label>
 
-			<Label Text="How to play" FontSize="16" Margin="0,10,0,0" />
+			<Label Text="{loc:T ReviewRequest_HowToPlay}" FontSize="16" Margin="0,10,0,0" />
 			<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding PreviewRules}">
 				<BindableLayout.EmptyView>
-					<Label Text="No rules written." TextColor="{StaticResource TextSecondary}" />
+					<Label Text="{loc:T ReviewRequest_NoRulesWritten}" TextColor="{StaticResource TextSecondary}" />
 				</BindableLayout.EmptyView>
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="models:RulesBlock">

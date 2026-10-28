@@ -64,7 +64,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 	private int savedGameCount;
 
 	/// <summary>"Saved games ›", with how many there are.</summary>
-	public string SavedGamesButtonText => SavedGameCount == 0 ? "Saved games ›" : $"Saved games ({SavedGameCount}) ›";
+	public string SavedGamesButtonText => SavedGameCount == 0 ? L.T("Saved games ›") : L.F("Saved games ({0}) ›", SavedGameCount);
 
 	/// <summary>
 	/// Gets the services it works with - the phone's database, the sign-in, the game night, profiles, saved
@@ -172,11 +172,11 @@ public partial class PlayerEntryViewModel : ObservableObject
 	{
 		if (UserProfile.NormalizeCode(PlayerCode) is not { } code)
 		{
-			StatusMessage = $"A personal code has {UserProfile.CodeLength} letters and numbers, e.g. AB3K-9QX7.";
+			StatusMessage = L.F("A personal code has {0} letters and numbers, e.g. AB3K-9QX7.", UserProfile.CodeLength);
 			return;
 		}
 
-		StatusMessage = "Looking up the code...";
+		StatusMessage = L.T("Looking up the code...");
 		UserProfile? profile;
 		try
 		{
@@ -184,12 +184,12 @@ public partial class PlayerEntryViewModel : ObservableObject
 		}
 		catch (Exception ex) when (ex is HttpRequestException or CloudException)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - adding by code needs internet." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - adding by code needs internet.") : ex.Message;
 			return;
 		}
 		if (profile is null)
 		{
-			StatusMessage = $"Nobody has the code {code}. Check it with them.";
+			StatusMessage = L.F("Nobody has the code {0}. Check it with them.", code);
 			return;
 		}
 		if (profile.Uid != CurrentAccountId)
@@ -198,18 +198,18 @@ public partial class PlayerEntryViewModel : ObservableObject
 			{
 				if ((await _links.GetBlockedAsync()).Any(b => b.Uid == profile.Uid))
 				{
-					StatusMessage = "You blocked this player. Unblock them under Account > Blocked players to add them again.";
+					StatusMessage = L.T("You blocked this player. Unblock them under Account > Blocked players to add them again.");
 					return;
 				}
 				if (await _links.IsBlockedByAsync(profile.Uid))
 				{
-					StatusMessage = "This player can't be added.";
+					StatusMessage = L.T("This player can't be added.");
 					return;
 				}
 			}
 			catch (Exception ex) when (ex is HttpRequestException or CloudException)
 			{
-				StatusMessage = ex is HttpRequestException ? "No connection - adding by code needs internet." : ex.Message;
+				StatusMessage = ex is HttpRequestException ? L.T("No connection - adding by code needs internet.") : ex.Message;
 				return;
 			}
 		}
@@ -250,7 +250,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 	{
 		if (player.LinkedAccountId == CurrentAccountId)
 		{
-			StatusMessage = "You can't delete yourself from the saved players.";
+			StatusMessage = L.T("You can't delete yourself from the saved players.");
 			return false;
 		}
 
@@ -265,7 +265,7 @@ public partial class PlayerEntryViewModel : ObservableObject
 			}
 			catch (Exception ex) when (ex is HttpRequestException or CloudException or InvalidOperationException)
 			{
-				StatusMessage = ex is HttpRequestException ? "No connection - removing the link both ways or blocking needs internet." : ex.Message;
+				StatusMessage = ex is HttpRequestException ? L.T("No connection - removing the link both ways or blocking needs internet.") : ex.Message;
 				return false;
 			}
 		}
@@ -273,8 +273,8 @@ public partial class PlayerEntryViewModel : ObservableObject
 		await HideAsync(player);
 		StatusMessage = removal switch
 		{
-			PlayerRemoval.Block => $"{player.Name} is removed and blocked.",
-			PlayerRemoval.BothWays => $"{player.Name} is removed, and you'll be removed from their players.",
+			PlayerRemoval.Block => L.F("{0} is removed and blocked.", player.Name),
+			PlayerRemoval.BothWays => L.F("{0} is removed, and you'll be removed from their players.", player.Name),
 			_ => string.Empty
 		};
 		return true;

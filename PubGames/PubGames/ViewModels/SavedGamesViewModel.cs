@@ -55,9 +55,9 @@ public partial class SavedGamesViewModel : ObservableObject
 	}
 
 	/// <summary>"Unfinished (3)".</summary>
-	public string UnfinishedTabText => $"Unfinished ({_all.Count(r => !r.Game.IsFinished)})";
+	public string UnfinishedTabText => L.F("Unfinished ({0})", _all.Count(r => !r.Game.IsFinished));
 	/// <summary>"Finished (5)".</summary>
-	public string FinishedTabText => $"Finished ({_all.Count(r => r.Game.IsFinished)})";
+	public string FinishedTabText => L.F("Finished ({0})", _all.Count(r => r.Game.IsFinished));
 
 	/// <summary>Choosing games to delete: rows show a tick box and tapping one ticks it.</summary>
 	[ObservableProperty]
@@ -68,7 +68,7 @@ public partial class SavedGamesViewModel : ObservableObject
 	public bool IsBrowsing => !IsSelecting;
 
 	/// <summary>"Select", or "Cancel" while choosing.</summary>
-	public string SelectButtonText => IsSelecting ? "Cancel" : "Select";
+	public string SelectButtonText => IsSelecting ? L.T("Cancel") : L.T("Select");
 
 	/// <summary>How many games are selected.</summary>
 	[ObservableProperty]
@@ -79,7 +79,7 @@ public partial class SavedGamesViewModel : ObservableObject
 	public bool HasSelection => SelectedCount > 0;
 
 	/// <summary>"Delete 1 game" or "Delete 3 games".</summary>
-	public string DeleteButtonText => SelectedCount == 1 ? "Delete 1 game" : $"Delete {SelectedCount} games";
+	public string DeleteButtonText => SelectedCount == 1 ? L.T("Delete 1 game") : L.F("Delete {0} games", SelectedCount);
 
 	/// <summary>The games are loaded (so an empty list really is empty).</summary>
 	[ObservableProperty]
@@ -91,14 +91,14 @@ public partial class SavedGamesViewModel : ObservableObject
 
 	/// <summary>What the empty page says.</summary>
 	public string EmptyText => ShowsFinished
-		? "No finished games saved."
-		: "No unfinished games. A game is saved once someone has a score.";
+		? L.T("No finished games saved.")
+		: L.T("No unfinished games. A game is saved once someone has a score.");
 
 	/// <summary>Every choice of how long games are kept, for the picker.</summary>
 	public List<SavedGamesRetentionOption> RetentionOptions { get; } = SavedGamesRetentionOption.All;
 
 	/// <summary>"Keep unfinished games" or "Keep finished games".</summary>
-	public string RetentionTitle => ShowsFinished ? "Keep finished games" : "Keep unfinished games";
+	public string RetentionTitle => ShowsFinished ? L.T("Keep finished games") : L.T("Keep unfinished games");
 
 	private SavedGamesRetention Retention
 	{

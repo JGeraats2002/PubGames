@@ -28,7 +28,7 @@ public partial class BlockedPlayersPage : ContentPage
 	private async void OnUnblockClicked(object? sender, EventArgs e)
 	{
 		if (sender is not BindableObject { BindingContext: BlockedPlayer player }) return;
-		if (await DisplayAlertAsync($"Unblock {player.Name}?", "They can add you by your code again.", "Unblock", "Cancel"))
+		if (await DisplayAlertAsync(L.F("Unblock {0}?", player.Name), L.T("They can add you by your code again."), L.T("Unblock"), L.T("Cancel")))
 			await _vm.UnblockAsync(player);
 	}
 }

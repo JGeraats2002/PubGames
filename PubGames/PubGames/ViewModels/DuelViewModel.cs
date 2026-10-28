@@ -38,7 +38,7 @@ public partial class DuelRow : ObservableObject
 	private int roundsWon;
 
 	/// <summary>"1 round won" or "2 rounds won" (best of).</summary>
-	public string RoundsWonText => RoundsWon == 1 ? "1 round won" : $"{RoundsWon} rounds won";
+	public string RoundsWonText => RoundsWon == 1 ? L.T("1 round won") : L.F("{0} rounds won", RoundsWon);
 }
 
 /// <summary>
@@ -123,7 +123,7 @@ public partial class DuelViewModel : ObservableObject
 
 	/// <summary>How to keep score in this duel, which score wins it, and how it ends.</summary>
 	public string Explanation =>
-		$"{Rules.Explanation} The {(Settings.LowestWins ? "lowest" : "highest")} score wins. Take turns in the order below. "
+		L.F("{0} The {1} score wins. Take turns in the order below. ", Rules.Explanation, (Settings.LowestWins ? L.T("lowest") : L.T("highest")))
 		+ char.ToUpperInvariant(Settings.DuelEndSummary[0]) + Settings.DuelEndSummary[1..] + ".";
 
 	/// <summary>The text on the − buttons.</summary>
@@ -166,7 +166,7 @@ public partial class DuelViewModel : ObservableObject
 		Message = string.Empty;
 		if (!row.IsTurn)
 		{
-			Message = $"It's {Rows[_turn].Player.Name}'s turn.";
+			Message = L.F("It's {0}'s turn.", Rows[_turn].Player.Name);
 			return false;
 		}
 
@@ -175,12 +175,12 @@ public partial class DuelViewModel : ObservableObject
 		{
 			if (ReadNumber(row.Typed) is not { } amount)
 			{
-				Message = $"{row.Player.Name}: type an amount first. {manual.AllowedAmountsHint()}";
+				Message = L.F("{0}: type an amount first. {1}", row.Player.Name, manual.AllowedAmountsHint());
 				return false;
 			}
 			if (!manual.AllowsAmount(amount) && amount != 0)
 			{
-				Message = $"{row.Player.Name}: {amount} isn't allowed. {manual.AllowedAmountsHint()}";
+				Message = L.F("{0}: {1} isn't allowed. {2}", row.Player.Name, amount, manual.AllowedAmountsHint());
 				return false;
 			}
 			row.Typed = string.Empty;
@@ -204,7 +204,7 @@ public partial class DuelViewModel : ObservableObject
 			var points = text.Length == 0 ? 0 : ReadNumber(text);
 			if (points is null)
 			{
-				Message = $"Type {row.Player.Name}'s points as a whole number.";
+				Message = L.F("Type {0}'s points as a whole number.", row.Player.Name);
 				return false;
 			}
 			row.Score += points.Value;
@@ -251,10 +251,10 @@ public partial class DuelViewModel : ObservableObject
 				if (winners.Count == 1)
 				{
 					winners[0].RoundsWon++;
-					Message = $"{winners[0].Player.Name} wins round {Round}.";
+					Message = L.F("{0} wins round {1}.", winners[0].Player.Name, Round);
 				}
 				else
-					Message = $"Round {Round} is tied: nobody gets the round.";
+					Message = L.F("Round {0} is tied: nobody gets the round.", Round);
 				// Every round starts again from the starting score.
 				foreach (var row in Rows)
 					row.Score = Rules.StartScore;
@@ -264,13 +264,13 @@ public partial class DuelViewModel : ObservableObject
 			case DuelEnd.Score:
 				if (!scores.Any(Settings.ReachesEnd)) return false;
 				if (IsDecided(scores)) return true;
-				Message = "Not decided yet: everyone plays another round.";
+				Message = L.T("Not decided yet: everyone plays another round.");
 				return false;
 
 			default:
 				if (Round < Settings.DuelTurns) return false;
 				if (IsDecided(scores)) return true;
-				Message = Margin > 1 ? $"Not decided yet (a lead of {Margin} is needed): everyone plays another turn." : "Still tied: everyone plays another turn.";
+				Message = Margin > 1 ? L.F("Not decided yet (a lead of {0} is needed): everyone plays another turn.", Margin) : L.T("Still tied: everyone plays another turn.");
 				return false;
 		}
 	}
@@ -324,12 +324,12 @@ public partial class DuelViewModel : ObservableObject
 			Rows[rowIndex].IsTurn = rowIndex == _turn;
 		var round = Settings.EffectiveDuelEnd switch
 		{
-			DuelEnd.Turns when Round <= Settings.DuelTurns => $"Turn {Round} of {Settings.DuelTurns}",
-			DuelEnd.Turns => $"Extra turn {Round - Settings.DuelTurns}",
-			DuelEnd.BestOf => $"Round {Round} · first to {Settings.DuelRoundsToWin} {(Settings.DuelRoundsToWin == 1 ? "round" : "rounds")} wins",
-			_ => $"Round {Round}"
+			DuelEnd.Turns when Round <= Settings.DuelTurns => L.F("Turn {0} of {1}", Round, Settings.DuelTurns),
+			DuelEnd.Turns => L.F("Extra turn {0}", Round - Settings.DuelTurns),
+			DuelEnd.BestOf => L.F("Round {0} · first to {1} {2} wins", Round, Settings.DuelRoundsToWin, (Settings.DuelRoundsToWin == 1 ? L.T("round") : L.T("rounds"))),
+			_ => L.F("Round {0}", Round)
 		};
-		Status = $"{round} · {Rows[_turn].Player.Name}'s turn";
+		Status = L.F("{0} · {1}'s turn", round, Rows[_turn].Player.Name);
 	}
 
 	/// <summary>

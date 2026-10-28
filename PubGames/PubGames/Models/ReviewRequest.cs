@@ -124,6 +124,10 @@ public class ReviewRequest
 	public string ProposedGroupId { get; set; } = string.Empty;
 	/// <summary>The proposed rules, with their pictures.</summary>
 	public string ProposedRulesText { get; set; } = string.Empty;
+	/// <summary>The language the proposed name and rules are written in.</summary>
+	public string ProposedSourceLanguage { get; set; } = string.Empty;
+	/// <summary>The proposed translations (as on PubGame.TranslationsText), with any corrections by hand.</summary>
+	public string? ProposedTranslationsText { get; set; }
 	/// <summary>The proposed cover picture, or null.</summary>
 	public string? ProposedCoverImageUrl { get; set; }
 	/// <summary>The proposed scoring type.</summary>
@@ -153,9 +157,9 @@ public class ReviewRequest
 	[Ignore]
 	public string StatusLabel => Status switch
 	{
-		ReviewStatus.WaitingForReview => "Waiting for review",
-		ReviewStatus.Approved => "Approved",
-		_ => string.IsNullOrWhiteSpace(ReviewNote) ? "Rejected" : $"Rejected: {ReviewNote}"
+		ReviewStatus.WaitingForReview => L.T("Waiting for review"),
+		ReviewStatus.Approved => L.T("Approved"),
+		_ => string.IsNullOrWhiteSpace(ReviewNote) ? L.T("Rejected") : L.F("Rejected: {0}", ReviewNote)
 	};
 
 	/// <summary>Whether an admin still has to decide.</summary>
@@ -177,23 +181,23 @@ public class ReviewRequest
 	/// <summary>Who sent it and when, as the list shows it.</summary>
 	[Ignore]
 	public string SubmittedLabel => IsFromModerator
-		? $"Submitted by {SubmitterLabel} on {SubmittedAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture)}"
-		: $"Category added on {SubmittedAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture)} - choose which games belong in it";
+		? L.F("Submitted by {0} on {1}", SubmitterLabel, SubmittedAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture))
+		: L.F("Category added on {0} - choose which games belong in it", SubmittedAt.ToLocalTime().ToString("d MMM, HH:mm", CultureInfo.CurrentCulture));
 
 	/// <summary>What a kind of request is called in the app.</summary>
 	public static string TypeLabelFor(ReviewRequestType type) => type switch
 	{
-		ReviewRequestType.NewGame => "New game",
-		ReviewRequestType.GameChanges => "Changes to a game",
-		ReviewRequestType.Deletion => "Deletion",
-		ReviewRequestType.NewCategory => "New category",
-		ReviewRequestType.NewCategoryGroup => "New main category",
-		ReviewRequestType.RenameCategory => "Rename category",
-		ReviewRequestType.MoveCategory => "Move category",
-		ReviewRequestType.DeleteCategory => "Delete category",
-		ReviewRequestType.RenameCategoryGroup => "Rename main category",
-		ReviewRequestType.DeleteCategoryGroup => "Delete main category",
-		_ => "Add games to category"
+		ReviewRequestType.NewGame => L.T("New game"),
+		ReviewRequestType.GameChanges => L.T("Changes to a game"),
+		ReviewRequestType.Deletion => L.T("Deletion"),
+		ReviewRequestType.NewCategory => L.T("New category"),
+		ReviewRequestType.NewCategoryGroup => L.T("New main category"),
+		ReviewRequestType.RenameCategory => L.T("Rename category"),
+		ReviewRequestType.MoveCategory => L.T("Move category"),
+		ReviewRequestType.DeleteCategory => L.T("Delete category"),
+		ReviewRequestType.RenameCategoryGroup => L.T("Rename main category"),
+		ReviewRequestType.DeleteCategoryGroup => L.T("Delete main category"),
+		_ => L.T("Add games to category")
 	};
 
 	/// <summary>
@@ -216,6 +220,8 @@ public class ReviewRequest
 	{
 		ProposedName = game.Name;
 		ProposedRulesText = game.RulesText;
+		ProposedSourceLanguage = game.SourceLanguage;
+		ProposedTranslationsText = game.TranslationsText;
 		ProposedCoverImageUrl = game.CoverImageUrl;
 		ProposedScoringType = game.ScoringType;
 		ProposedScoringSettingsText = game.ScoringSettingsText;
@@ -232,6 +238,8 @@ public class ReviewRequest
 	{
 		game.Name = ProposedName;
 		game.RulesText = ProposedRulesText;
+		game.SourceLanguage = ProposedSourceLanguage;
+		game.TranslationsText = ProposedTranslationsText;
 		game.CoverImageUrl = ProposedCoverImageUrl;
 		game.ScoringType = ProposedScoringType;
 		game.ScoringSettingsText = ProposedScoringSettingsText;

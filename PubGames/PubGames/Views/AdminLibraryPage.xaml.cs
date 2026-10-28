@@ -73,8 +73,8 @@ public partial class AdminLibraryPage : ContentPage
 			return;
 		}
 
-		var withdraw = await DisplayAlertAsync("Withdraw request?",
-			$"Your request \"{request.Summary}\" will be taken back before an admin reviews it.", "Withdraw", "Keep");
+		var withdraw = await DisplayAlertAsync(L.T("Withdraw request?"),
+			L.F("Your request \"{0}\" will be taken back before an admin reviews it.", request.Summary), L.T("Withdraw"), L.T("Keep"));
 		if (withdraw)
 			await _vm.WithdrawAsync(request);
 	}

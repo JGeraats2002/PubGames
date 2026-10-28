@@ -128,7 +128,7 @@ public class FirestoreClient
 	private async Task<HttpRequestMessage> CreateRequestAsync(HttpMethod method, string url)
 	{
 		var token = await _auth.GetIdTokenAsync()
-			?? throw new InvalidOperationException("Sign in to sync with the cloud.");
+			?? throw new InvalidOperationException(L.T("Sign in to sync with the cloud."));
 		var request = new HttpRequestMessage(method, url);
 		request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 		return request;
@@ -172,7 +172,7 @@ public class FirestoreClient
 		{
 			["arrayValue"] = new JsonObject { ["values"] = new JsonArray(list.Select(item => (JsonNode)ToValue(item)).ToArray()) }
 		},
-		_ => throw new ArgumentException($"Unsupported Firestore field type {value.GetType().Name}")
+		_ => throw new ArgumentException(L.F("Unsupported Firestore field type {0}", value.GetType().Name))
 	};
 
 	/// <summary>An array field of strings (e.g. a game's category ids); empty when missing.</summary>
@@ -206,8 +206,8 @@ public class FirestoreClient
 /// </summary>
 public class CloudException(int statusCode, string details)
 	: Exception(statusCode == 403
-		? "The cloud refused this change - you don't have permission for it. Ask an admin to check your rights on the Team page."
-		: $"Cloud request failed ({statusCode}): {details}")
+		? L.T("The cloud refused this change - you don't have permission for it. Ask an admin to check your rights on the Team page.")
+		: L.F("Cloud request failed ({0}): {1}", statusCode, details))
 {
 	/// <summary>The HTTP status the cloud answered with (403: no permission, 404: not found ...).</summary>
 	public int StatusCode { get; } = statusCode;

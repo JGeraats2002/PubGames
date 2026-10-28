@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
              xmlns:views="clr-namespace:PubGames.Views"
@@ -12,7 +13,7 @@
 		<VerticalStackLayout Padding="20" Spacing="14">
 
 			<!-- A paid game that isn't unlocked: its rules can be read; Unlock comes instead of Skip rules and Start game. -->
-			<Button Text="🔒 Unlock to play" Clicked="OnUnlockClicked" IsVisible="{Binding IsLocked}" />
+			<Button Text="{loc:T GameRules_UnlockToPlay}" Clicked="OnUnlockClicked" IsVisible="{Binding IsLocked}" />
 
 			<!-- How many subgames make up the game (1 unless changed); used by both Skip rules and Start game. -->
 			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12" IsVisible="{Binding IsUnlocked}">
@@ -21,19 +22,19 @@
 				</Border.StrokeShape>
 				<VerticalStackLayout Spacing="6">
 					<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
-						<Label Text="Play" VerticalOptions="Center" />
-						<Button SemanticProperties.Description="One subgame fewer" Grid.Column="1" Text="−" Clicked="OnFewerSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
+						<Label Text="{loc:T GameRules_Play}" VerticalOptions="Center" />
+						<Button SemanticProperties.Description="{loc:T GameRules_OneSubgameFewer}" Grid.Column="1" Text="−" Clicked="OnFewerSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 						<Label Grid.Column="2" Text="{Binding SubgameCountText}" FontAttributes="Bold" WidthRequest="100"
 						       HorizontalTextAlignment="Center" VerticalOptions="Center" />
-						<Button SemanticProperties.Description="One subgame more" Grid.Column="3" Text="+" Clicked="OnMoreSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
+						<Button SemanticProperties.Description="{loc:T GameRules_OneSubgameMore}" Grid.Column="3" Text="+" Clicked="OnMoreSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 					</Grid>
 				</VerticalStackLayout>
 			</Border>
 
 			<!-- For groups who already know the game. -->
-			<Button Text="Skip rules" Command="{Binding StartGameCommand}" IsVisible="{Binding IsUnlocked}"
+			<Button Text="{loc:T GameRules_SkipRules}" Command="{Binding StartGameCommand}" IsVisible="{Binding IsUnlocked}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 
@@ -50,7 +51,7 @@
 			<Label Text="{Binding PlayerCountLabel}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 			<Label Text="{Binding PlayersSummary}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
 
-			<Label Text="How to play" FontSize="16" Margin="0,10,0,0" />
+			<Label Text="{loc:T GameRules_HowToPlay}" FontSize="16" Margin="0,10,0,0" />
 			<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding RulesBlocks}">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="models:RulesBlock">
@@ -62,8 +63,8 @@
 				</BindableLayout.ItemTemplate>
 			</VerticalStackLayout>
 
-			<Button Text="Start game" Command="{Binding StartGameCommand}" Margin="0,20,0,0" IsVisible="{Binding IsUnlocked}" />
-			<Button Text="🔒 Unlock to play" Clicked="OnUnlockClicked" Margin="0,20,0,0" IsVisible="{Binding IsLocked}" />
+			<Button Text="{loc:T GameRules_StartGame}" Command="{Binding StartGameCommand}" Margin="0,20,0,0" IsVisible="{Binding IsUnlocked}" />
+			<Button Text="{loc:T GameRules_UnlockToPlay}" Clicked="OnUnlockClicked" Margin="0,20,0,0" IsVisible="{Binding IsLocked}" />
 
 		</VerticalStackLayout>
 	</ScrollView>

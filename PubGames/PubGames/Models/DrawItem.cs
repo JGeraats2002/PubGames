@@ -31,17 +31,17 @@ public enum DrawKind
 public class DrawItem
 {
 	// Saved drawings keep a colour's place in this list, so new colours go at the end.
-	public static readonly string[] ColorNames = ["Dark", "Red", "Blue", "Green", "Orange", "White", "Yellow", "Purple"];
-	public static readonly string[] Suits = ["♠ Spades", "♥ Hearts", "♦ Diamonds", "♣ Clubs"];
+	public static string[] ColorNames => [L.T("Dark"), L.T("Red"), L.T("Blue"), L.T("Green"), L.T("Orange"), L.T("White"), L.T("Yellow"), L.T("Purple")];
+	public static string[] Suits => [L.T("♠ Spades"), L.T("♥ Hearts"), L.T("♦ Diamonds"), L.T("♣ Clubs")];
 	public static readonly string[] Ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-	public static readonly string[] FingerNames = ["Thumb", "Index", "Middle", "Ring", "Pinky"];
-	public static readonly string[] DrinkShapes = ["Cup", "Mug", "Shot glass", "Bottle"];
-	public static readonly string[] FillNames = ["Empty", "¼", "½", "¾", "Full"];
-	public static readonly string[] DiceShapes = ["Die", "Cup with dice", "Cup upside down"];
-	public static readonly string[] CoinSides = ["Heads", "Tails"];
-	public static readonly string[] CoasterShapes = ["Round", "Square"];
-	public static readonly string[] TableShapes = ["Rectangle", "Round"];
-	public static readonly string[] TableSurfaces = ["Wood", "Green felt"];
+	public static string[] FingerNames => [L.T("Thumb"), L.T("Index"), L.T("Middle"), L.T("Ring"), L.T("Pinky")];
+	public static string[] DrinkShapes => [L.T("Cup"), L.T("Mug"), L.T("Shot glass"), L.T("Bottle")];
+	public static string[] FillNames => [L.T("Empty"), "¼", "½", "¾", L.T("Full")];
+	public static string[] DiceShapes => [L.T("Die"), L.T("Cup with dice"), L.T("Cup upside down")];
+	public static string[] CoinSides => [L.T("Heads"), L.T("Tails")];
+	public static string[] CoasterShapes => [L.T("Round"), L.T("Square")];
+	public static string[] TableShapes => [L.T("Rectangle"), L.T("Round")];
+	public static string[] TableSurfaces => [L.T("Wood"), L.T("Green felt")];
 
 	private static readonly Color Outline = Color.FromArgb("#2C2C2A");
 	private static readonly Color Red = Color.FromArgb("#C62828");
@@ -91,7 +91,7 @@ public class DrawItem
 	public int ColorIndex { get; set; }
 
 	/// <summary>The words of a text item.</summary>
-	public string Text { get; set; } = "Text";
+	public string Text { get; set; } = L.T("Text");
 
 	// Card
 	public int Suit { get; set; }
@@ -192,12 +192,12 @@ public class DrawItem
 	[JsonIgnore]
 	public string Label => Kind switch
 	{
-		DrawKind.Card => (Deck ? "Deck" : "Card") + (FaceDown ? Deck ? " (closed)" : " (face down)" : $" {Ranks[Rank]}{Suits[Suit][0]}"),
-		DrawKind.Die => Shape == 0 ? $"Die {Value}" : DiceShapes[Shape],
-		DrawKind.Coin => $"Coin ({CoinSides[Side].ToLowerInvariant()})",
+		DrawKind.Card => (Deck ? L.T("Deck") : L.T("Card")) + (FaceDown ? Deck ? " (closed)" : L.T(" (face down)") : $" {Ranks[Rank]}{Suits[Suit][0]}"),
+		DrawKind.Die => Shape == 0 ? L.F("Die {0}", Value) : DiceShapes[Shape],
+		DrawKind.Coin => L.F("Coin ({0})", CoinSides[Side].ToLowerInvariant()),
 		DrawKind.Drink => DrinkShapes[Shape],
-		DrawKind.Number => $"Number {Value}",
-		DrawKind.Check => "Check mark",
+		DrawKind.Number => L.F("Number {0}", Value),
+		DrawKind.Check => L.T("Check mark"),
 		_ => Kind.ToString()
 	};
 
@@ -954,7 +954,7 @@ public class DrawingBoard : IDrawable
 	/// </summary>
 	public float Height => IsSquare ? Width : 750;
 
-	public static readonly string[] BackgroundNames = ["White", "Cream", "Yellow", "Orange", "Red", "Green", "Blue", "Purple", "Dark"];
+	public static string[] BackgroundNames => [L.T("White"), L.T("Cream"), L.T("Yellow"), L.T("Orange"), L.T("Red"), L.T("Green"), L.T("Blue"), L.T("Purple"), L.T("Dark")];
 
 	private static readonly Color[] BackgroundColors =
 	[

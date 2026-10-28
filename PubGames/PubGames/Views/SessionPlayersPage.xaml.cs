@@ -6,7 +6,7 @@ namespace PubGames.Views;
 /// <summary>Change players, during a game: players join, leave, swap seats or are replaced.</summary>
 public partial class SessionPlayersPage : ContentPage
 {
-	private const string NewPlayerOption = "Someone new...";
+	private static string NewPlayerOption => L.T("Someone new...");
 
 	private readonly SessionPlayersViewModel _vm;
 
@@ -37,8 +37,8 @@ public partial class SessionPlayersPage : ContentPage
 	{
 		if (sender is not Button { BindingContext: ParticipantRow row }) return;
 
-		var confirmed = await DisplayAlertAsync($"Remove {row.Player.Name}?",
-			$"Their score ({row.Score}) will be kept: if they join again later in this game, they'll continue from it.", "Remove", "Cancel");
+		var confirmed = await DisplayAlertAsync(L.F("Remove {0}?", row.Player.Name),
+			L.F("Their score ({0}) will be kept: if they join again later in this game, they'll continue from it.", row.Score), L.T("Remove"), L.T("Cancel"));
 		if (confirmed)
 			await _vm.RemoveAsync(row);
 	}
@@ -49,12 +49,12 @@ public partial class SessionPlayersPage : ContentPage
 		if (sender is not Button { BindingContext: ParticipantRow row }) return;
 
 		var options = _vm.AvailablePlayers.Select(p => p.Name).Append(NewPlayerOption).ToArray();
-		var choice = await DisplayActionSheetAsync($"Who takes {row.Player.Name}'s seat?", "Cancel", null, options);
+		var choice = await DisplayActionSheetAsync(L.F("Who takes {0}'s seat?", row.Player.Name), L.T("Cancel"), null, options);
 
 		Player? replacement;
 		if (choice == NewPlayerOption)
 		{
-			var name = await DisplayPromptAsync("New player", "Name:", "Next", "Cancel");
+			var name = await DisplayPromptAsync(L.T("New player"), L.T("Name:"), L.T("Next"), L.T("Cancel"));
 			if (string.IsNullOrWhiteSpace(name)) return;
 			replacement = await _vm.CreatePlayerAsync(name);
 		}

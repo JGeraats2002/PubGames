@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:services="clr-namespace:PubGames.Services"
              x:Class="PubGames.Views.BlockedPlayersPage"
              x:DataType="vm:BlockedPlayersViewModel"
-             Title="Blocked players">
+             Title="{loc:T BlockedPlayers_BlockedPlayers}">
 
 	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
 
@@ -13,7 +14,7 @@
 
 		<CollectionView Grid.Row="1" ItemsSource="{Binding Blocked}">
 			<CollectionView.EmptyView>
-				<Label Text="You haven't blocked anyone." TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<Label Text="{loc:T BlockedPlayers_YouHavenTBlockedAnyone}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="services:BlockedPlayer">
@@ -23,7 +24,7 @@
 								<Label Text="{Binding Name}" FontAttributes="Bold" />
 								<Label Text="{Binding BlockedLabel}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 							</VerticalStackLayout>
-							<Button Grid.Column="1" Text="Unblock" Clicked="OnUnblockClicked" VerticalOptions="Center"
+							<Button Grid.Column="1" Text="{loc:T BlockedPlayers_Unblock}" Clicked="OnUnblockClicked" VerticalOptions="Center"
 							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 							        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="12,0" HeightRequest="48" />
 						</Grid>

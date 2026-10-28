@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.ScoreboardPage"
              x:DataType="vm:ScoreboardViewModel"
@@ -12,10 +13,10 @@
 			<!-- − / + change how many subgames the game has, e.g. when the winner isn't clear after 1 game. -->
 			<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
 				<Label Text="{Binding SubgameLabel}" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
-				<Button Grid.Column="1" Text="− subgame" Clicked="OnFewerSubgamesClicked" IsVisible="{Binding CanHaveFewerSubgames}"
+				<Button Grid.Column="1" Text="{loc:T Scoreboard_Subgame}" Clicked="OnFewerSubgamesClicked" IsVisible="{Binding CanHaveFewerSubgames}"
 				        HeightRequest="48" Padding="10,0" FontSize="12"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-				<Button Grid.Column="2" Text="+ subgame" Clicked="OnMoreSubgamesClicked"
+				<Button Grid.Column="2" Text="{loc:T Scoreboard_Subgame2}" Clicked="OnMoreSubgamesClicked"
 				        IsVisible="{Binding IsFinished, Converter={StaticResource InvertedBoolConverter}}"
 				        HeightRequest="48" Padding="10,0" FontSize="12"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
@@ -27,7 +28,7 @@
 			<Label Text="{Binding EndMessage}" IsVisible="{Binding HasEndMessage}" FontSize="13" FontAttributes="Bold"
 			       TextColor="{StaticResource PrimaryDark}" LineBreakMode="WordWrap" MaxLines="2" />
 			<!-- Fixed input order with + and − by a step: the player whose turn it is taps this when they're done. -->
-			<Button x:Name="TurnDoneButton" Text="Turn done ▶" Clicked="OnTurnDoneClicked" IsVisible="False"
+			<Button x:Name="TurnDoneButton" Text="{loc:T Scoreboard_TurnDone}" Clicked="OnTurnDoneClicked" IsVisible="False"
 			        HeightRequest="48" Padding="12,0" FontSize="13" HorizontalOptions="End" />
 		</VerticalStackLayout>
 
@@ -41,27 +42,27 @@
 
 		<!-- Next subgame / Finish game share the bottom row; UpdateFooter gives the visible one(s) the width. -->
 		<Grid Grid.Row="2" x:Name="Footer" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
-			<Button Text="Change players" Clicked="OnChangePlayersClicked"
+			<Button Text="{loc:T Scoreboard_ChangePlayers}" Clicked="OnChangePlayersClicked"
 			        IsVisible="{Binding IsFinished, Converter={StaticResource InvertedBoolConverter}}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
-			<Button Grid.Column="1" x:Name="StatsButton" Text="Stats" Clicked="OnStatsClicked"
+			<Button Grid.Column="1" x:Name="StatsButton" Text="{loc:T Scoreboard_Stats}" Clicked="OnStatsClicked"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
-			<Button Grid.Row="1" x:Name="NextButton" Text="Next subgame ▶" Clicked="OnNextClicked" IsVisible="{Binding CanGoNext}" />
-			<Button Grid.Row="1" Grid.Column="1" x:Name="FinishButton" Text="Finish game" Clicked="OnFinishClicked"
+			<Button Grid.Row="1" x:Name="NextButton" Text="{loc:T Scoreboard_NextSubgame}" Clicked="OnNextClicked" IsVisible="{Binding CanGoNext}" />
+			<Button Grid.Row="1" Grid.Column="1" x:Name="FinishButton" Text="{loc:T Scoreboard_FinishGame}" Clicked="OnFinishClicked"
 			        IsVisible="{Binding CanFinish}" BackgroundColor="{StaticResource PrimaryDark}" />
 		</Grid>
 
 		<!-- Manual plus / minus while typing: right above the keyboard, to go to the previous or next player's box.
 		     Next (and the keyboard's own action key) first adds what's typed. -->
 		<Grid Grid.Row="2" x:Name="KeyboardBar" IsVisible="False" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-			<Button x:Name="PreviousBoxButton" Text="◀ Previous" Clicked="OnPreviousBoxClicked"
+			<Button x:Name="PreviousBoxButton" Text="{loc:T Scoreboard_Previous}" Clicked="OnPreviousBoxClicked"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 			<Label Grid.Column="1" x:Name="KeyboardBarLabel" FontAttributes="Bold" FontSize="15"
 			       HorizontalTextAlignment="Center" VerticalOptions="Center" LineBreakMode="TailTruncation" />
-			<Button Grid.Column="2" x:Name="NextBoxButton" Text="Next ▶" Clicked="OnNextBoxClicked" />
+			<Button Grid.Column="2" x:Name="NextBoxButton" Text="{loc:T Scoreboard_Next}" Clicked="OnNextBoxClicked" />
 		</Grid>
 
 	</Grid>

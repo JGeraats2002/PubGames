@@ -25,9 +25,9 @@ public sealed record ResultModeOption(ResultMode Mode)
 	/// <summary>What a way of noting results is called in the app.</summary>
 	public static string LabelFor(ResultMode mode) => mode switch
 	{
-		ResultMode.Ranking => "Ranking (1st, 2nd, 3rd...)",
-		ResultMode.Loser => "Loser(s) only",
-		_ => "Winner(s) only"
+		ResultMode.Ranking => L.T("Ranking (1st, 2nd, 3rd...)"),
+		ResultMode.Loser => L.T("Loser(s) only"),
+		_ => L.T("Winner(s) only")
 	};
 }
 
@@ -139,7 +139,7 @@ public static class Standings
 			foreach (var roundResult in round)
 			{
 				if (!standings.TryGetValue(roundResult.PlayerId, out var standing))
-					standings[roundResult.PlayerId] = standing = new PlayerStanding { PlayerId = roundResult.PlayerId, Name = names.GetValueOrDefault(roundResult.PlayerId) ?? "Unknown player" };
+					standings[roundResult.PlayerId] = standing = new PlayerStanding { PlayerId = roundResult.PlayerId, Name = names.GetValueOrDefault(roundResult.PlayerId) ?? L.T("Unknown player") };
 				standing.Subgames++;
 				if (roundResult.IsWinner) standing.Wins++;
 				if (roundResult.IsLoser) standing.Losses++;
@@ -164,11 +164,11 @@ public static class Standings
 			var standing = sorted[position];
 			var total = mode switch
 			{
-				ResultMode.Ranking => $"{standing.Points} {(standing.Points == 1 ? "point" : "points")}",
-				ResultMode.Loser => $"{standing.Losses} {(standing.Losses == 1 ? "loss" : "losses")}",
-				_ => $"{standing.Wins} {(standing.Wins == 1 ? "win" : "wins")}"
+				ResultMode.Ranking => $"{standing.Points} {(standing.Points == 1 ? L.T("point") : L.T("points"))}",
+				ResultMode.Loser => $"{standing.Losses} {(standing.Losses == 1 ? L.T("loss") : L.T("losses"))}",
+				_ => $"{standing.Wins} {(standing.Wins == 1 ? L.T("win") : L.T("wins"))}"
 			};
-			standing.Total = $"{total} · {standing.Subgames} {(standing.Subgames == 1 ? "subgame" : "subgames")}";
+			standing.Total = $"{total} · {standing.Subgames} {(standing.Subgames == 1 ? L.T("subgame") : L.T("subgames"))}";
 		}
 		return sorted;
 	}
@@ -208,17 +208,17 @@ public static class Standings
 	/// <summary>"🏆 Winner: Jan", "🏆 Winners: Jan &amp; Sanne" or "Loser: Piet" for the final result.</summary>
 	public static string Headline(ResultMode mode, List<PlayerStanding> sorted)
 	{
-		if (sorted.Count == 0) return "No results yet.";
+		if (sorted.Count == 0) return L.T("No results yet.");
 
 		if (mode == ResultMode.Loser)
 		{
-			if (sorted.Max(s => s.Losses) == 0) return "Nobody lost a subgame.";
+			if (sorted.Max(s => s.Losses) == 0) return L.T("Nobody lost a subgame.");
 			var losers = Losers(sorted).Select(s => s.Name).ToList();
-			return $"✖ {(losers.Count == 1 ? "Loser" : "Losers")}: {Names(losers)}";
+			return $"✖ {(losers.Count == 1 ? L.T("Loser") : L.T("Losers"))}: {Names(losers)}";
 		}
 
 		var winners = sorted.Where(s => s.Place == 1).Select(s => s.Name).ToList();
-		return $"🏆 {(winners.Count == 1 ? "Winner" : "Winners")}: {Names(winners)}";
+		return $"🏆 {(winners.Count == 1 ? L.T("Winner") : L.T("Winners"))}: {Names(winners)}";
 	}
 
 	/// <summary>Loser games: the players in last place - the most losses, unless a duel decided between them.</summary>

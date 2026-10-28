@@ -38,6 +38,15 @@ public class CategoryGroup
 	/// <summary>The main category's name, e.g. Duration.</summary>
 	public string Name { get; set; } = string.Empty;
 
+	/// <summary>The name in other languages, as JSON by language code; made by the cloud (translateCategory).</summary>
+	public string? TranslationsText { get; set; }
+
+	/// <summary>The name in the app's language: the translation when there is one, otherwise the name itself.</summary>
+	[Ignore]
+	public string ShownName =>
+		GameTranslation.NamesFromJson(TranslationsText).TryGetValue(Services.AppLanguage.Current.Code, out var translated)
+		&& !string.IsNullOrWhiteSpace(translated) ? translated : Name;
+
 	/// <summary>Place in the list, lowest first; an admin can move it up and down. Equal places go oldest first.</summary>
 	public int SortOrder { get; set; }
 
@@ -91,13 +100,13 @@ public class CategoryChoiceGroup
 	public required List<CategoryChoice> Choices { get; init; }
 
 	/// <summary>The main category's name; "Other categories" for categories without one.</summary>
-	public string Name => Group?.Name ?? "Other categories";
+	public string Name => Group?.ShownName ?? L.T("Other categories");
 
 	/// <summary>A game needs at least one category from every main category that has any.</summary>
 	public bool IsRequired => Group is not null && Choices.Count > 0;
 
 	/// <summary>The heading: the name, with "(at least one)" when a game needs a category from it.</summary>
-	public string Title => IsRequired ? $"{Name} (at least one)" : $"{Name} (optional)";
+	public string Title => IsRequired ? L.F("{0} (at least one)", Name) : L.F("{0} (optional)", Name);
 
 	/// <summary>Whether a category in it is selected.</summary>
 	public bool HasSelection => Choices.Any(c => c.IsSelected);

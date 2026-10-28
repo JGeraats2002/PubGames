@@ -44,9 +44,9 @@ public partial class StandingsViewModel : ObservableObject, IQueryAttributable
 	public string AccountId { get; private set; } = string.Empty;
 
 	/// <summary>"Final result" or "Stats".</summary>
-	public string PageTitle => IsFinal ? "Final result" : "Stats";
+	public string PageTitle => IsFinal ? L.T("Final result") : L.T("Stats");
 	/// <summary>The button's text: "Done", or "Back to the game".</summary>
-	public string DoneText => IsFinal ? "Done" : "Back to the game";
+	public string DoneText => IsFinal ? L.T("Done") : L.T("Back to the game");
 
 	/// <summary>
 	/// Gets the services it works with - the phone's database - from the app (dependency injection).
@@ -70,7 +70,7 @@ public partial class StandingsViewModel : ObservableObject, IQueryAttributable
 		var session = await _local.GetSessionAsync(sessionId);
 		if (session is null) return;
 
-		var game = Game = await _local.GetGameAsync(session.GameId);
+		var game = Game = (await _local.GetGameAsync(session.GameId))?.InAppLanguage();
 		SubgameCount = session.SubgameCount;
 		AccountId = session.AccountId;
 		var settings = game?.ScoringSettings ?? ScoringSettings.Default;
@@ -89,7 +89,7 @@ public partial class StandingsViewModel : ObservableObject, IQueryAttributable
 		if (IsFinal)
 		{
 			Headline = Standings.Headline(settings.ResultMode, standings);
-			Subtitle = $"{game?.Name ?? "Game"} · {played} {(played == 1 ? "subgame" : "subgames")} played";
+			Subtitle = L.F("{0} · {1} {2} played", game?.Name ?? L.T("Game"), played, (played == 1 ? L.T("subgame") : L.T("subgames")));
 			foreach (var standing in standings)
 				standing.ShowPlace = true;
 			Rows = standings;
@@ -97,8 +97,8 @@ public partial class StandingsViewModel : ObservableObject, IQueryAttributable
 		else
 		{
 			Subtitle = played == 0
-				? "No subgames finished yet."
-				: $"After {played} {(played == 1 ? "subgame" : "subgames")}.";
+				? L.T("No subgames finished yet.")
+				: L.F("After {0} {1}.", played, (played == 1 ? L.T("subgame") : L.T("subgames")));
 			// Seat order (players who left at the end), so the stats don't give the ranking away.
 			var seat = participants.Where(p => p.IsActive).ToDictionary(p => p.PlayerId, p => p.Position);
 			Rows = standings.OrderBy(s => seat.GetValueOrDefault(s.PlayerId, int.MaxValue)).ThenBy(s => s.Name).ToList();

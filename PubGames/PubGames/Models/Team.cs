@@ -78,7 +78,7 @@ public class TeamMember
 
 	/// <summary>"Admin" or "Moderator".</summary>
 	[Ignore]
-	public string RoleName => Role == TeamRole.Admin ? "Admin" : "Moderator";
+	public string RoleName => Role == TeamRole.Admin ? L.T("Admin") : L.T("Moderator");
 
 	/// <summary>An email in one form (no spaces, lower case), so the same address always matches.</summary>
 	public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();

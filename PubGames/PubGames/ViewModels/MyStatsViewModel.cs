@@ -72,7 +72,7 @@ public partial class MyStatsViewModel : ObservableObject
 	{
 		var (played, offline) = await _stats.GetMyGamesAsync();
 		var games = (await _local.GetManageableGamesAsync()).Concat(await _local.GetGamesAsync())
-			.GroupBy(g => g.Id).ToDictionary(g => g.Key, g => g.First());
+			.GroupBy(g => g.Id).ToDictionary(g => g.Key, g => g.First().InAppLanguage());
 		var categories = await _categories.GetCachedAsync();
 
 		_all = played
@@ -100,8 +100,8 @@ public partial class MyStatsViewModel : ObservableObject
 		var used = _all.SelectMany(r => r.CategoryIds).ToHashSet();
 		Filters.Show(await _categories.GetCachedGroupsAsync(), categories.Where(c => used.Contains(c.Id)));
 
-		Message = offline ? "Offline - your stats as last seen on this phone."
-			: _all.Count == 0 ? "No finished games yet." : string.Empty;
+		Message = offline ? L.T("Offline - your stats as last seen on this phone.")
+			: _all.Count == 0 ? L.T("No finished games yet.") : string.Empty;
 		ApplyFilters();
 	}
 
@@ -127,11 +127,11 @@ public partial class GameStatsViewModel : ObservableObject, IQueryAttributable
 {
 	/// <summary>The page's title: the game's name.</summary>
 	[ObservableProperty]
-	private string title = "Stats";
+	private string title = L.T("Stats");
 
 	/// <summary>Played, won, lost and tied in this game.</summary>
 	[ObservableProperty]
-	private GameStats stats = GameStats.From("Game", []);
+	private GameStats stats = GameStats.From(L.T("Game"), []);
 
 	/// <summary>The game's cover picture, or null.</summary>
 	[ObservableProperty]
@@ -152,6 +152,6 @@ public partial class GameStatsViewModel : ObservableObject, IQueryAttributable
 		foreach (var game in row.Games)
 			History.Add(new PlayedGameLine(
 				game.PlayedAt.ToLocalTime().ToString("ddd d MMM yyyy, HH:mm", System.Globalization.CultureInfo.CurrentCulture),
-				game.Outcome switch { GameOutcome.Won => "🏆 Won", GameOutcome.Lost => "✖ Lost", _ => "= Tied" }));
+				game.Outcome switch { GameOutcome.Won => L.T("🏆 Won"), GameOutcome.Lost => L.T("✖ Lost"), _ => L.T("= Tied") }));
 	}
 }

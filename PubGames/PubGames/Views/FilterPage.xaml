@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:models="clr-namespace:PubGames.Models"
              xmlns:views="clr-namespace:PubGames.Views"
              x:Class="PubGames.Views.FilterPage"
              x:DataType="models:CategoryFilterSet"
-             Title="Filter">
+             Title="{loc:T Filter_Filter}">
 
 	<Grid RowDefinitions="*,Auto" Padding="20" RowSpacing="12">
 
 		<ScrollView>
 			<VerticalStackLayout Spacing="18">
 
-				<Label Text="Filter games" FontSize="20" FontAttributes="Bold" />
+				<Label Text="{loc:T Filter_FilterGames}" FontSize="20" FontAttributes="Bold" />
 
 				<!-- A game fits when this number is within its minimum and maximum. All the way left: any number. -->
 				<VerticalStackLayout Spacing="4">
-					<Label Text="Number of players" FontAttributes="Bold" />
+					<Label Text="{loc:T Filter_NumberOfPlayers}" FontAttributes="Bold" />
 					<Label Text="{Binding PlayersText}" />
 					<Slider x:Name="PlayersSlider" Minimum="0" ValueChanged="OnPlayersChanged" />
 				</VerticalStackLayout>
@@ -37,10 +38,10 @@
 		</ScrollView>
 
 		<Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
-			<Button Text="Clear filters" Clicked="OnClearClicked"
+			<Button Text="{loc:T Filter_ClearFilters}" Clicked="OnClearClicked"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="1" Text="Show games" Clicked="OnDoneClicked" />
+			<Button Grid.Column="1" Text="{loc:T Filter_ShowGames}" Clicked="OnDoneClicked" />
 		</Grid>
 
 	</Grid>

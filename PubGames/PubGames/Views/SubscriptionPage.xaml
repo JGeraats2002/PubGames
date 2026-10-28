@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.SubscriptionPage"
              x:DataType="vm:SubscriptionViewModel"
-             Title="Pub Games Pass">
+             Title="{loc:T Subscription_PubGamesPass}">
 
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="12">
 
-			<Label Text="Pub Games Pass" FontSize="22" FontAttributes="Bold" />
+			<Label Text="{loc:T Subscription_PubGamesPass}" FontSize="22" FontAttributes="Bold" />
 			<Label Text="{Binding Status}" FontSize="15" />
 
 			<!-- The three plans, with Google Play's prices. -->
@@ -38,10 +39,10 @@
 			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
 			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" />
 
-			<Button Text="Manage subscription" Clicked="OnManageClicked" IsVisible="{Binding HasPass}"
+			<Button Text="{loc:T Subscription_ManageSubscription}" Clicked="OnManageClicked" IsVisible="{Binding HasPass}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
-			<Button Text="Restore purchases" Clicked="OnRestoreClicked"
+			<Button Text="{loc:T Subscription_RestorePurchases}" Clicked="OnRestoreClicked"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 

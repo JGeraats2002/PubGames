@@ -43,42 +43,42 @@ public record ScoringRules(
 		ScoringType.ManualPlusMinus => ManualPlusMinus(settings ?? ScoringSettings.Default),
 
 		ScoringType.TypedScore => new("points",
-			"Play the duel, then type in everyone's score.",
+			L.T("Play the duel, then type in everyone's score."),
 			MinusStep: null, PlusStep: 0, AllowsTypedAmount: true, HighestWins: null),
 
 		ScoringType.PointTally => new("points",
-			"Add or subtract points each round. Tap a score to add any amount. Highest total wins.",
+			L.T("Add or subtract points each round. Tap a score to add any amount. Highest total wins."),
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: true, HighestWins: true),
 
 		ScoringType.SipCounter => new("sips",
-			"Count the sips everyone takes. There's no winner - just keep track.",
+			L.T("Count the sips everyone takes. There's no winner - just keep track."),
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: true, HighestWins: null),
 
-		ScoringType.WinLoseRounds => new("rounds won",
-			"Tap + for the player who wins a round. Most rounds won wins the game.",
+		ScoringType.WinLoseRounds => new(L.T("rounds won"),
+			L.T("Tap + for the player who wins a round. Most rounds won wins the game."),
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: false, HighestWins: true),
 
 		ScoringType.Ranking => new("points",
-			"After each round, add each player's placement points (tap a score to type them). Highest total wins.",
+			L.T("After each round, add each player's placement points (tap a score to type them). Highest total wins."),
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: true, HighestWins: true),
 
 		_ => new("points",
-			"Keep score the way the rules describe. Tap a score to add any amount.",
+			L.T("Keep score the way the rules describe. Tap a score to add any amount."),
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: true, HighestWins: null)
 	};
 
 	/// <summary>Only + and −, each by the game's step, kept between its min and max.</summary>
 	private static ScoringRules PlusMinus(ScoringSettings s)
 	{
-		var explanation = $"Tap + or − to change a score by {s.Step}. Everyone starts at {s.StartScore}.";
+		var explanation = L.F("Tap + or − to change a score by {0}. Everyone starts at {1}.", s.Step, s.StartScore);
 		if (s.MinScore is { } min && s.MaxScore is { } max)
-			explanation += $" Scores stay between {min} and {max}.";
+			explanation += L.F(" Scores stay between {0} and {1}.", min, max);
 		else if (s.MaxScore is { } maxOnly)
-			explanation += $" Maximum is {maxOnly}.";
+			explanation += L.F(" Maximum is {0}.", maxOnly);
 		else if (s.MinScore is { } minOnly)
-			explanation += $" Minimum is {minOnly}.";
+			explanation += L.F(" Minimum is {0}.", minOnly);
 		if (s.WarningScore is { } warning)
-			explanation += $" Warning at {warning}.";
+			explanation += L.F(" Warning at {0}.", warning);
 
 		return new("points", explanation,
 			MinusStep: -s.Step, PlusStep: s.Step, AllowsTypedAmount: false, HighestWins: null,
@@ -88,17 +88,17 @@ public record ScoringRules(
 	/// <summary>+ and − ask for an amount each time, within the game's amount rules.</summary>
 	private static ScoringRules ManualPlusMinus(ScoringSettings s)
 	{
-		var explanation = "Tap + or − and type the amount." +
-			(s.AmountRules.Count > 0 ? $" Amounts must be {s.AmountRulesText}." : string.Empty) +
-			$" Everyone starts at {s.StartScore}.";
+		var explanation = L.T("Tap + or − and type the amount.") +
+			(s.AmountRules.Count > 0 ? L.F(" Amounts must be {0}.", s.AmountRulesText) : string.Empty) +
+			L.F(" Everyone starts at {0}.", s.StartScore);
 		if (s.MinScore is { } min && s.MaxScore is { } max)
-			explanation += $" Scores stay between {min} and {max}.";
+			explanation += L.F(" Scores stay between {0} and {1}.", min, max);
 		else if (s.MaxScore is { } maxOnly)
-			explanation += $" Maximum is {maxOnly}.";
+			explanation += L.F(" Maximum is {0}.", maxOnly);
 		else if (s.MinScore is { } minOnly)
-			explanation += $" Minimum is {minOnly}.";
+			explanation += L.F(" Minimum is {0}.", minOnly);
 		if (s.WarningScore is { } warning)
-			explanation += $" Warning at {warning}.";
+			explanation += L.F(" Warning at {0}.", warning);
 
 		return new("points", explanation,
 			MinusStep: -1, PlusStep: 1, AllowsTypedAmount: false, HighestWins: null,
@@ -133,14 +133,14 @@ public record ScoringRules(
 
 	/// <summary>The badge on a player's card: "▲ MAX REACHED" / "▼ MIN REACHED" / "⚠ WARNING", or empty.</summary>
 	public string StatusFor(int score) =>
-		IsAtLimit(score) ? (MaxScore is { } max && score >= max ? "▲ MAX REACHED" : "▼ MIN REACHED")
-		: IsWarning(score) ? "⚠ WARNING"
+		IsAtLimit(score) ? (MaxScore is { } max && score >= max ? L.T("▲ MAX REACHED") : L.T("▼ MIN REACHED"))
+		: IsWarning(score) ? L.T("⚠ WARNING")
 		: string.Empty;
 
 	/// <summary>The same badge for a small card: "▲ MAX" / "▼ MIN" / "⚠ WARN", or empty.</summary>
 	public string ShortStatusFor(int score) =>
-		IsAtLimit(score) ? (MaxScore is { } max && score >= max ? "▲ MAX" : "▼ MIN")
-		: IsWarning(score) ? "⚠ WARN"
+		IsAtLimit(score) ? (MaxScore is { } max && score >= max ? L.T("▲ MAX") : L.T("▼ MIN"))
+		: IsWarning(score) ? L.T("⚠ WARN")
 		: string.Empty;
 
 	/// <summary>

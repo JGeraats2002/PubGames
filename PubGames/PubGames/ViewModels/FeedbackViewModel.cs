@@ -9,7 +9,7 @@ namespace PubGames.ViewModels;
 public sealed record FeedbackGameOption(PubGame? Game)
 {
 	/// <summary>The game's name, or "Not about a game".</summary>
-	public string Label => Game?.Name ?? "Not about a game";
+	public string Label => Game?.Name ?? L.T("Not about a game");
 
 	/// <summary>The game's name (or "Not about a game"), as the picker shows it.</summary>
 	public override string ToString() => Label;
@@ -97,7 +97,7 @@ public partial class FeedbackViewModel : ObservableObject
 	public async Task LoadAsync()
 	{
 		if (Games.Count == 0)
-			foreach (var game in (await _local.GetGamesAsync()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase))
+			foreach (var game in (await _local.GetGamesAsync()).Select(g => g.InAppLanguage()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase))
 				Games.Add(new FeedbackGameOption(game));
 		await LoadSentAsync();
 	}
@@ -115,7 +115,7 @@ public partial class FeedbackViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - your earlier feedback can't be shown now." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - your earlier feedback can't be shown now.") : ex.Message;
 		}
 	}
 
@@ -124,7 +124,7 @@ public partial class FeedbackViewModel : ObservableObject
 	{
 		if (SelectedCategory is not { } category)
 		{
-			StatusMessage = "Choose what your feedback is about.";
+			StatusMessage = L.T("Choose what your feedback is about.");
 			return false;
 		}
 		PubGame? game = null;
@@ -132,19 +132,19 @@ public partial class FeedbackViewModel : ObservableObject
 		{
 			if (SelectedGame?.Game is not { } chosen)
 			{
-				StatusMessage = "Choose which game it's about.";
+				StatusMessage = L.T("Choose which game it's about.");
 				return false;
 			}
 			game = chosen;
 		}
 		if (Text.Trim().Length < Feedback.MinLength)
 		{
-			StatusMessage = $"Explain your feedback - at least {Feedback.MinLength} characters, so the admins know what to look at.";
+			StatusMessage = L.F("Explain your feedback - at least {0} characters, so the admins know what to look at.", Feedback.MinLength);
 			return false;
 		}
 
 		IsBusy = true;
-		StatusMessage = "Sending...";
+		StatusMessage = L.T("Sending...");
 		try
 		{
 			await _feedback.SendAsync(category.Category, game, Text);
@@ -152,13 +152,13 @@ public partial class FeedbackViewModel : ObservableObject
 			IsAboutGame = false;
 			SelectedGame = null;
 			Text = string.Empty;
-			StatusMessage = "Thanks! Your feedback is sent to the admins.";
+			StatusMessage = L.T("Thanks! Your feedback is sent to the admins.");
 			await LoadSentAsync();
 			return true;
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return false;
 		}
 		finally
@@ -182,11 +182,11 @@ public partial class AdminFeedbackViewModel : ObservableObject
 	public AdminFeedbackViewModel(IFeedbackService feedback) => _feedback = feedback;
 
 	/// <summary>What the list can show: open feedback, a status, or all.</summary>
-	public List<string> Filters { get; } = ["Open", "New", "Being worked on", "Resolved", "Won't be changed", "All"];
+	public List<string> Filters { get; } = [L.T("Open"), L.T("New"), L.T("Being worked on"), L.T("Resolved"), L.T("Won't be changed"), L.T("All")];
 
 	/// <summary>What the list shows now.</summary>
 	[ObservableProperty]
-	private string selectedFilter = "Open";
+	private string selectedFilter = L.T("Open");
 
 	partial void OnSelectedFilterChanged(string value) => Show();
 
@@ -217,7 +217,7 @@ public partial class AdminFeedbackViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - feedback can't be loaded now." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - feedback can't be loaded now.") : ex.Message;
 		}
 		finally
 		{
@@ -229,13 +229,15 @@ public partial class AdminFeedbackViewModel : ObservableObject
 	/// <summary>Shows the feedback that fits the chosen filter.</summary>
 	private void Show()
 	{
-		var shown = _all.Where(f => SelectedFilter switch
+		// By place in Filters: the names are in the app's language.
+		var filter = Filters.IndexOf(SelectedFilter);
+		var shown = _all.Where(f => filter switch
 		{
-			"Open" => f.IsOpen,
-			"New" => f.Status == FeedbackStatus.New,
-			"Being worked on" => f.Status == FeedbackStatus.InProgress,
-			"Resolved" => f.Status == FeedbackStatus.Resolved,
-			"Won't be changed" => f.Status == FeedbackStatus.Declined,
+			0 => f.IsOpen,
+			1 => f.Status == FeedbackStatus.New,
+			2 => f.Status == FeedbackStatus.InProgress,
+			3 => f.Status == FeedbackStatus.Resolved,
+			4 => f.Status == FeedbackStatus.Declined,
 			_ => true
 		}).ToList();
 		Items.Clear();
@@ -254,7 +256,7 @@ public partial class AdminFeedbackViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 	}
 
@@ -270,7 +272,7 @@ public partial class AdminFeedbackViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 	}
 }
@@ -308,7 +310,7 @@ public partial class BlockedPlayersViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - blocked players can't be shown now." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - blocked players can't be shown now.") : ex.Message;
 		}
 	}
 
@@ -319,11 +321,11 @@ public partial class BlockedPlayersViewModel : ObservableObject
 		{
 			await _links.UnblockAsync(player.Uid);
 			Blocked.Remove(player);
-			StatusMessage = $"{player.Name} is unblocked. They can add you by your code again; add them again by their code if you want.";
+			StatusMessage = L.F("{0} is unblocked. They can add you by your code again; add them again by their code if you want.", player.Name);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 	}
 }

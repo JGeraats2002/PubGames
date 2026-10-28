@@ -45,14 +45,14 @@ public sealed record ScoreRule(ScoreRuleKind Kind, int? Value = null, int? Value
 	/// <summary>"higher than 3", "between 0 and 10", "even", ...</summary>
 	public string Describe() => Kind switch
 	{
-		ScoreRuleKind.HigherThan => $"higher than {Value}",
-		ScoreRuleKind.HigherOrEqual => $"higher than or equal to {Value}",
-		ScoreRuleKind.LowerThan => $"lower than {Value}",
-		ScoreRuleKind.LowerOrEqual => $"lower than or equal to {Value}",
+		ScoreRuleKind.HigherThan => L.F("higher than {0}", Value),
+		ScoreRuleKind.HigherOrEqual => L.F("higher than or equal to {0}", Value),
+		ScoreRuleKind.LowerThan => L.F("lower than {0}", Value),
+		ScoreRuleKind.LowerOrEqual => L.F("lower than or equal to {0}", Value),
 		ScoreRuleKind.Even => "even",
-		ScoreRuleKind.Odd => "not even",
-		ScoreRuleKind.Between => $"between {Value} and {Value2}",
-		_ => $"divisible by {Value}"
+		ScoreRuleKind.Odd => L.T("not even"),
+		ScoreRuleKind.Between => L.F("between {0} and {1}", Value, Value2),
+		_ => L.F("divisible by {0}", Value)
 	};
 
 	/// <summary>Why this rule can't be used on its own (a number missing, dividing by 0), or null.</summary>
@@ -60,9 +60,9 @@ public sealed record ScoreRule(ScoreRuleKind Kind, int? Value = null, int? Value
 	{
 		var name = ScoreRuleKindOption.TextFor(Kind);
 		if (NeedsValue && Value is null || NeedsSecondValue && Value2 is null)
-			return $"Rule {number} ({name}): fill in {(NeedsSecondValue ? "both numbers" : "the number")}.";
+			return L.F("Rule {0} ({1}): fill in {2}.", number, name, (NeedsSecondValue ? L.T("both numbers") : L.T("the number")));
 		if (Kind == ScoreRuleKind.DivisibleBy && Value < 1)
-			return $"Rule {number} ({name}): the number must be 1 or more.";
+			return L.F("Rule {0} ({1}): the number must be 1 or more.", number, name);
 		return null;
 	}
 }
@@ -155,13 +155,13 @@ public sealed record ScoreRuleKindOption(ScoreRuleKind Kind)
 	/// <summary>What a kind of rule is called in the app.</summary>
 	public static string TextFor(ScoreRuleKind kind) => kind switch
 	{
-		ScoreRuleKind.HigherThan => "Higher than",
-		ScoreRuleKind.HigherOrEqual => "Higher than or equal to",
-		ScoreRuleKind.LowerThan => "Lower than",
-		ScoreRuleKind.LowerOrEqual => "Lower than or equal to",
-		ScoreRuleKind.Even => "Even",
-		ScoreRuleKind.Odd => "Not even",
-		ScoreRuleKind.Between => "Between",
-		_ => "Divisible by"
+		ScoreRuleKind.HigherThan => L.T("Higher than"),
+		ScoreRuleKind.HigherOrEqual => L.T("Higher than or equal to"),
+		ScoreRuleKind.LowerThan => L.T("Lower than"),
+		ScoreRuleKind.LowerOrEqual => L.T("Lower than or equal to"),
+		ScoreRuleKind.Even => L.T("Even"),
+		ScoreRuleKind.Odd => L.T("Not even"),
+		ScoreRuleKind.Between => L.T("Between"),
+		_ => L.T("Divisible by")
 	};
 }

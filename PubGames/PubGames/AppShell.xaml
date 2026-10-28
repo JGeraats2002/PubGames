@@ -1,44 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
        xmlns:views="clr-namespace:PubGames.Views"
        x:Class="PubGames.AppShell"
        Shell.FlyoutBehavior="Disabled"
-       Title="Pub Games">
+       Title="{loc:T AppShell_PubGames}">
 
 	<!-- Only shown once signed in (App swaps between LoginPage and this shell).
 	     Players is the start of a game night: players → choose game → rules → scoreboard,
 	     all pushed onto this tab's stack (see routes in AppShell.xaml.cs).
 	     Absolute routes include the tab bar's route: AppShell.RequestsRoute. -->
 	<TabBar Route="main">
-		<ShellContent Title="Players"
+		<ShellContent Title="{loc:T AppShell_Players}"
 		              ContentTemplate="{DataTemplate views:PlayerEntryPage}"
 		              Route="players" />
 
 		<!-- Hidden for regular players; visible to admins and moderators (Requests, Feedback and Team: admins only). -->
-		<Tab x:Name="AdminTab" Title="Admin" Route="admin">
-			<ShellContent Title="Library"
+		<Tab x:Name="AdminTab" Title="{loc:T AppShell_Admin}" Route="admin">
+			<ShellContent Title="{loc:T AppShell_Library}"
 			              ContentTemplate="{DataTemplate views:AdminLibraryPage}"
 			              Route="library" />
-			<ShellContent Title="Categories"
+			<ShellContent Title="{loc:T AppShell_Categories}"
 			              ContentTemplate="{DataTemplate views:CategoriesPage}"
 			              Route="categories" />
-			<ShellContent Title="Inbox"
+			<ShellContent Title="{loc:T AppShell_Inbox}"
 			              ContentTemplate="{DataTemplate views:InboxPage}"
 			              Route="inbox" />
-			<ShellContent x:Name="RequestsContent" Title="Requests"
+			<ShellContent x:Name="RequestsContent" Title="{loc:T AppShell_Requests}"
 			              ContentTemplate="{DataTemplate views:ReviewRequestsPage}"
 			              Route="requests" />
-			<ShellContent x:Name="FeedbackContent" Title="Feedback"
+			<ShellContent x:Name="FeedbackContent" Title="{loc:T AppShell_Feedback}"
 			              ContentTemplate="{DataTemplate views:AdminFeedbackPage}"
 			              Route="feedback" />
-			<ShellContent x:Name="TeamContent" Title="Team"
+			<ShellContent x:Name="TeamContent" Title="{loc:T AppShell_Team}"
 			              ContentTemplate="{DataTemplate views:AdminTeamPage}"
 			              Route="team" />
 		</Tab>
 
 		<!-- Opens on Settings: Profile, My stats, Blocked players, Feedback and Sign out. -->
-		<ShellContent Title="Account"
+		<ShellContent Title="{loc:T AppShell_Account}"
 		              ContentTemplate="{DataTemplate views:AccountPage}"
 		              Route="account" />
 	</TabBar>

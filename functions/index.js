@@ -372,3 +372,138 @@ exports.deleteAccount = onCall(async (request) => {
   logger.info(`Account deleted: ${uid}`);
   return { ok: true };
 });
+
+
+// ----- Translations -----
+//
+// A game is written in one language (sourceLanguage) and translated once into
+// every other language the app has, when it's saved - not per player, so it
+// stays cheap (Cloud Translation: the first 500,000 characters a month are
+// free). Translations are kept in the game itself: translations.nl = { name,
+// rulesText, manual, sourceHash }. sourceHash says which version of the
+// original a translation is of; when the name or rules change, the automatic
+// ones are made again. A translation a team member corrected by hand (manual)
+// is never overwritten. Category names are translated the same way.
+
+// The app's language codes, and what Cloud Translation calls them.
+const LANGUAGES = { en: "en", nl: "nl", fr: "fr", de: "de", es: "es", it: "it", pt: "pt-BR", zh: "zh-CN", ar: "ar" };
+
+// A picture in the rules: ![image](reference). Pictures are kept as they are; only the text around them is translated.
+const IMAGE_TAG = /!\[[^\]]*\]\([^)\s]+\)/g;
+
+/** Which version of a game's name and rules a translation is of. Must match GameTranslation.HashOf in the app. */
+function sourceHash(name, rulesText) {
+  return crypto.createHash("sha256").update(`${name}\u001f${rulesText}`, "utf8").digest("hex").slice(0, 16);
+}
+
+/** Cloud Translation, signed in as this project's service account. */
+let translator = null;
+async function translateTexts(texts, from, to) {
+  if (texts.length === 0) return [];
+  if (!translator) {
+    const auth = new google.auth.GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-translation"] });
+    translator = google.translate({ version: "v3", auth: await auth.getClient() });
+  }
+  const projectId = process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG || "{}").projectId;
+  const result = [];
+  // At most 1024 texts and about 30,000 characters per request.
+  let batch = [];
+  let size = 0;
+  const flush = async () => {
+    if (batch.length === 0) return;
+    const { data } = await translator.projects.translateText({
+      parent: `projects/${projectId}/locations/global`,
+      requestBody: { contents: batch, mimeType: "text/plain", sourceLanguageCode: LANGUAGES[from], targetLanguageCode: LANGUAGES[to] }
+    });
+    for (const translation of data.translations) result.push(translation.translatedText);
+    batch = [];
+    size = 0;
+  };
+  for (const text of texts) {
+    if (batch.length >= 100 || size + text.length > 25000) await flush();
+    batch.push(text);
+    size += text.length;
+  }
+  await flush();
+  return result;
+}
+
+/** Translates a game's rules, keeping every picture where it is. */
+async function translateRules(rulesText, from, to) {
+  const parts = [];
+  let position = 0;
+  for (const match of rulesText.matchAll(IMAGE_TAG)) {
+    parts.push({ text: rulesText.slice(position, match.index) });
+    parts.push({ image: match[0] });
+    position = match.index + match[0].length;
+  }
+  parts.push({ text: rulesText.slice(position) });
+
+  const toTranslate = parts.filter((part) => part.text !== undefined && part.text.trim().length > 0);
+  const translated = await translateTexts(toTranslate.map((part) => part.text.trim()), from, to);
+  toTranslate.forEach((part, index) => { part.translated = translated[index]; });
+  return parts
+    .map((part) => part.image || (part.translated !== undefined ? part.translated : ""))
+    .map((piece) => piece.trim())
+    .filter((piece) => piece.length > 0)
+    .join("\n\n");
+}
+
+/**
+ * A game was saved: every language without an up-to-date translation gets one,
+ * except the ones corrected by hand. Writing the translations triggers this
+ * again, but then everything is up to date and nothing happens.
+ */
+exports.translateGame = onDocumentWritten({ document: "games/{gameId}", timeoutSeconds: 300 }, async (event) => {
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after || after.status === "Deleted" || typeof after.name !== "string") return;
+
+  const from = LANGUAGES[after.sourceLanguage] ? after.sourceLanguage : "en";
+  const name = after.name;
+  const rulesText = typeof after.rulesText === "string" ? after.rulesText : "";
+  const hash = sourceHash(name, rulesText);
+  const existing = after.translations || {};
+
+  const updates = {};
+  for (const to of Object.keys(LANGUAGES)) {
+    if (to === from) continue;
+    const current = existing[to];
+    if (current && (current.manual === true || current.sourceHash === hash)) continue;
+    try {
+      const [translatedName] = await translateTexts([name], from, to);
+      updates[`translations.${to}`] = {
+        name: translatedName,
+        rulesText: await translateRules(rulesText, from, to),
+        manual: false,
+        sourceHash: hash
+      };
+    } catch (error) {
+      logger.error(`translateGame ${event.params.gameId} -> ${to} failed`, error);
+    }
+  }
+  if (Object.keys(updates).length > 0)
+    await event.data.after.ref.update(updates);
+});
+
+/** Translates a category's or main category's name into every other language when it's new or renamed. */
+async function translateName(event) {
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after || typeof after.name !== "string" || after.name.length === 0) return;
+  // Ids starting with "_" are notes for the app (see CategoryService.SortOnceAsync), not categories.
+  if (String(event.data.after.id).startsWith("_") || after.translatedFrom === after.name) return;
+
+  const from = LANGUAGES[after.sourceLanguage] ? after.sourceLanguage : "en";
+  const translations = {};
+  for (const to of Object.keys(LANGUAGES)) {
+    if (to === from) continue;
+    try {
+      [translations[to]] = await translateTexts([after.name], from, to);
+    } catch (error) {
+      logger.error(`translateName ${after.name} -> ${to} failed`, error);
+    }
+  }
+  await event.data.after.ref.update({ translations, translatedFrom: after.name });
+}
+
+exports.translateCategory = onDocumentWritten("categories/{categoryId}", translateName);
+exports.translateCategoryGroup = onDocumentWritten("categoryGroups/{groupId}", translateName);

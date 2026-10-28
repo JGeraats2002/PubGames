@@ -31,7 +31,7 @@ public partial class AdminCreateGamePage : ContentPage
 		{
 			_leaving = true;
 			if (message is not null)
-				await DisplayAlertAsync("Done", message, "OK");
+				await DisplayAlertAsync(L.T("Done"), message, "OK");
 			await Shell.Current.GoToAsync("..");
 		};
 		// The back arrow at the top asks first too.
@@ -59,14 +59,14 @@ public partial class AdminCreateGamePage : ContentPage
 
 		if (_vm.HasUnsavedChanges)
 		{
-			const string discard = "Don't save";
+			var discard = L.T("Don't save");
 			var save = _vm.SaveButtonText;
-			var choice = await ChoicePopup.AskAsync(this, "Save your changes?", null, "Keep editing", discard, save);
+			var choice = await ChoicePopup.AskAsync(this, L.T("Save your changes?"), null, L.T("Keep editing"), discard, save);
 			if (choice == save)
 			{
 				await _vm.SaveCommand.ExecuteAsync(null);
 				if (!_leaving && !string.IsNullOrEmpty(_vm.StatusMessage))
-					await DisplayAlertAsync("Not saved yet", _vm.StatusMessage, "OK");
+					await DisplayAlertAsync(L.T("Not saved yet"), _vm.StatusMessage, "OK");
 				return;
 			}
 			if (choice != discard) return;
@@ -92,6 +92,8 @@ public partial class AdminCreateGamePage : ContentPage
 	private void OnScoringTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.ScoringPage);
 	/// <summary>Shows the Rules page of the form.</summary>
 	private void OnRulesTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.RulesPage);
+	/// <summary>Shows the Languages page of the form.</summary>
+	private void OnLanguagesTabClicked(object? sender, EventArgs e) => ShowPage(AdminCreateGameViewModel.LanguagesPage);
 
 	/// <summary>
 	/// Switches to a page of the form, scrolled to the top (a picture being moved is put down first).
@@ -110,7 +112,7 @@ public partial class AdminCreateGamePage : ContentPage
 		var options = _vm.AddableSections();
 		if (options.Count == 0) return;
 
-		var choice = await DisplayActionSheetAsync("Add your rules", "Cancel", null, options.Select(o => o.Title).ToArray());
+		var choice = await DisplayActionSheetAsync(L.T("Add your rules"), L.T("Cancel"), null, options.Select(o => o.Title).ToArray());
 		if (options.FirstOrDefault(o => o.Title == choice) is { } picked)
 			_vm.AddSection(picked.Section);
 	}
@@ -121,10 +123,10 @@ public partial class AdminCreateGamePage : ContentPage
 	private async void OnCopyGameRulesClicked(object? sender, EventArgs e)
 	{
 		if (_vm.DuelScoring.IsChosen
-			&& !await DisplayAlertAsync("Copy the game's rules?", "What you filled in for the duel is replaced by the game's rules.", "Copy", "Cancel"))
+			&& !await DisplayAlertAsync(L.T("Copy the game's rules?"), L.T("What you filled in for the duel is replaced by the game's rules."), L.T("Copy"), L.T("Cancel")))
 			return;
 		if (!_vm.CopyGameRulesToDuel())
-			await DisplayAlertAsync("No rules to copy yet", "Choose the game's scoring type first, at the top of this page.", "OK");
+			await DisplayAlertAsync(L.T("No rules to copy yet"), L.T("Choose the game's scoring type first, at the top of this page."), "OK");
 	}
 
 	/// <summary>The ✕ next to a part: take it off the form, clearing what was filled in.</summary>
@@ -133,7 +135,7 @@ public partial class AdminCreateGamePage : ContentPage
 		if (sender is not Button { CommandParameter: GameFormSection section }) return;
 
 		var title = AdminCreateGameViewModel.TitleOf(section);
-		if (await DisplayAlertAsync($"Remove {title}?", "What you filled in here is cleared. You can add it again with + Add your rules.", "Remove", "Keep"))
+		if (await DisplayAlertAsync(L.F("Remove {0}?", title), L.T("What you filled in here is cleared. You can add it again with + Add your rules."), L.T("Remove"), L.T("Keep")))
 			_vm.RemoveSection(section);
 	}
 
@@ -144,25 +146,22 @@ public partial class AdminCreateGamePage : ContentPage
 	/// <param name="editable">The drawing of the picture that's there now, if it was made in the image editor: then editing it is offered too.</param>
 	private async Task<(PictureSource Source, EditedImage? Drawing)?> ChoosePictureAsync(bool cover, string? editable = null)
 	{
-		const string edit = "Edit this image";
-		const string upload = "Upload an image";
-		const string photo = "Take a photo";
-		const string create = "Create an image";
+		var edit = L.T("Edit this image");
+		var upload = L.T("Upload an image");
+		var photo = L.T("Take a photo");
+		var create = L.T("Create an image");
 
 		string[] choices = editable is null ? [upload, photo, create] : [edit, upload, photo, create];
-		switch (await DisplayActionSheetAsync("Where does the picture come from?", "Cancel", null, choices))
-		{
-			case upload:
-				return (PictureSource.Library, null);
-			case photo:
-				return (PictureSource.Camera, null);
-			case create:
-				return await ImageEditorPage.OpenAsync(Navigation, cover) is { } created ? (PictureSource.Drawing, created) : null;
-			case edit:
-				return await ImageEditorPage.OpenAsync(Navigation, cover, editable) is { } edited ? (PictureSource.Drawing, edited) : null;
-			default:
-				return null;
-		}
+		var choice = await DisplayActionSheetAsync(L.T("Where does the picture come from?"), L.T("Cancel"), null, choices);
+		if (choice == upload)
+			return (PictureSource.Library, null);
+		if (choice == photo)
+			return (PictureSource.Camera, null);
+		if (choice == create)
+			return await ImageEditorPage.OpenAsync(Navigation, cover) is { } created ? (PictureSource.Drawing, created) : null;
+		if (choice == edit)
+			return await ImageEditorPage.OpenAsync(Navigation, cover, editable) is { } edited ? (PictureSource.Drawing, edited) : null;
+		return null;
 	}
 
 	/// <summary>
@@ -179,10 +178,10 @@ public partial class AdminCreateGamePage : ContentPage
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
 		var confirmed = _vm.IsModerator
-			? await DisplayAlertAsync("Request deletion?",
-				$"An admin will review your request. \"{_vm.Name}\" will stay in every player's library until an admin approves it.", "Request deletion", "Cancel")
-			: await DisplayAlertAsync("Delete game?",
-				$"\"{_vm.Name}\" will disappear from every player's library.", "Delete", "Cancel");
+			? await DisplayAlertAsync(L.T("Request deletion?"),
+				L.F("An admin will review your request. \"{0}\" will stay in every player's library until an admin approves it.", _vm.Name), L.T("Request deletion"), L.T("Cancel"))
+			: await DisplayAlertAsync(L.T("Delete game?"),
+				L.F("\"{0}\" will disappear from every player's library.", _vm.Name), L.T("Delete"), L.T("Cancel"));
 		if (confirmed)
 			await _vm.DeleteAsync();
 	}
@@ -190,8 +189,8 @@ public partial class AdminCreateGamePage : ContentPage
 	/// <summary>Takes back the moderator's request that's still waiting for review, after asking.</summary>
 	private async void OnWithdrawClicked(object? sender, EventArgs e)
 	{
-		var confirmed = await DisplayAlertAsync("Withdraw request?",
-			"Your request will be taken back before an admin reviews it. Nothing will change for players.", "Withdraw", "Cancel");
+		var confirmed = await DisplayAlertAsync(L.T("Withdraw request?"),
+			L.T("Your request will be taken back before an admin reviews it. Nothing will change for players."), L.T("Withdraw"), L.T("Cancel"));
 		if (confirmed)
 			await _vm.WithdrawAsync();
 	}
@@ -253,33 +252,33 @@ public partial class AdminCreateGamePage : ContentPage
 	{
 		if (sender is not BindableObject { BindingContext: EditableRulesBlock { ImageRef: { } imageRef } image }) return;
 
-		const string edit = "Edit image";
-		const string move = "Move to another place";
-		const string remove = "Remove";
+		var edit = L.T("Edit image");
+		var move = L.T("Move to another place");
+		var remove = L.T("Remove");
 
 		StopMoving();
 		var drawing = await _vm.GetDrawingAsync(imageRef);
 		string[] choices = drawing is null ? [move] : [edit, move];
-		switch (await DisplayActionSheetAsync("Picture", "Cancel", remove, choices))
+		var choice = await DisplayActionSheetAsync(L.T("Picture"), L.T("Cancel"), remove, choices);
+		if (choice == edit)
 		{
-			case edit:
-				// The picture's own shape comes with its drawing.
-				if (await ImageEditorPage.OpenAsync(Navigation, cover: false, drawing) is { } edited
-					&& await _vm.UploadPictureAsync(PictureSource.Drawing, edited) is { } reference)
-					image.ImageRef = reference;
-				break;
-
-			case move:
-				// The place it goes is tapped from now on, not where the cursor happened to be.
-				_lastRulesEditor = null;
-				_movingImage = image;
-				MoveBar.IsVisible = true;
-				break;
-
-			case remove:
-				if (await DisplayAlertAsync("Remove this picture?", "The picture is taken out of the rules.", "Remove", "Keep"))
-					EditableRulesBlock.RemoveImage(_vm.RulesBlocks, image);
-				break;
+			// The picture's own shape comes with its drawing.
+			if (await ImageEditorPage.OpenAsync(Navigation, cover: false, drawing) is { } edited
+				&& await _vm.UploadPictureAsync(PictureSource.Drawing, edited) is { } reference)
+				image.ImageRef = reference;
+		}
+		else if (choice == move)
+		{
+			// The place it goes is tapped from now on, not where the cursor happened to be.
+			_lastRulesEditor = null;
+			_movingImage = image;
+			MoveBar.IsVisible = true;
+			SaveBar.IsVisible = false;
+		}
+		else if (choice == remove)
+		{
+			if (await DisplayAlertAsync(L.T("Remove this picture?"), L.T("The picture is taken out of the rules."), L.T("Remove"), L.T("Keep")))
+				EditableRulesBlock.RemoveImage(_vm.RulesBlocks, image);
 		}
 	}
 
@@ -290,7 +289,7 @@ public partial class AdminCreateGamePage : ContentPage
 
 		if (RulesCursor() is not { } cursor)
 		{
-			await DisplayAlertAsync("Tap in the text first", "Tap in the rules where the picture should go, then tap Place here.", "OK");
+			await DisplayAlertAsync(L.T("Tap in the text first"), L.T("Tap in the rules where the picture should go, then tap Place here."), "OK");
 			return;
 		}
 
@@ -307,5 +306,6 @@ public partial class AdminCreateGamePage : ContentPage
 	{
 		_movingImage = null;
 		MoveBar.IsVisible = false;
+		SaveBar.IsVisible = true;
 	}
 }

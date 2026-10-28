@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              x:Class="PubGames.Views.ImageEditorPage"
-             Title="Create image">
+             Title="{loc:T ImageEditor_CreateImage}">
 
 	<Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12" RowSpacing="10">
 
 		<!-- Undo takes back the last change; the ⓘ explains the editor. -->
 		<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-			<Label x:Name="Heading" Text="Create image" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
-			<Button Grid.Column="1" Text="↶ Undo" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
+			<Label x:Name="Heading" Text="{loc:T ImageEditor_CreateImage}" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
+			<Button Grid.Column="1" Text="{loc:T ImageEditor_Undo}" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button SemanticProperties.Description="Help" Grid.Column="2" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
+			<Button SemanticProperties.Description="{loc:T ImageEditor_Help}" Grid.Column="2" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 		</Grid>
@@ -36,10 +37,10 @@
 		</ScrollView>
 
 		<Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
-			<Button Text="Cancel" Clicked="OnCancelClicked"
+			<Button Text="{loc:T ImageEditor_Cancel}" Clicked="OnCancelClicked"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="1" Text="Use this image" Clicked="OnUseClicked" />
+			<Button Grid.Column="1" Text="{loc:T ImageEditor_UseThisImage}" Clicked="OnUseClicked" />
 		</Grid>
 
 	</Grid>

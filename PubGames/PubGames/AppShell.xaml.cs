@@ -36,6 +36,7 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute(nameof(FeedbackPage), typeof(FeedbackPage));
 		Routing.RegisterRoute(nameof(BlockedPlayersPage), typeof(BlockedPlayersPage));
 		Routing.RegisterRoute(nameof(SubscriptionPage), typeof(SubscriptionPage));
+		Routing.RegisterRoute(nameof(LanguagePage), typeof(LanguagePage));
 	}
 
 	/// <param name="me">

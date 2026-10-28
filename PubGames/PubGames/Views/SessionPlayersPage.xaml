@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
              x:Class="PubGames.Views.SessionPlayersPage"
              x:DataType="vm:SessionPlayersViewModel"
-             Title="Change players">
+             Title="{loc:T SessionPlayers_ChangePlayers}">
 
 	<Grid RowDefinitions="*,Auto" Padding="16" RowSpacing="12">
 
@@ -15,10 +16,10 @@
 				<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
 
 				<!-- Playing now, in seat order. -->
-				<Label Text="Playing now" FontSize="16" />
+				<Label Text="{loc:T SessionPlayers_PlayingNow}" FontSize="16" />
 				<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Rows}">
 					<BindableLayout.EmptyView>
-						<Label Text="Nobody is playing yet." TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{loc:T SessionPlayers_NobodyIsPlayingYet}" TextColor="{StaticResource TextSecondary}" />
 					</BindableLayout.EmptyView>
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="vm:ParticipantRow">
@@ -30,15 +31,15 @@
 									<Label Text="{Binding Seat}" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
 									<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
 										<Label Text="{Binding Player.Name}" LineBreakMode="TailTruncation" />
-										<Label Text="{Binding Score, StringFormat='Score: {0}'}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding Score, StringFormat={loc:T SessionPlayers_Score0}}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 									</VerticalStackLayout>
-									<Button SemanticProperties.Description="Move up" Grid.Column="2" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="48" HeightRequest="48" Padding="0"
+									<Button SemanticProperties.Description="{loc:T SessionPlayers_MoveUp}" Grid.Column="2" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="48" HeightRequest="48" Padding="0"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button SemanticProperties.Description="Move down" Grid.Column="3" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="48" HeightRequest="48" Padding="0"
+									<Button SemanticProperties.Description="{loc:T SessionPlayers_MoveDown}" Grid.Column="3" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="48" HeightRequest="48" Padding="0"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button Grid.Column="4" Text="Replace" Clicked="OnReplaceClicked" HeightRequest="48" Padding="8,0" FontSize="12"
+									<Button Grid.Column="4" Text="{loc:T SessionPlayers_Replace}" Clicked="OnReplaceClicked" HeightRequest="48" Padding="8,0" FontSize="12"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-									<Button SemanticProperties.Description="Remove player" Grid.Column="5" Text="✕" Clicked="OnRemoveClicked" WidthRequest="48" HeightRequest="48" Padding="0"
+									<Button SemanticProperties.Description="{loc:T SessionPlayers_RemovePlayer}" Grid.Column="5" Text="✕" Clicked="OnRemoveClicked" WidthRequest="48" HeightRequest="48" Padding="0"
 									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
 								</Grid>
 							</Border>
@@ -47,7 +48,7 @@
 				</VerticalStackLayout>
 
 				<!-- Saved players who aren't playing. -->
-				<Label Text="Add a saved player" FontSize="16" Margin="0,8,0,0" IsVisible="{Binding HasAvailablePlayers}" />
+				<Label Text="{loc:T SessionPlayers_AddASavedPlayer}" FontSize="16" Margin="0,8,0,0" IsVisible="{Binding HasAvailablePlayers}" />
 				<FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding AvailablePlayers}">
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="models:Player">
@@ -65,20 +66,20 @@
 				</FlexLayout>
 
 				<!-- Someone who isn't a saved player yet. -->
-				<Label Text="Add a new player" FontSize="16" Margin="0,8,0,0" />
+				<Label Text="{loc:T SessionPlayers_AddANewPlayer}" FontSize="16" Margin="0,8,0,0" />
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-					<Entry Placeholder="Name" Text="{Binding NewPlayerName}" />
-					<Button Grid.Column="1" Text="Add" Clicked="OnAddNewClicked" />
+					<Entry Placeholder="{loc:T SessionPlayers_Name}" Text="{Binding NewPlayerName}" />
+					<Button Grid.Column="1" Text="{loc:T SessionPlayers_Add}" Clicked="OnAddNewClicked" />
 				</Grid>
 				<HorizontalStackLayout Spacing="6">
 					<CheckBox IsChecked="{Binding SaveNewPlayer}" VerticalOptions="Center" />
-					<Label Text="Save to my players, for next time" VerticalOptions="Center" FontSize="13" />
+					<Label Text="{loc:T SessionPlayers_SaveToMyPlayersFor}" VerticalOptions="Center" FontSize="13" />
 				</HorizontalStackLayout>
 
 			</VerticalStackLayout>
 		</ScrollView>
 
-		<Button Grid.Row="1" Text="Back to the scoreboard" Clicked="OnDoneClicked" />
+		<Button Grid.Row="1" Text="{loc:T SessionPlayers_BackToTheScoreboard}" Clicked="OnDoneClicked" />
 
 	</Grid>
 

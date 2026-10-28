@@ -36,10 +36,10 @@ public partial class ResultRow : ObservableObject
 	public string PlaceLabel => Standings.Ordinal(Place);
 
 	/// <summary>The badge on a marked card, in words so it doesn't rely on colour.</summary>
-	public string MarkText => Mode == ResultMode.Loser ? "✖ LOSER" : "🏆 WINNER";
+	public string MarkText => Mode == ResultMode.Loser ? L.T("✖ LOSER") : L.T("🏆 WINNER");
 
 	/// <summary>"Score: 42".</summary>
-	public string ScoreText => $"Score: {Score}";
+	public string ScoreText => L.F("Score: {0}", Score);
 }
 
 /// <summary>
@@ -96,7 +96,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 
 	/// <summary>The page's title: which subgame.</summary>
 	[ObservableProperty]
-	private string title = "Result";
+	private string title = L.T("Result");
 
 	/// <summary>What's still missing, what a duel decided, or what went wrong.</summary>
 	[ObservableProperty]
@@ -108,7 +108,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
 	/// <summary>The confirm button's text: next subgame, or finish the game.</summary>
-	public string ConfirmText => IsFinishing ? "Finish game & show result" : "Start next subgame";
+	public string ConfirmText => IsFinishing ? L.T("Finish game & show result") : L.T("Start next subgame");
 
 	/// <summary>Raised after saving; true when the whole game is finished.</summary>
 	public event EventHandler<bool>? Saved;
@@ -149,7 +149,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		Mode = settings.ResultMode;
 
 		var round = Math.Max(1, _session.CurrentRound);
-		Title = _session.SubgameCount is { } count ? $"Result of subgame {round} of {count}" : $"Result of subgame {round}";
+		Title = _session.SubgameCount is { } count ? L.F("Result of subgame {0} of {1}", round, count) : L.F("Result of subgame {0}", round);
 		_lowestWins = settings.LowestWins;
 
 		_participants = await _local.GetParticipantsAsync(sessionId);
@@ -170,7 +170,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			var isLast = active.All(other => Better(other.Score) <= Better(participant.Score));
 			Rows.Add(new ResultRow
 			{
-				Player = players.GetValueOrDefault(participant.PlayerId) ?? new Player { Id = participant.PlayerId, Name = "Unknown player" },
+				Player = players.GetValueOrDefault(participant.PlayerId) ?? new Player { Id = participant.PlayerId, Name = L.T("Unknown player") },
 				Score = participant.Score,
 				Mode = Mode,
 				PlayerCount = active.Count,
@@ -207,8 +207,8 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			tied = standings.Where(s => s.Place == 1).Select(s => s.Name).ToList();
 
 		if (tied.Count < 2) return null;
-		var who = $"{string.Join(", ", tied.SkipLast(1))} and {tied[^1]}";
-		return Mode == ResultMode.Loser ? $"{who} are tied as loser." : $"{who} are tied for the win.";
+		var who = L.F("{0} and {1}", string.Join(", ", tied.SkipLast(1)), tied[^1]);
+		return Mode == ResultMode.Loser ? L.F("{0} are tied as loser.", who) : L.F("{0} are tied for the win.", who);
 	}
 
 	/// <summary>Everyone's totals over the subgames, without any earlier duel after the final total.</summary>
@@ -244,7 +244,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 				result.Add(group);
 				continue;
 			}
-			var replay = await DuelAsync(group, $"Still tied after the duel: {TieBreak.Names(group.Select(p => p.Name).ToList())}. Play the duel again.", wholeOrder, worstCounts);
+			var replay = await DuelAsync(group, L.F("Still tied after the duel: {0}. Play the duel again.", TieBreak.Names(group.Select(p => p.Name).ToList())), wholeOrder, worstCounts);
 			if (replay is null) return null;
 			result.AddRange(replay);
 		}
@@ -269,7 +269,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			var marked = Rows.Where(r => r.IsMarked).ToList();
 			if (marked.Count < 2) return false;
 			var loser = Mode == ResultMode.Loser;
-			var reason = loser ? $"{NamesOf(marked)} are tied as loser of this subgame." : $"{NamesOf(marked)} are tied for the win of this subgame.";
+			var reason = loser ? L.F("{0} are tied as loser of this subgame.", NamesOf(marked)) : L.F("{0} are tied for the win of this subgame.", NamesOf(marked));
 			var order = await DuelAsync(marked.Select(r => r.Player).ToList(), reason, wholeOrder: false, worstCounts: loser);
 			if (order is null) return null;
 
@@ -277,8 +277,8 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			foreach (var row in marked)
 				row.IsMarked = decided.Contains(row.Player.Id);
 			var name = NamesOf(marked.Where(r => r.IsMarked));
-			StatusMessage = (loser ? $"{name} lost the duel and is marked as loser." : $"{name} won the duel and is marked as winner.")
-				+ " Change it if needed, then confirm.";
+			StatusMessage = (loser ? L.F("{0} lost the duel and is marked as loser.", name) : L.F("{0} won the duel and is marked as winner.", name))
+				+ L.T(" Change it if needed, then confirm.");
 			return true;
 		}
 
@@ -288,7 +288,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		foreach (var group in shared)
 		{
 			var rows = group.ToList();
-			var order = await DuelAsync(rows.Select(r => r.Player).ToList(), $"{NamesOf(rows)} share {Standings.Ordinal(group.Key)} place.", wholeOrder: every, worstCounts: false);
+			var order = await DuelAsync(rows.Select(r => r.Player).ToList(), L.F("{0} share {1} place.", NamesOf(rows), Standings.Ordinal(group.Key)), wholeOrder: every, worstCounts: false);
 			if (order is null) return null;
 
 			// The duel's order gives places one after another from the shared place: 1st, 2nd, ...
@@ -300,7 +300,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 				next += ids.Count;
 			}
 		}
-		StatusMessage = "The duel decided the places and points below. Change them if needed, then confirm.";
+		StatusMessage = L.T("The duel decided the places and points below. Change them if needed, then confirm.");
 		return true;
 	}
 
@@ -328,9 +328,9 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 		{
 			var names = TieBreak.Names(group.Select(s => s.Name).ToList());
 			var isLoss = loserGame && group.SequenceEqual(losers);
-			var reason = isLoss ? $"{names} are tied as loser of the game."
-				: group[0].Place == 1 ? $"{names} are tied for the win of the game."
-				: $"{names} share {Standings.Ordinal(group[0].Place)} place in the final total.";
+			var reason = isLoss ? L.F("{0} are tied as loser of the game.", names)
+				: group[0].Place == 1 ? L.F("{0} are tied for the win of the game.", names)
+				: L.F("{0} share {1} place in the final total.", names, Standings.Ordinal(group[0].Place));
 			var tied = group.Select(s => players.GetValueOrDefault(s.PlayerId) ?? new Player { Id = s.PlayerId, Name = s.Name }).ToList();
 			var order = await DuelAsync(tied, reason, wholeOrder: every, worstCounts: isLoss);
 			if (order is null) return false;
@@ -347,14 +347,14 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 				}));
 				rank += tiedGroup.Count;
 			}
-			summary.Add(isLoss ? $"{TieBreak.Names(order[^1].Select(p => p.Name).ToList())} lost the duel."
-				: $"{TieBreak.Names(order[0].Select(p => p.Name).ToList())} won the duel.");
+			summary.Add(isLoss ? L.F("{0} lost the duel.", TieBreak.Names(order[^1].Select(p => p.Name).ToList()))
+				: L.F("{0} won the duel.", TieBreak.Names(order[0].Select(p => p.Name).ToList())));
 		}
 
 		// Also clears a final duel from an earlier try.
 		await _local.SaveRoundResultsAsync(_session!.Id, RoundResult.FinalDuelRound, duelResults);
 		if (summary.Count > 0 && Inform is not null)
-			await Inform("Duel decided", string.Join("\n", summary));
+			await Inform(L.T("Duel decided"), string.Join("\n", summary));
 		return true;
 	}
 
@@ -410,12 +410,12 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 
 		if (Rows.Count == 0)
 		{
-			StatusMessage = "Nobody is playing - add players first.";
+			StatusMessage = L.T("Nobody is playing - add players first.");
 			return;
 		}
 		if (Mode != ResultMode.Ranking && !Rows.Any(r => r.IsMarked))
 		{
-			StatusMessage = Mode == ResultMode.Loser ? "Tap at least one loser." : "Tap at least one winner.";
+			StatusMessage = Mode == ResultMode.Loser ? L.T("Tap at least one loser.") : L.T("Tap at least one winner.");
 			return;
 		}
 
@@ -425,7 +425,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			switch (await PlayOffSubgameTiesAsync())
 			{
 				case null:
-					StatusMessage = "The duel was stopped, so the tie isn't decided. Nothing is saved yet.";
+					StatusMessage = L.T("The duel was stopped, so the tie isn't decided. Nothing is saved yet.");
 					return;
 				case true:
 					// The duel's outcome is filled in: check it (or change it) and confirm again to save.
@@ -449,7 +449,7 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			{
 				if (!await PlayOffFinalTiesAsync())
 				{
-					StatusMessage = "The duel was stopped, so the tie in the final total isn't decided. Confirm again to play it.";
+					StatusMessage = L.T("The duel was stopped, so the tie in the final total isn't decided. Confirm again to play it.");
 					return;
 				}
 			}

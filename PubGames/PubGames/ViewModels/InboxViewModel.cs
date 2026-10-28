@@ -61,8 +61,8 @@ public partial class InboxViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			StatusMessage = ex is HttpRequestException
-				? "Offline - showing the messages saved on this phone."
-				: $"Couldn't refresh messages: {ex.Message}";
+				? L.T("Offline - showing the messages saved on this phone.")
+				: L.F("Couldn't refresh messages: {0}", ex.Message);
 		}
 
 		// Unread ones keep their "New" label for this visit; next time they're read.
@@ -102,28 +102,28 @@ public partial class InboxViewModel : ObservableObject
 			members = await _team.GetCachedMembersAsync();
 		}
 
-		var recipients = new List<MessageRecipient> { new(InboxMessage.AllAdmins, "All admins", "Everyone with admin rights") };
+		var recipients = new List<MessageRecipient> { new(InboxMessage.AllAdmins, L.T("All admins"), L.T("Everyone with admin rights")) };
 		recipients.AddRange(members
 			.Where(m => m.Email != MyEmail)
 			.Select(m => new MessageRecipient(m.Email,
 				string.IsNullOrWhiteSpace(m.DisplayName) ? m.Email : m.DisplayName,
-				$"{(m.IsBuiltInAdmin ? "Owner" : m.RoleName)} · {m.Email}")));
+				$"{(m.IsBuiltInAdmin ? L.T("Owner") : m.RoleName)} · {m.Email}")));
 		return recipients;
 	}
 
 	/// <summary>Returns true when sent (StatusMessage says why not otherwise).</summary>
 	public async Task<bool> SendAsync(string toEmail, string text)
 	{
-		StatusMessage = "Sending...";
+		StatusMessage = L.T("Sending...");
 		try
 		{
 			await _messages.SendAsync(toEmail, text);
-			StatusMessage = "Message sent.";
+			StatusMessage = L.T("Message sent.");
 			return true;
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return false;
 		}
 	}
@@ -139,7 +139,7 @@ public partial class InboxViewModel : ObservableObject
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 		}
 	}
 
@@ -169,8 +169,8 @@ public partial class InboxViewModel : ObservableObject
 			return request;
 
 		StatusMessage = request is null
-			? "That request can't be found any more."
-			: "Only rejected new games and changes can be edited and submitted again.";
+			? L.T("That request can't be found any more.")
+			: L.T("Only rejected new games and changes can be edited and submitted again.");
 		return null;
 	}
 }

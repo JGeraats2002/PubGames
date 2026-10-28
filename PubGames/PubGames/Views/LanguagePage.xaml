@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.LanguagePage"
+             x:DataType="vm:LanguageViewModel"
+             Title="{Binding Heading}"
+             FlowDirection="{Binding FlowDirection}">
+
+	<Grid RowDefinitions="Auto,*,Auto" Padding="20" RowSpacing="16">
+
+		<VerticalStackLayout Spacing="6">
+			<Label Text="{Binding Heading}" FontSize="24" FontAttributes="Bold" HorizontalTextAlignment="Center"
+			       SemanticProperties.HeadingLevel="Level1" />
+			<Label Text="{Binding Explanation}" FontSize="13" TextColor="{StaticResource TextSecondary}"
+			       HorizontalTextAlignment="Center" />
+		</VerticalStackLayout>
+
+		<!-- Every language: its flag in a circle, its name below in the language the screen is in now. -->
+		<CollectionView Grid.Row="1" ItemsSource="{Binding Choices}" SelectionMode="None">
+			<CollectionView.ItemsLayout>
+				<GridItemsLayout Orientation="Vertical" Span="3" VerticalItemSpacing="18" HorizontalItemSpacing="8" />
+			</CollectionView.ItemsLayout>
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="vm:LanguageChoice">
+					<VerticalStackLayout Spacing="8" Padding="0,6"
+					                     SemanticProperties.Description="{Binding Description}">
+						<VerticalStackLayout.GestureRecognizers>
+							<TapGestureRecognizer Command="{Binding ChooseCommand, Source={RelativeSource AncestorType={x:Type vm:LanguageViewModel}}, x:DataType=vm:LanguageViewModel}"
+							                      CommandParameter="{Binding .}" />
+						</VerticalStackLayout.GestureRecognizers>
+						<!-- The ring around the flag shows which language is chosen. -->
+						<Border WidthRequest="80" HeightRequest="80" HorizontalOptions="Center" Padding="4"
+						        StrokeThickness="3" Stroke="Transparent" StrokeShape="Ellipse">
+							<Border.Triggers>
+								<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+									<Setter Property="Stroke" Value="{StaticResource Primary}" />
+								</DataTrigger>
+							</Border.Triggers>
+							<Border StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse">
+								<Image Source="{Binding Flag}" Aspect="AspectFill" />
+							</Border>
+						</Border>
+						<Label Text="{Binding Name}" FontSize="14" HorizontalTextAlignment="Center">
+							<Label.Triggers>
+								<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+									<Setter Property="FontAttributes" Value="Bold" />
+									<Setter Property="TextColor" Value="{StaticResource Primary}" />
+								</DataTrigger>
+							</Label.Triggers>
+						</Label>
+					</VerticalStackLayout>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+
+		<Button Grid.Row="2" Text="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" HeightRequest="52" />
+	</Grid>
+
+</ContentPage>

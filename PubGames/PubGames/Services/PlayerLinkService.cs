@@ -7,7 +7,7 @@ namespace PubGames.Services;
 public sealed record BlockedPlayer(string Uid, string Name, DateTime BlockedAt)
 {
 	/// <summary>"Blocked on 27 Oct 2026".</summary>
-	public string BlockedLabel => $"Blocked on {BlockedAt.ToLocalTime().ToString("d MMM yyyy", CultureInfo.CurrentCulture)}";
+	public string BlockedLabel => L.F("Blocked on {0}", BlockedAt.ToLocalTime().ToString("d MMM yyyy", CultureInfo.CurrentCulture));
 }
 
 /// <summary>
@@ -49,7 +49,7 @@ public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : I
 	private const string Unlinks = "unlinks";
 	private const string Blocks = "blocks";
 
-	private string Me => auth.CurrentUser?.Uid ?? throw new InvalidOperationException("Sign in first.");
+	private string Me => auth.CurrentUser?.Uid ?? throw new InvalidOperationException(L.T("Sign in first."));
 
 	/// <inheritdoc />
 	public Task UnlinkBothWaysAsync(string otherUid) =>
@@ -83,7 +83,7 @@ public class PlayerLinkService(FirestoreClient firestore, IAuthService auth) : I
 		return (await firestore.WhereEqualAsync(Blocks, "blockerUid", Me))
 			.Where(f => f.GetValueOrDefault("blockedUid") is string)
 			.Select(f => new BlockedPlayer((string)f["blockedUid"]!,
-				f.GetValueOrDefault("blockedName") as string ?? "Unknown player",
+				f.GetValueOrDefault("blockedName") as string ?? L.T("Unknown player"),
 				f.GetValueOrDefault("createdAt") as DateTime? ?? DateTime.UtcNow))
 			.OrderBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase)
 			.ToList();

@@ -106,8 +106,20 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	/// <summary>The page of the form that's open: General, Scoring or Rules.</summary>
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(IsGeneralPage), nameof(IsScoringPage), nameof(IsRulesPage), nameof(CanAddSection))]
+	[NotifyPropertyChangedFor(nameof(IsGeneralPage), nameof(IsScoringPage), nameof(IsRulesPage), nameof(IsLanguagesPage), nameof(CanAddSection))]
 	private int currentPage = GeneralPage;
+
+	/// <summary>
+	/// Opening the Languages page shows the translation of the name and rules as they are now (the original
+	/// may have changed on the other pages); corrections made there are kept.
+	/// </summary>
+	partial void OnCurrentPageChanged(int value)
+	{
+		if (value != LanguagesPage) return;
+		_translations = EffectiveTranslations();
+		TranslationLanguage ??= TranslationLanguages.FirstOrDefault();
+		ShowTranslation();
+	}
 
 	/// <summary>The General page is open.</summary>
 	public bool IsGeneralPage => CurrentPage == GeneralPage;
@@ -117,10 +129,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	public bool IsRulesPage => CurrentPage == RulesPage;
 
 	/// <summary>Every part that can be added, in the order the form shows them.</summary>
-	public static IReadOnlyList<GameFormSectionInfo> Sections { get; } =
+	public static IReadOnlyList<GameFormSectionInfo> Sections =>
 	[
-		new(GameFormSection.Subgame, "Subgame", ScoringPage),
-		new(GameFormSection.Ties, "Ties", ScoringPage)
+		new(GameFormSection.Subgame, L.T("Subgame"), ScoringPage),
+		new(GameFormSection.Ties, L.T("Ties"), ScoringPage)
 	];
 
 	[ObservableProperty] private bool subgameAdded;
@@ -213,7 +225,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Whether the game has a cover picture.</summary>
 	public bool HasCover => !string.IsNullOrEmpty(CoverImageUrl);
 	/// <summary>The cover button's text: upload one, or change it.</summary>
-	public string CoverButtonText => HasCover ? "Change cover image" : "Upload cover image";
+	public string CoverButtonText => HasCover ? L.T("Change cover image") : L.T("Upload cover image");
 
 	/// <summary>Whether the game has to be unlocked.</summary>
 	[ObservableProperty]
@@ -241,7 +253,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	}
 
 	/// <summary>The game's scoring type and its numbers.</summary>
-	public ScoringEditor Scoring { get; } = new(ScoringTypeOption.All, "Choose scoring type");
+	public ScoringEditor Scoring { get; } = new(ScoringTypeOption.All, L.T("Choose scoring type"));
 
 	/// <summary>The scoring type that's chosen.</summary>
 	public ScoringType ScoringType => Scoring.ScoringType;
@@ -267,17 +279,17 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>The label above "which score wins", worded for how results are noted.</summary>
 	public string ScoreDirectionTitle => ResultMode switch
 	{
-		ResultMode.Loser => "Who loses a subgame",
-		ResultMode.Ranking => "Who is 1st in a subgame",
-		_ => "Who wins a subgame"
+		ResultMode.Loser => L.T("Who loses a subgame"),
+		ResultMode.Ranking => L.T("Who is 1st in a subgame"),
+		_ => L.T("Who wins a subgame")
 	};
 
 	/// <summary>The dropdown's text while nothing is chosen.</summary>
 	public string ScoreDirectionPrompt => ResultMode switch
 	{
-		ResultMode.Loser => "Choose who loses",
-		ResultMode.Ranking => "Choose who is 1st",
-		_ => "Choose who wins"
+		ResultMode.Loser => L.T("Choose who loses"),
+		ResultMode.Ranking => L.T("Choose who is 1st"),
+		_ => L.T("Choose who wins")
 	};
 
 	/// <summary>The ways of noting a subgame's result, for the picker.</summary>
@@ -359,10 +371,10 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	}
 
 	/// <summary>The duel's own scoring type and numbers, e.g. to 10 while the game goes to 100.</summary>
-	public ScoringEditor DuelScoring { get; } = new(ScoringTypeOption.DuelOptions, "Choose the duel's scoring type", "Duel scoring: ");
+	public ScoringEditor DuelScoring { get; } = new(ScoringTypeOption.DuelOptions, L.T("Choose the duel's scoring type"), L.T("Duel scoring: "));
 
 	/// <summary>Which score wins the duel, for the picker.</summary>
-	public List<string> DuelBestScoreOptions { get; } = ["Highest score wins the duel", "Lowest score wins the duel"];
+	public List<string> DuelBestScoreOptions { get; } = [L.T("Highest score wins the duel"), L.T("Lowest score wins the duel")];
 
 	/// <summary>Null until chosen.</summary>
 	private bool? _duelLowestWins;
@@ -485,25 +497,25 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			if (int.TryParse(text.Trim().Replace('−', '-'), allowNegative ? NumberStyles.AllowLeadingSign : NumberStyles.None,
 					CultureInfo.CurrentCulture, out var value) && (allowNegative || value >= 1))
 				return value;
-			error = $"Enter {what}.";
+			error = L.F("Enter {0}.", what);
 			return null;
 		}
 
 		problem = null;
 		if (_duelEnd is not { } end)
 		{
-			problem = "Choose how the duel ends.";
+			problem = L.T("Choose how the duel ends.");
 			return null;
 		}
 		var basis = new ScoringSettings { LowestWins = lowestWins, DuelEnd = end };
 		basis = end switch
 		{
-			DuelEnd.Score => basis with { EndScore = Number(DuelEndScore, "the score the duel goes to as a whole number", allowNegative: true) },
-			DuelEnd.BestOf => basis with { DuelRounds = Number(DuelRounds, "the number of rounds (1 or more)") ?? 3 },
-			_ => basis with { DuelTurns = Number(DuelTurns, "the number of turns each (1 or more)") ?? 1 }
+			DuelEnd.Score => basis with { EndScore = Number(DuelEndScore, L.T("the score the duel goes to as a whole number"), allowNegative: true) },
+			DuelEnd.BestOf => basis with { DuelRounds = Number(DuelRounds, L.T("the number of rounds (1 or more)")) ?? 3 },
+			_ => basis with { DuelTurns = Number(DuelTurns, L.T("the number of turns each (1 or more)")) ?? 1 }
 		};
 		if (CanHaveDuelMargin && DuelHasMargin)
-			basis = basis with { DuelMargin = Number(DuelMargin, "the lead needed to win (1 or more)") };
+			basis = basis with { DuelMargin = Number(DuelMargin, L.T("the lead needed to win (1 or more)")) };
 		problem = error;
 		return error is null ? basis : null;
 	}
@@ -591,7 +603,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>What players will see, e.g. "Players: 2-6", or what still needs filling in.</summary>
 	public string PlayersPreview => ReadPlayers(out var min, out var max) is { } problem
 		? problem
-		: $"Players: {PubGame.PlayersLabelFor(min, max)}";
+		: L.F("Players: {0}", PubGame.PlayersLabelFor(min, max));
 
 	/// <summary>Shows a minimum and maximum number of players (either can be off).</summary>
 	private void ShowPlayers(int? min, int? max)
@@ -609,21 +621,25 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (HasMinPlayers)
 		{
 			if (!int.TryParse(MinPlayers.Trim(), NumberStyles.None, CultureInfo.CurrentCulture, out var least) || least < 1)
-				return "Enter a whole number (1 or more) for the minimum number of players, or switch it off.";
+				return L.T("Enter a whole number (1 or more) for the minimum number of players, or switch it off.");
 			min = least;
 		}
 		if (HasMaxPlayers)
 		{
 			if (!int.TryParse(MaxPlayers.Trim(), NumberStyles.None, CultureInfo.CurrentCulture, out var most) || most < 1)
-				return "Enter a whole number (1 or more) for the maximum number of players, or switch it off.";
+				return L.T("Enter a whole number (1 or more) for the maximum number of players, or switch it off.");
 			max = most;
 		}
-		return min > max ? "The minimum number of players can't be higher than the maximum." : null;
+		return min > max ? L.T("The minimum number of players can't be higher than the maximum.") : null;
 	}
 
 	/// <summary>What's still missing or went wrong, or that it's saving.</summary>
 	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasStatusMessage))]
 	private string statusMessage = string.Empty;
+
+	/// <summary>There's a message to show above the save button.</summary>
+	public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
 
 	/// <summary>Temporary messages clear themselves (see MessageTimer).</summary>
 	private readonly MessageTimer _statusMessageTimer = new();
@@ -631,21 +647,21 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
 	/// <summary>"New game" or "Edit game".</summary>
-	public string PageTitle => IsEditing ? "Edit game" : "New game";
+	public string PageTitle => IsEditing ? L.T("Edit game") : L.T("New game");
 
 	/// <summary>
 	/// The save button's text: publish or save (admins), or submit for review (moderators).
 	/// </summary>
 	public string SaveButtonText => (IsModerator, IsEditing) switch
 	{
-		(false, false) => "Publish game",
-		(false, true) => "Save changes",
-		(true, false) => "Submit for review",
-		(true, true) => "Submit changes for review"
+		(false, false) => L.T("Publish game"),
+		(false, true) => L.T("Save changes"),
+		(true, false) => L.T("Submit for review"),
+		(true, true) => L.T("Submit changes for review")
 	};
 
 	/// <summary>The delete button's text: delete (admins) or request deletion (moderators).</summary>
-	public string DeleteButtonText => IsModerator ? "Request deletion" : "Delete game";
+	public string DeleteButtonText => IsModerator ? L.T("Request deletion") : L.T("Delete game");
 
 	/// <summary>Only an existing, published game can be deleted (or have its deletion requested).</summary>
 	public bool CanDelete => _editing is not null;
@@ -713,7 +729,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	/// <summary>Everything that can be filled in on the form, as one text, to see whether anything changed.</summary>
 	private string FormSnapshot() => string.Join("\u001F",
-		Name, EditableRulesBlock.ToRulesText(RulesBlocks), CoverImageUrl, IsPaid, Price,
+		Name, EditableRulesBlock.ToRulesText(RulesBlocks), SourceLanguage?.Code, TranslationsSnapshot(), CoverImageUrl, IsPaid, Price,
 		HasMinPlayers, MinPlayers, HasMaxPlayers, MaxPlayers,
 		string.Join(",", SelectedCategoryIds().Order()),
 		Scoring.Snapshot(), _resultModeChosen, ResultMode, _lowestWins,
@@ -736,7 +752,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			{
 				ShowProposal(_request);
 				CanWithdraw = true;
-				ReviewInfo = "Your changes to this game are waiting for review. Submitting again will replace them.";
+				ReviewInfo = L.T("Your changes to this game are waiting for review. Submitting again will replace them.");
 				return;
 			}
 		}
@@ -750,6 +766,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowPlayers(_editing.MinPlayers, _editing.MaxPlayers);
 		SelectCategories(_editing.CategoryIds);
 		ShowAddedSections();
+		ShowLanguages(_editing.SourceLanguage, _editing.Translations);
 	}
 
 	/// <summary>Opens a moderator's review request: fills the form with what they proposed.</summary>
@@ -766,11 +783,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		CanWithdraw = _request.IsWaitingForReview;
 		ReviewInfo = _request.Status switch
 		{
-			ReviewStatus.WaitingForReview => "This request is waiting for review. Submitting again will replace it.",
+			ReviewStatus.WaitingForReview => L.T("This request is waiting for review. Submitting again will replace it."),
 			ReviewStatus.Rejected when !string.IsNullOrWhiteSpace(_request.ReviewNote) =>
-				$"An admin rejected this request: \"{_request.ReviewNote}\". Change what's needed and submit it again.",
-			ReviewStatus.Rejected => "An admin rejected this request. Change what's needed and submit it again.",
-			_ => "This request was approved. Submitting again will send a new request."
+				L.F("An admin rejected this request: \"{0}\". Change what's needed and submit it again.", _request.ReviewNote),
+			ReviewStatus.Rejected => L.T("An admin rejected this request. Change what's needed and submit it again."),
+			_ => L.T("This request was approved. Submitting again will send a new request.")
 		};
 	}
 
@@ -786,6 +803,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		ShowPlayers(request.ProposedMinPlayers, request.ProposedMaxPlayers);
 		SelectCategories(request.ProposedCategoryIdsText.Split(',', StringSplitOptions.RemoveEmptyEntries));
 		ShowAddedSections();
+		ShowLanguages(request.ProposedSourceLanguage, GameTranslation.FromJson(request.ProposedTranslationsText));
 	}
 
 	/// <summary>Loads the category list (called when the page appears; the game may still be loading).</summary>
@@ -844,8 +862,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		var missing = CategoryChoiceGroups.Where(g => g.IsRequired && !g.HasSelection).Select(g => g.Name).ToList();
 		if (missing.Count > 0)
-			return $"Pick at least one category for: {string.Join(", ", missing)}.";
-		return SelectedCategoryIds().Count == 0 ? "Pick at least one category, so players can find the game." : null;
+			return L.F("Pick at least one category for: {0}.", string.Join(", ", missing));
+		return SelectedCategoryIds().Count == 0 ? L.T("Pick at least one category, so players can find the game.") : null;
 	}
 
 	/// <summary>Selects these categories (remembered until the categories have loaded).</summary>
@@ -935,7 +953,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		// Every dropdown needs a choice.
 		if (!Scoring.IsChosen)
 		{
-			StatusMessage = "Choose a scoring type.";
+			StatusMessage = L.T("Choose a scoring type.");
 			return null;
 		}
 		// Not chosen (or Subgame not added): the winner(s) are noted and the highest score wins.
@@ -945,13 +963,13 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		{
 			if (_lowestWins is not { } chosenLowestWins)
 			{
-				StatusMessage = $"{ScoreDirectionPrompt}: the highest or the lowest score.";
+				StatusMessage = L.F("{0}: the highest or the lowest score.", ScoreDirectionPrompt);
 				return null;
 			}
 			(resultMode, lowestWins) = (ResultMode, chosenLowestWins);
 		}
 
-		if (ReadEndScore(HasEndScore, EndScore, "the end score", out var endScore) is { } endProblem)
+		if (ReadEndScore(HasEndScore, EndScore, L.T("the end score"), out var endScore) is { } endProblem)
 		{
 			StatusMessage = endProblem;
 			return null;
@@ -977,17 +995,17 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		{
 			if (!DuelScoring.IsChosen)
 			{
-				StatusMessage = "Duel scoring: choose the duel's scoring type.";
+				StatusMessage = L.T("Duel scoring: choose the duel's scoring type.");
 				return null;
 			}
 			if (_duelLowestWins is not { } duelLowestWins)
 			{
-				StatusMessage = "Duel scoring: choose whether the highest or the lowest score wins the duel.";
+				StatusMessage = L.T("Duel scoring: choose whether the highest or the lowest score wins the duel.");
 				return null;
 			}
 			if (ReadDuelBasis(duelLowestWins, out var duelEndProblem) is not { } duelBasis)
 			{
-				StatusMessage = $"Duel: {duelEndProblem}";
+				StatusMessage = L.F("Duel: {0}", duelEndProblem);
 				return null;
 			}
 			if (DuelScoring.Read(duelBasis, out var duelProblem) is not { } duel)
@@ -1021,7 +1039,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (!has) return null;
 		// Some keyboards type a real minus sign (−) instead of a hyphen.
 		if (!int.TryParse(text.Trim().Replace('−', '-'), NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, out var end))
-			return $"Enter a whole number for {what}, or switch it off.";
+			return L.F("Enter a whole number for {0}, or switch it off.", what);
 		value = end;
 		return null;
 	}
@@ -1062,7 +1080,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		if (IsUploading) return null;
 
 		IsUploading = true;
-		StatusMessage = "Uploading image...";
+		StatusMessage = L.T("Uploading image...");
 		try
 		{
 			var reference = source switch
@@ -1078,7 +1096,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 		catch (HttpRequestException)
 		{
-			StatusMessage = "No connection - couldn't upload the image.";
+			StatusMessage = L.T("No connection - couldn't upload the image.");
 		}
 		catch (Exception ex)
 		{
@@ -1097,20 +1115,20 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		if (!_auth.IsSignedIn)
 		{
-			StatusMessage = "Sign in to create games.";
+			StatusMessage = L.T("Sign in to create games.");
 			return;
 		}
 
 		if (string.IsNullOrWhiteSpace(Name))
 		{
-			StatusMessage = "Give the game a name first.";
+			StatusMessage = L.T("Give the game a name first.");
 			CurrentPage = GeneralPage;
 			return;
 		}
 
 		if (SelectedPriceOption is null)
 		{
-			StatusMessage = "Choose the game's price.";
+			StatusMessage = L.T("Choose the game's price.");
 			CurrentPage = GeneralPage;
 			return;
 		}
@@ -1138,7 +1156,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		var me = _team.Me;
 		if (me is null)
 		{
-			StatusMessage = "Only admins and moderators can create games.";
+			StatusMessage = L.T("Only admins and moderators can create games.");
 			return;
 		}
 
@@ -1164,6 +1182,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			};
 		game.Name = Name.Trim();
 		game.RulesText = EditableRulesBlock.ToRulesText(RulesBlocks);
+		game.SourceLanguage = SourceLanguage?.Code ?? "en";
+		game.Translations = EffectiveTranslations();
 		game.CoverImageUrl = CoverImageUrl;
 		game.ScoringType = ScoringType;
 		// Checked by SaveAsync before saving; deleting keeps the saved settings if the form's are unfinished.
@@ -1186,7 +1206,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		game.PublishedAt ??= DateTime.UtcNow;
 
 		// Cloud first: a change only counts once everyone else can actually see it.
-		StatusMessage = IsEditing ? "Saving..." : "Publishing...";
+		StatusMessage = IsEditing ? L.T("Saving...") : L.T("Publishing...");
 		if (!await TrySaveToCloudAsync(game)) return;
 
 		await _local.SaveGameAsync(game);
@@ -1221,7 +1241,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		var email = TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
 		if (!ReviewRequest.GamesTakenByOthers(waiting, email).TryGetValue(_editing.Id, out var taken)) return false;
 
-		_statusMessageTimer.ShowLasting($"{taken.SubmitterLabel} has already submitted a request for this game, which is waiting for review. You can change the game again once an admin has decided on it, or it's withdrawn.", v => StatusMessage = v);
+		_statusMessageTimer.ShowLasting(L.F("{0} has already submitted a request for this game, which is waiting for review. You can change the game again once an admin has decided on it, or it's withdrawn.", taken.SubmitterLabel), v => StatusMessage = v);
 		return true;
 	}
 
@@ -1236,7 +1256,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		var proposal = FormAsGame(_editing);
 		if (_editing is not null && SameContent(proposal, _editing))
 		{
-			StatusMessage = "Nothing has changed yet - make your changes first, then submit them for review.";
+			StatusMessage = L.T("Nothing has changed yet - make your changes first, then submit them for review.");
 			return;
 		}
 
@@ -1260,13 +1280,13 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		request.ReviewedAt = null;
 		request.ReviewNote = string.Empty;
 
-		StatusMessage = "Submitting for review...";
+		StatusMessage = L.T("Submitting for review...");
 		if (!await TrySaveRequestAsync(request)) return;
 
 		StatusMessage = string.Empty;
 		Finished?.Invoke(this, request.Type == ReviewRequestType.NewGame
-			? $"\"{request.SubjectName}\" has been submitted for review. An admin will decide whether it's published; you'll get the decision in your Inbox."
-			: $"Your changes to \"{request.SubjectName}\" have been submitted for review. Players will keep seeing the current version until an admin approves them; you'll get the decision in your Inbox.");
+			? L.F("\"{0}\" has been submitted for review. An admin will decide whether it's published; you'll get the decision in your Inbox.", request.SubjectName)
+			: L.F("Your changes to \"{0}\" have been submitted for review. Players will keep seeing the current version until an admin approves them; you'll get the decision in your Inbox.", request.SubjectName));
 	}
 
 	/// <summary>Admins: soft delete, the game drops out of every player's library on their next refresh. Moderators: request deletion.</summary>
@@ -1285,7 +1305,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 		var deleted = FormAsGame(_editing);
 		deleted.Status = GameStatus.Deleted;
-		StatusMessage = "Deleting...";
+		StatusMessage = L.T("Deleting...");
 		if (!await TrySaveToCloudAsync(deleted)) return;
 
 		// Keep the saved content, not unsaved edits from the form.
@@ -1302,7 +1322,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 		if (await FindMyWaitingRequestAsync(_editing!.Id, ReviewRequestType.Deletion) is not null)
 		{
-			StatusMessage = "You already requested deletion of this game - it's waiting for review.";
+			StatusMessage = L.T("You already requested deletion of this game - it's waiting for review.");
 			return;
 		}
 
@@ -1317,11 +1337,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			SubmittedByName = _auth.CurrentUser.DisplayName
 		};
 
-		StatusMessage = "Requesting deletion...";
+		StatusMessage = L.T("Requesting deletion...");
 		if (!await TrySaveRequestAsync(request)) return;
 
 		StatusMessage = string.Empty;
-		Finished?.Invoke(this, $"You've requested the deletion of \"{_editing.Name}\". The game stays playable until an admin approves it; you'll get the decision in your Inbox.");
+		Finished?.Invoke(this, L.F("You've requested the deletion of \"{0}\". The game stays playable until an admin approves it; you'll get the decision in your Inbox.", _editing.Name));
 	}
 
 	/// <summary>Takes back the moderator's request while it's still waiting for review.</summary>
@@ -1329,19 +1349,19 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		if (_request is not { IsWaitingForReview: true }) return;
 
-		StatusMessage = "Withdrawing...";
+		StatusMessage = L.T("Withdrawing...");
 		try
 		{
 			await _cloud.WithdrawReviewRequestAsync(_request);
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return;
 		}
 
 		StatusMessage = string.Empty;
-		Finished?.Invoke(this, "Request withdrawn.");
+		Finished?.Invoke(this, L.T("Request withdrawn."));
 	}
 
 	/// <summary>
@@ -1360,7 +1380,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		a.Name == b.Name && RulesImages.Normalize(a.RulesText) == RulesImages.Normalize(b.RulesText) && a.CoverImageUrl == b.CoverImageUrl
 		&& a.ScoringType == b.ScoringType && a.ScoringSettings == b.ScoringSettings && a.IsPaid == b.IsPaid && a.Price == b.Price
 		&& a.MinPlayers == b.MinPlayers && a.MaxPlayers == b.MaxPlayers
-		&& a.CategoryIds.ToHashSet().SetEquals(b.CategoryIds);
+		&& a.CategoryIds.ToHashSet().SetEquals(b.CategoryIds)
+		&& SameTranslations(a, b);
 
 	/// <summary>
 	/// Saves the game in the cloud; false (with the reason on the page) when that didn't work.
@@ -1374,7 +1395,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 		catch (HttpRequestException)
 		{
-			StatusMessage = "No connection - try again when you're online.";
+			StatusMessage = L.T("No connection - try again when you're online.");
 		}
 		catch (Exception ex)
 		{
@@ -1395,7 +1416,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		}
 		catch (HttpRequestException)
 		{
-			StatusMessage = "No connection - try again when you're online.";
+			StatusMessage = L.T("No connection - try again when you're online.");
 		}
 		catch (Exception ex)
 		{

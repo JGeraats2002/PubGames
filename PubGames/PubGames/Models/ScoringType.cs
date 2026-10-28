@@ -42,13 +42,13 @@ public sealed record ScoringTypeOption(ScoringType Type)
 	/// <summary>What a scoring type is called in the app.</summary>
 	public static string LabelFor(ScoringType type) => type switch
 	{
-		ScoringType.PlusMinus => "Plus / minus",
-		ScoringType.ManualPlusMinus => "Manual plus / minus",
-		ScoringType.TypedScore => "Type in the score",
-		ScoringType.PointTally => "Point tally",
-		ScoringType.SipCounter => "Sip counter",
-		ScoringType.WinLoseRounds => "Win/lose rounds",
-		ScoringType.Ranking => "Ranking",
-		_ => "Custom"
+		ScoringType.PlusMinus => L.T("Plus / minus"),
+		ScoringType.ManualPlusMinus => L.T("Manual plus / minus"),
+		ScoringType.TypedScore => L.T("Type in the score"),
+		ScoringType.PointTally => L.T("Point tally"),
+		ScoringType.SipCounter => L.T("Sip counter"),
+		ScoringType.WinLoseRounds => L.T("Win/lose rounds"),
+		ScoringType.Ranking => L.T("Ranking"),
+		_ => L.T("Custom")
 	};
 }

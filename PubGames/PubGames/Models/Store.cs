@@ -17,19 +17,19 @@ public static class Prices
 	public static string Format(decimal euros) => euros.ToString("C", Euro);
 
 	/// <summary>What an admin can choose for a game: free or one of the fixed prices.</summary>
-	public static IReadOnlyList<GamePriceOption> GameOptions { get; } =
+	public static IReadOnlyList<GamePriceOption> GameOptions =>
 	[
-		new(0m, "Free"),
-		new(0.99m, $"{Format(0.99m)} - standard game"),
-		new(1.99m, $"{Format(1.99m)} - big game")
+		new(0m, L.T("Free")),
+		new(0.99m, L.F("{0} - standard game", Format(0.99m))),
+		new(1.99m, L.F("{0} - big game", Format(1.99m)))
 	];
 
 	/// <summary>The Pub Games Pass: every paid game, for as long as it runs.</summary>
-	public static IReadOnlyList<PassPlan> PassPlans { get; } =
+	public static IReadOnlyList<PassPlan> PassPlans =>
 	[
-		new("week", "Week", 0.99m),
-		new("month", "Month", 2.99m),
-		new("year", "Year", 24.99m)
+		new("week", L.T("Week"), 0.99m),
+		new("month", L.T("Month"), 2.99m),
+		new("year", L.T("Year"), 24.99m)
 	];
 
 	public const string PassProductId = "pubgames_pass";

@@ -33,14 +33,14 @@ public sealed record StartRotationOption(StartRotation Rotation)
 	/// <summary>What a choice of who starts the next subgame is called in the app.</summary>
 	public static string LabelFor(StartRotation rotation) => rotation switch
 	{
-		StartRotation.NextPlayer => "The next player (one seat on)",
-		StartRotation.Winner => "The winner of the last subgame",
-		StartRotation.LeftOfWinner => "The player left of the winner",
-		StartRotation.RightOfWinner => "The player right of the winner",
-		StartRotation.Loser => "The loser of the last subgame",
-		StartRotation.LeftOfLoser => "The player left of the loser",
-		StartRotation.RightOfLoser => "The player right of the loser",
-		_ => "Nobody changes seats"
+		StartRotation.NextPlayer => L.T("The next player (one seat on)"),
+		StartRotation.Winner => L.T("The winner of the last subgame"),
+		StartRotation.LeftOfWinner => L.T("The player left of the winner"),
+		StartRotation.RightOfWinner => L.T("The player right of the winner"),
+		StartRotation.Loser => L.T("The loser of the last subgame"),
+		StartRotation.LeftOfLoser => L.T("The player left of the loser"),
+		StartRotation.RightOfLoser => L.T("The player right of the loser"),
+		_ => L.T("Nobody changes seats")
 	};
 }
 
@@ -55,7 +55,7 @@ public enum EndMode
 public sealed record EndModeOption(EndMode Mode)
 {
 	/// <summary>How a subgame ends at its end score, as the picker shows it.</summary>
-	public string Label => Mode == EndMode.Automatic ? "Automatically" : "The players end it themselves";
+	public string Label => Mode == EndMode.Automatic ? L.T("Automatically") : L.T("The players end it themselves");
 
 	/// <summary>The Picker shows this.</summary>
 	public override string ToString() => Label;

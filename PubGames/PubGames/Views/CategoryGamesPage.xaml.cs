@@ -18,7 +18,7 @@ public partial class CategoryGamesPage : ContentPage
 		InfoButton.Attach(this, () => Help.CategoryGames);
 		_vm.Finished += async (_, message) =>
 		{
-			await DisplayAlertAsync("Saved", message, "OK");
+			await DisplayAlertAsync(L.T("Saved"), message, "OK");
 			await Shell.Current.GoToAsync("..");
 		};
 	}

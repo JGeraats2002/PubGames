@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.ProfilePage"
              x:DataType="vm:AccountViewModel"
-             Title="Profile">
+             Title="{loc:T Profile_Profile}">
 
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="12">
@@ -34,18 +35,18 @@
 						</Border.StrokeShape>
 						<Label Text="{Binding RoleName}" TextColor="White" FontSize="12" />
 					</Border>
-					<Button Text="Change picture" Command="{Binding ChangePhotoCommand}" HorizontalOptions="Start"
+					<Button Text="{loc:T Profile_ChangePicture}" Command="{Binding ChangePhotoCommand}" HorizontalOptions="Start"
 					        HeightRequest="48" Padding="12,0" FontSize="13"
 					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 					        BorderColor="{StaticResource Border}" BorderWidth="1" />
 				</VerticalStackLayout>
 			</Grid>
 
-			<Label Text="Name" FontSize="12" TextColor="{StaticResource TextSecondary}" />
-			<Entry Text="{Binding ProfileName}" Placeholder="Your name" MaxLength="40" />
-			<Label Text="Nickname" FontSize="12" TextColor="{StaticResource TextSecondary}" />
-			<Entry Text="{Binding Nickname}" Placeholder="What players call you" MaxLength="30" />
-			<Button Text="Save profile" Command="{Binding SaveProfileCommand}" />
+			<Label Text="{loc:T Profile_Name}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Text="{Binding ProfileName}" Placeholder="{loc:T Profile_YourName}" MaxLength="40" />
+			<Label Text="{loc:T Profile_Nickname}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Entry Text="{Binding Nickname}" Placeholder="{loc:T Profile_WhatPlayersCallYou}" MaxLength="30" />
+			<Button Text="{loc:T Profile_SaveProfile}" Command="{Binding SaveProfileCommand}" />
 
 			<!-- The personal code: others add you with it, so the games count in your stats. -->
 			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" Margin="0,6,0,0">
@@ -54,10 +55,10 @@
 				</Border.StrokeShape>
 				<Grid ColumnDefinitions="*,Auto">
 					<VerticalStackLayout VerticalOptions="Center">
-						<Label Text="Your player code" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{loc:T Profile_YourPlayerCode}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 						<Label Text="{Binding Code}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
 					</VerticalStackLayout>
-					<Button Grid.Column="1" Text="Copy" Command="{Binding CopyCodeCommand}" VerticalOptions="Center"
+					<Button Grid.Column="1" Text="{loc:T Profile_Copy}" Command="{Binding CopyCodeCommand}" VerticalOptions="Center"
 					        HeightRequest="48" Padding="14,0" FontSize="13" />
 				</Grid>
 			</Border>
@@ -69,13 +70,13 @@
 				</Border.StrokeShape>
 				<Grid ColumnDefinitions="*,Auto">
 					<VerticalStackLayout VerticalOptions="Center">
-						<Label Text="Friend code" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{loc:T Profile_FriendCode}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 						<Label Text="{Binding FriendCode}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
 						<Label Text="{Binding FriendCodeValidity}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
 					</VerticalStackLayout>
 					<VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
-						<Button Text="Copy" Command="{Binding CopyFriendCodeCommand}" HeightRequest="48" Padding="14,0" FontSize="13" />
-						<Button Text="New code" Command="{Binding RenewFriendCodeCommand}" HeightRequest="48" Padding="14,0" FontSize="13"
+						<Button Text="{loc:T Profile_Copy}" Command="{Binding CopyFriendCodeCommand}" HeightRequest="48" Padding="14,0" FontSize="13" />
+						<Button Text="{loc:T Profile_NewCode}" Command="{Binding RenewFriendCodeCommand}" HeightRequest="48" Padding="14,0" FontSize="13"
 						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 						        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 					</VerticalStackLayout>

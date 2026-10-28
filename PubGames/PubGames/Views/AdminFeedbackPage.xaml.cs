@@ -31,18 +31,19 @@ public partial class AdminFeedbackPage : ContentPage
 	{
 		if (sender is not BindableObject { BindingContext: Feedback item }) return;
 
-		const string reply = "Only reply";
+		var reply = L.T("Only reply");
+		// By the choice as shown ("Mark as: Resolved", in the app's language).
 		var statuses = new[] { FeedbackStatus.InProgress, FeedbackStatus.Resolved, FeedbackStatus.Declined, FeedbackStatus.New }
 			.Where(s => s != item.Status)
-			.ToDictionary(Feedback.StatusLabel);
-		var choice = await DisplayActionSheetAsync("Handle feedback", "Cancel", null,
-			statuses.Keys.Select(k => $"Mark as: {k}").Append(reply).ToArray());
-		if (choice is null || choice == "Cancel") return;
+			.ToDictionary(s => L.F("Mark as: {0}", Feedback.StatusLabel(s)));
+		var choice = await DisplayActionSheetAsync(L.T("Handle feedback"), L.T("Cancel"), null,
+			statuses.Keys.Append(reply).ToArray());
+		if (choice is null || choice == L.T("Cancel")) return;
 
-		var status = choice == reply ? item.Status : statuses[choice["Mark as: ".Length..]];
-		var text = await DisplayPromptAsync("Reply to the sender",
-			"Optional: the sender sees this with their feedback. Leave it empty for no reply.",
-			"Save", "Cancel", maxLength: Feedback.MaxReplyLength, keyboard: Keyboard.Chat, initialValue: item.Reply ?? string.Empty);
+		var status = choice == reply ? item.Status : statuses[choice];
+		var text = await DisplayPromptAsync(L.T("Reply to the sender"),
+			L.T("Optional: the sender sees this with their feedback. Leave it empty for no reply."),
+			L.T("Save"), L.T("Cancel"), maxLength: Feedback.MaxReplyLength, keyboard: Keyboard.Chat, initialValue: item.Reply ?? string.Empty);
 		if (text is null) return; // cancelled
 		await _vm.UpdateAsync(item, status, text);
 	}
@@ -58,7 +59,7 @@ public partial class AdminFeedbackPage : ContentPage
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
 		if (sender is not BindableObject { BindingContext: Feedback item }) return;
-		if (await DisplayAlertAsync("Delete feedback?", "It's removed for everyone, also for the sender. This can't be undone.", "Delete", "Keep"))
+		if (await DisplayAlertAsync(L.T("Delete feedback?"), L.T("It's removed for everyone, also for the sender. This can't be undone."), L.T("Delete"), L.T("Keep")))
 			await _vm.DeleteAsync(item);
 	}
 }

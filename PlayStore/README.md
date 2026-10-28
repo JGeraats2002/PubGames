@@ -52,6 +52,7 @@ EVERYTHING IN ONE PLACE
 • See who wins, loses and ties the most
 • Save a game and continue later
 • Miss a game? Suggest it right from the app
+• In 9 languages, and games are translated into yours
 
 Most games are free. Extra games can be unlocked one by one, or all at once with the Pub Games Pass (weekly, monthly or yearly).
 
@@ -80,10 +81,13 @@ ALLES OP ÉÉN PLEK
 • Zie wie het vaakst wint, verliest of gelijkspeelt
 • Sla een spel op en speel later verder
 • Mis je een spel? Stel het voor vanuit de app
+• In 9 talen, en spellen worden vertaald naar jouw taal
 
 De meeste spellen zijn gratis. Extra spellen ontgrendel je los, of allemaal tegelijk met de Pub Games Pass (per week, maand of jaar).
 
 Omdat de app ook drankspellen bevat, is Pub Games alleen voor volwassenen (18+). Drink met mate, ken je grenzen en rijd nooit onder invloed.
+
+**Andere talen:** zie `listings.md` (FR, DE, ES, IT, PT, ZH, AR).
 
 **Afbeeldingen:**
 - App-icoon: `icon-512.png`

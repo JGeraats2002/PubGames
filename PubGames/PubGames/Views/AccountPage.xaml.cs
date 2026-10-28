@@ -39,6 +39,10 @@ public partial class AccountPage : ContentPage
 	private async void OnBlockedTapped(object? sender, TappedEventArgs e) =>
 		await Shell.Current.GoToAsync(nameof(BlockedPlayersPage));
 
+	/// <summary>Opens the language screen, to show the app in another language.</summary>
+	private async void OnLanguageTapped(object? sender, TappedEventArgs e) =>
+		await Shell.Current.GoToAsync(nameof(LanguagePage));
+
 	/// <summary>Opens Feedback, to send feedback to the admins.</summary>
 	private async void OnFeedbackTapped(object? sender, TappedEventArgs e) =>
 		await Shell.Current.GoToAsync(nameof(FeedbackPage));
@@ -49,25 +53,25 @@ public partial class AccountPage : ContentPage
 	/// </summary>
 	private async void OnDeleteAccountClicked(object? sender, EventArgs e)
 	{
-		const string delete = "Delete account";
-		var choice = await ChoicePopup.AskAsync(this, "Delete your account?",
-			"Your profile, player code, stats, bought games, feedback and the players and games on this phone are deleted for good. "
-			+ "A running Pub Games Pass isn't stopped by this: cancel it in Google Play first (Account > Pub Games Pass > Manage subscription).",
-			"Cancel", delete);
+		var delete = L.T("Delete account");
+		var choice = await ChoicePopup.AskAsync(this, L.T("Delete your account?"),
+			L.T("Your profile, player code, stats, bought games, feedback and the players and games on this phone are deleted for good. ")
+			+ L.T("A running Pub Games Pass isn't stopped by this: cancel it in Google Play first (Account > Pub Games Pass > Manage subscription)."),
+			L.T("Cancel"), delete);
 		if (choice != delete) return;
 
-		var typed = await DisplayPromptAsync("Are you sure?", "Type DELETE to delete your account. This can't be undone.",
-			"Delete", "Cancel", placeholder: "DELETE", maxLength: 6, keyboard: Keyboard.Text);
+		var typed = await DisplayPromptAsync(L.T("Are you sure?"), L.T("Type DELETE to delete your account. This can't be undone."),
+			L.T("Delete"), L.T("Cancel"), placeholder: "DELETE", maxLength: 6, keyboard: Keyboard.Text);
 		if (typed?.Trim().ToUpperInvariant() != "DELETE") return;
 
 		if (await _vm.DeleteAccountAsync() is { } problem)
-			await DisplayAlertAsync("Account not deleted", problem, "OK");
+			await DisplayAlertAsync(L.T("Account not deleted"), problem, "OK");
 	}
 
 	/// <summary>Signs out after asking, so it doesn't happen by a mistap.</summary>
 	private async void OnSignOutClicked(object? sender, EventArgs e)
 	{
-		if (await DisplayAlertAsync("Sign out?", "You can sign in again with any Google account.", "Sign out", "Cancel"))
+		if (await DisplayAlertAsync(L.T("Sign out?"), L.T("You can sign in again with any Google account."), L.T("Sign out"), L.T("Cancel")))
 			await _vm.SignOutCommand.ExecuteAsync(null);
 	}
 }

@@ -116,7 +116,7 @@ public class StatsService(ILocalDatabaseService local, FirestoreClient firestore
 			return null;
 		return new PlayedGame(
 			f.GetValueOrDefault("gameId") as string ?? string.Empty,
-			f.GetValueOrDefault("gameName") as string ?? "Game",
+			f.GetValueOrDefault("gameName") as string ?? L.T("Game"),
 			f.GetValueOrDefault("playedAt") as DateTime? ?? DateTime.MinValue,
 			outcome);
 	}

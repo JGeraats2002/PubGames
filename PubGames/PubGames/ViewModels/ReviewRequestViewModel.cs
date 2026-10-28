@@ -106,7 +106,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 
 	/// <summary>The approve button's text, for what approving does.</summary>
 	[ObservableProperty]
-	private string approveButtonText = "Approve";
+	private string approveButtonText = L.T("Approve");
 
 	/// <summary>Whether it can be approved (e.g. not when the game no longer exists).</summary>
 	[ObservableProperty]
@@ -122,7 +122,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	partial void OnStatusMessageChanged(string value) => _statusMessageTimer.Shown(value, () => StatusMessage, v => StatusMessage = v);
 
 	/// <summary>Who sent the request, for the confirmation questions.</summary>
-	public string SubmitterLabel => _request?.SubmitterLabel ?? "the moderator";
+	public string SubmitterLabel => _request?.SubmitterLabel ?? L.T("the moderator");
 
 	/// <summary>
 	/// Gets the services it works with - the phone's database, cloud sync, the permissions, the sign-in, the
@@ -151,7 +151,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		_request = await _local.GetReviewRequestAsync(requestId);
 		if (_request is null)
 		{
-			_statusMessageTimer.ShowLasting("This request no longer exists - it may have been withdrawn.", v => StatusMessage = v);
+			_statusMessageTimer.ShowLasting(L.T("This request no longer exists - it may have been withdrawn."), v => StatusMessage = v);
 			return;
 		}
 
@@ -184,36 +184,36 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		IsReadOnly = !(_team.Me is { } me && _permissions.CanReviewRequests(me));
 		_category = _allCategories.FirstOrDefault(c => c.Id == r.CategoryId);
 		_group = _allGroups.FirstOrDefault(g => g.Id == r.CategoryId);
-		const string categoryGone = "This category no longer exists, so this request can only be rejected.";
-		const string groupGone = "This main category no longer exists, so this request can only be rejected.";
+		var categoryGone = L.T("This category no longer exists, so this request can only be rejected.");
+		var groupGone = L.T("This main category no longer exists, so this request can only be rejected.");
 		var gameGone = _current is null or { Status: GameStatus.Deleted };
 
 		switch (r.Type)
 		{
 			case ReviewRequestType.NewGame:
-				Headline = $"{r.SubmitterLabel} wants to add a new game: \"{r.ProposedName}\".";
-				PreviewTitle = "How it will look for players";
+				Headline = L.F("{0} wants to add a new game: \"{1}\".", r.SubmitterLabel, r.ProposedName);
+				PreviewTitle = L.T("How it will look for players");
 				Preview = r.ProposedGame(null);
-				ApproveButtonText = "Approve and publish";
+				ApproveButtonText = L.T("Approve and publish");
 				CanApprove = true;
 				break;
 
 			case ReviewRequestType.GameChanges:
-				Headline = $"{r.SubmitterLabel} wants to change \"{_current?.Name ?? r.SubjectName}\".";
-				PreviewTitle = "How it will look for players";
+				Headline = L.F("{0} wants to change \"{1}\".", r.SubmitterLabel, _current?.Name ?? r.SubjectName);
+				PreviewTitle = L.T("How it will look for players");
 				Preview = r.ProposedGame(_current);
 				Changes = gameGone ? [] : DescribeChanges(_current!, Preview);
-				ApproveButtonText = "Approve changes";
+				ApproveButtonText = L.T("Approve changes");
 				CanApprove = !gameGone;
 				_proposed = Preview;
 				CanSwitch = !gameGone;
 				break;
 
 			case ReviewRequestType.Deletion:
-				Headline = $"{r.SubmitterLabel} wants to delete \"{_current?.Name ?? r.SubjectName}\" from every player's library.";
-				PreviewTitle = "The game that would be deleted";
+				Headline = L.F("{0} wants to delete \"{1}\" from every player's library.", r.SubmitterLabel, _current?.Name ?? r.SubjectName);
+				PreviewTitle = L.T("The game that would be deleted");
 				Preview = _current;
-				ApproveButtonText = "Approve deletion";
+				ApproveButtonText = L.T("Approve deletion");
 				CanApprove = !gameGone;
 				break;
 
@@ -222,67 +222,67 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 				var problem = _categories.ValidateNewName(r.ProposedName, r.ProposedGroupId ?? string.Empty, _allCategories)
 					// Also requests from before main categories existed, which have none.
 					?? (group is null && _allGroups.Count > 0
-						? "The main category it was proposed for doesn't exist (any more). Reject it and ask for a new proposal."
+						? L.T("The main category it was proposed for doesn't exist (any more). Reject it and ask for a new proposal.")
 						: null);
 				Headline = group is null
-					? $"{r.SubmitterLabel} wants to add the category \"{r.ProposedName}\"."
-					: $"{r.SubmitterLabel} wants to add the category \"{r.ProposedName}\" to the main category \"{group.Name}\".";
-				Changes = [problem ?? "After approving, you'll get a request to choose which games belong in it."];
-				ApproveButtonText = "Approve category";
+					? L.F("{0} wants to add the category \"{1}\".", r.SubmitterLabel, r.ProposedName)
+					: L.F("{0} wants to add the category \"{1}\" to the main category \"{2}\".", r.SubmitterLabel, r.ProposedName, group.Name);
+				Changes = [problem ?? L.T("After approving, you'll get a request to choose which games belong in it.")];
+				ApproveButtonText = L.T("Approve category");
 				CanApprove = problem is null;
 				break;
 
 			case ReviewRequestType.NewCategoryGroup:
 				var groupProblem = _categories.ValidateNewGroupName(r.ProposedName, _allGroups);
-				Headline = $"{r.SubmitterLabel} wants to add the main category \"{r.ProposedName}\".";
-				Changes = [groupProblem ?? "After approving, add categories to it on the Categories page. Once it has categories, every game needs at least one of them."];
-				ApproveButtonText = "Approve main category";
+				Headline = L.F("{0} wants to add the main category \"{1}\".", r.SubmitterLabel, r.ProposedName);
+				Changes = [groupProblem ?? L.T("After approving, add categories to it on the Categories page. Once it has categories, every game needs at least one of them.")];
+				ApproveButtonText = L.T("Approve main category");
 				CanApprove = groupProblem is null;
 				break;
 
 			case ReviewRequestType.RenameCategory:
-				Headline = $"{r.SubmitterLabel} wants to rename the category \"{_category?.Name ?? r.SubjectName}\" to \"{r.ProposedName}\".";
-				ShowCategoryChange("Approve rename", _category is null ? categoryGone
+				Headline = L.F("{0} wants to rename the category \"{1}\" to \"{2}\".", r.SubmitterLabel, _category?.Name ?? r.SubjectName, r.ProposedName);
+				ShowCategoryChange(L.T("Approve rename"), _category is null ? categoryGone
 					: _categories.ValidateNewName(r.ProposedName, _category.GroupId, _allCategories.Where(c => c.Id != _category.Id)),
-					"Games keep the category; only its name changes.");
+					L.T("Games keep the category; only its name changes."));
 				break;
 
 			case ReviewRequestType.MoveCategory:
 				var target = _allGroups.FirstOrDefault(g => g.Id == r.ProposedGroupId);
-				Headline = $"{r.SubmitterLabel} wants to move the category \"{_category?.Name ?? r.SubjectName}\" to the main category \"{target?.Name ?? r.ProposedName}\".";
-				ShowCategoryChange("Approve move", _category is null ? categoryGone
-					: target is null ? "The main category it should move to no longer exists, so this request can only be rejected."
+				Headline = L.F("{0} wants to move the category \"{1}\" to the main category \"{2}\".", r.SubmitterLabel, _category?.Name ?? r.SubjectName, target?.Name ?? r.ProposedName);
+				ShowCategoryChange(L.T("Approve move"), _category is null ? categoryGone
+					: target is null ? L.T("The main category it should move to no longer exists, so this request can only be rejected.")
 					: _categories.ValidateNewName(_category.Name, target.Id, _allCategories.Where(c => c.Id != _category.Id)),
-					"Games keep the category; it's listed under the other main category.");
+					L.T("Games keep the category; it's listed under the other main category."));
 				break;
 
 			case ReviewRequestType.DeleteCategory:
-				Headline = $"{r.SubmitterLabel} wants to delete the category \"{_category?.Name ?? r.SubjectName}\".";
-				ShowCategoryChange("Approve deletion", _category is null ? categoryGone : null,
-					"The category is taken off every game it's in. This can't be undone.");
+				Headline = L.F("{0} wants to delete the category \"{1}\".", r.SubmitterLabel, _category?.Name ?? r.SubjectName);
+				ShowCategoryChange(L.T("Approve deletion"), _category is null ? categoryGone : null,
+					L.T("The category is taken off every game it's in. This can't be undone."));
 				break;
 
 			case ReviewRequestType.RenameCategoryGroup:
-				Headline = $"{r.SubmitterLabel} wants to rename the main category \"{_group?.Name ?? r.SubjectName}\" to \"{r.ProposedName}\".";
-				ShowCategoryChange("Approve rename", _group is null ? groupGone
+				Headline = L.F("{0} wants to rename the main category \"{1}\" to \"{2}\".", r.SubmitterLabel, _group?.Name ?? r.SubjectName, r.ProposedName);
+				ShowCategoryChange(L.T("Approve rename"), _group is null ? groupGone
 					: _categories.ValidateNewGroupName(r.ProposedName, _allGroups.Where(g => g.Id != _group.Id)),
-					"Its categories stay as they are.");
+					L.T("Its categories stay as they are."));
 				break;
 
 			case ReviewRequestType.DeleteCategoryGroup:
 				var inGroup = _allCategories.Where(c => c.GroupId == r.CategoryId).Select(c => c.Name).ToList();
-				Headline = $"{r.SubmitterLabel} wants to delete the main category \"{_group?.Name ?? r.SubjectName}\".";
-				ShowCategoryChange("Approve deletion", _group is null ? groupGone
-					: _allGroups.Count <= 1 ? "This is the last main category, so it can't be deleted."
+				Headline = L.F("{0} wants to delete the main category \"{1}\".", r.SubmitterLabel, _group?.Name ?? r.SubjectName);
+				ShowCategoryChange(L.T("Approve deletion"), _group is null ? groupGone
+					: _allGroups.Count <= 1 ? L.T("This is the last main category, so it can't be deleted.")
 					: null,
 					inGroup.Count == 0
-						? "It has no categories. This can't be undone."
-						: $"Its categories ({string.Join(", ", inGroup)}) are deleted too and taken off every game. This can't be undone.");
+						? L.T("It has no categories. This can't be undone.")
+						: L.F("Its categories ({0}) are deleted too and taken off every game. This can't be undone.", string.Join(", ", inGroup)));
 				break;
 		}
 
 		if (gameGone && r.Type is ReviewRequestType.GameChanges or ReviewRequestType.Deletion)
-			_statusMessageTimer.ShowLasting("This game no longer exists, so this request can only be rejected.", v => StatusMessage = v);
+			_statusMessageTimer.ShowLasting(L.T("This game no longer exists, so this request can only be rejected."), v => StatusMessage = v);
 
 		ShowPreviewDetails();
 	}
@@ -303,7 +303,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 
 		ShowingOriginal = original;
 		Preview = original ? _current : _proposed;
-		PreviewTitle = original ? "The game as players see it now" : "How it will look for players";
+		PreviewTitle = original ? L.T("The game as players see it now") : L.T("How it will look for players");
 		ShowPreviewDetails();
 	}
 
@@ -318,7 +318,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - the message wasn't sent." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - the message wasn't sent.") : ex.Message;
 			return false;
 		}
 	}
@@ -341,32 +341,32 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	{
 		var changes = new List<string>();
 		if (before.Name != after.Name)
-			changes.Add($"Name: \"{before.Name}\" → \"{after.Name}\"");
+			changes.Add(L.F("Name: \"{0}\" → \"{1}\"", before.Name, after.Name));
 		if (before.CoverImageUrl != after.CoverImageUrl)
-			changes.Add(string.IsNullOrEmpty(before.CoverImageUrl) ? "Cover image: added"
-				: string.IsNullOrEmpty(after.CoverImageUrl) ? "Cover image: removed"
-				: "Cover image: replaced");
+			changes.Add(string.IsNullOrEmpty(before.CoverImageUrl) ? L.T("Cover image: added")
+				: string.IsNullOrEmpty(after.CoverImageUrl) ? L.T("Cover image: removed")
+				: L.T("Cover image: replaced"));
 		if (before.IsPaid != after.IsPaid || before.Price != after.Price)
-			changes.Add($"Price: {before.PriceLabel} → {after.PriceLabel}");
+			changes.Add(L.F("Price: {0} → {1}", before.PriceLabel, after.PriceLabel));
 		if (before.ScoringType != after.ScoringType || before.ScoringSettings != after.ScoringSettings)
-			changes.Add($"Scoring: {before.ScoringLabel} → {after.ScoringLabel}");
+			changes.Add(L.F("Scoring: {0} → {1}", before.ScoringLabel, after.ScoringLabel));
 		if (before.MinPlayers != after.MinPlayers || before.MaxPlayers != after.MaxPlayers)
-			changes.Add($"Players: {before.PlayersLabel} → {after.PlayersLabel}");
+			changes.Add(L.F("Players: {0} → {1}", before.PlayersLabel, after.PlayersLabel));
 		if (!before.CategoryIds.ToHashSet().SetEquals(after.CategoryIds))
 		{
 			var old = _categories.LabelFor(before.CategoryIds, _allCategories);
-			changes.Add($"Categories: {(old.Length == 0 ? "none" : old)} → {_categories.LabelFor(after.CategoryIds, _allCategories)}");
+			changes.Add(L.F("Categories: {0} → {1}", (old.Length == 0 ? L.T("none") : old), _categories.LabelFor(after.CategoryIds, _allCategories)));
 		}
 		if (before.RulesText != after.RulesText)
 		{
 			var picturesBefore = RulesBlock.Parse(before.RulesText).Count(b => b.IsImage);
 			var picturesAfter = RulesBlock.Parse(after.RulesText).Count(b => b.IsImage);
 			changes.Add(picturesBefore == picturesAfter
-				? "How to play: text changed"
-				: $"How to play: text changed, pictures {picturesBefore} → {picturesAfter}");
+				? L.T("How to play: text changed")
+				: L.F("How to play: text changed, pictures {0} → {1}", picturesBefore, picturesAfter));
 		}
 		if (changes.Count == 0)
-			changes.Add("Nothing differs from the current version any more.");
+			changes.Add(L.T("Nothing differs from the current version any more."));
 		return changes;
 	}
 
@@ -378,7 +378,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	{
 		if (_request is null || !IsAllowed()) return;
 
-		StatusMessage = "Approving...";
+		StatusMessage = L.T("Approving...");
 		try
 		{
 			// The change first: if that fails, the request stays waiting and can be approved again.
@@ -442,22 +442,22 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return;
 		}
 
-		var informed = await TellModeratorAsync($"Your request \"{_request.Summary}\" was approved. " + _request.Type switch
+		var informed = await TellModeratorAsync(L.F("Your request \"{0}\" was approved. ", _request.Summary) + _request.Type switch
 		{
-			ReviewRequestType.NewCategory => "The category now exists; an admin will add games to it.",
-			ReviewRequestType.NewCategoryGroup => "The main category now exists; categories can be added to it.",
-			ReviewRequestType.Deletion => "The game has been removed from every player's library.",
-			ReviewRequestType.NewGame or ReviewRequestType.GameChanges => "Players can now see it.",
-			_ => "The change has been made."
+			ReviewRequestType.NewCategory => L.T("The category now exists; an admin will add games to it."),
+			ReviewRequestType.NewCategoryGroup => L.T("The main category now exists; categories can be added to it."),
+			ReviewRequestType.Deletion => L.T("The game has been removed from every player's library."),
+			ReviewRequestType.NewGame or ReviewRequestType.GameChanges => L.T("Players can now see it."),
+			_ => L.T("The change has been made.")
 		});
 		Finished?.Invoke(this, _request.Type switch
 		{
-			ReviewRequestType.NewCategory => "Category added. You'll find a request to add games to it on the Requests page." + informed,
-			ReviewRequestType.NewCategoryGroup => "Main category added. Add categories to it on the Categories page." + informed,
+			ReviewRequestType.NewCategory => L.T("Category added. You'll find a request to add games to it on the Requests page.") + informed,
+			ReviewRequestType.NewCategoryGroup => L.T("Main category added. Add categories to it on the Categories page.") + informed,
 			_ => informed.TrimStart()
 		});
 	}
@@ -467,7 +467,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	{
 		if (_request is null || !IsAllowed()) return;
 
-		StatusMessage = "Rejecting...";
+		StatusMessage = L.T("Rejecting...");
 		try
 		{
 			await RecordDecisionAsync(ReviewStatus.Rejected, reason);
@@ -475,13 +475,13 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		catch (Exception ex)
 		{
 			_request.Status = ReviewStatus.WaitingForReview;
-			StatusMessage = ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message;
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return;
 		}
 
 		var informed = await TellModeratorAsync(
-			$"Your request \"{_request.Summary}\" was rejected.\n\nReason: {reason}" +
-			(_request.HasGameProposal ? "\n\nTap \"Edit and submit again\" to change it and send it back for review." : string.Empty),
+			L.F("Your request \"{0}\" was rejected.\n\nReason: {1}", _request.Summary, reason) +
+			(_request.HasGameProposal ? L.T("\n\nTap \"Edit and submit again\" to change it and send it back for review.") : string.Empty),
 			offersResubmit: _request.HasGameProposal);
 		Finished?.Invoke(this, informed.TrimStart());
 	}
@@ -513,7 +513,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		}
 		catch (Exception)
 		{
-			return $" The decision is saved, but {SubmitterLabel} couldn't be sent a message about it - you can message them from the Inbox.";
+			return L.F(" The decision is saved, but {0} couldn't be sent a message about it - you can message them from the Inbox.", SubmitterLabel);
 		}
 	}
 
@@ -522,7 +522,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	{
 		if (_team.Me is { } me && _permissions.CanReviewRequests(me)) return true;
 
-		StatusMessage = "Only admins can approve or reject requests.";
+		StatusMessage = L.T("Only admins can approve or reject requests.");
 		return false;
 	}
 }

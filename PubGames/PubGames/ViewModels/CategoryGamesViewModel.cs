@@ -65,7 +65,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 
 	/// <summary>The page's title: the category's name.</summary>
 	[ObservableProperty]
-	private string title = "Games in category";
+	private string title = L.T("Games in category");
 
 
 	/// <summary>Saving: the save button waits.</summary>
@@ -114,11 +114,11 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		OnPropertyChanged(nameof(CanSave));
 		if (_category is null)
 		{
-			_statusMessageTimer.ShowLasting("This category no longer exists.", v => StatusMessage = v);
+			_statusMessageTimer.ShowLasting(L.T("This category no longer exists."), v => StatusMessage = v);
 			return;
 		}
 
-		Title = $"Games in \"{_category.Name}\"";
+		Title = L.F("Games in \"{0}\"", _category.Name);
 
 		try
 		{
@@ -154,12 +154,12 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 			.ToList();
 		if (wouldBeUncategorized.Count > 0)
 		{
-			StatusMessage = $"Every game needs at least one category, so these must stay in \"{_category.Name}\" (or first get another category): {string.Join(", ", wouldBeUncategorized)}.";
+			StatusMessage = L.F("Every game needs at least one category, so these must stay in \"{0}\" (or first get another category): {1}.", _category.Name, string.Join(", ", wouldBeUncategorized));
 			return;
 		}
 
 		IsBusy = true;
-		StatusMessage = "Saving...";
+		StatusMessage = L.T("Saving...");
 		var changed = 0;
 		try
 		{
@@ -187,8 +187,8 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		}
 		catch (Exception ex)
 		{
-			StatusMessage = (ex is HttpRequestException ? "No connection - try again when you're online." : ex.Message)
-				+ (changed > 0 ? $" ({changed} game(s) were already saved.)" : string.Empty);
+			StatusMessage = (ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message)
+				+ (changed > 0 ? L.F(" ({0} game(s) were already saved.)", changed) : string.Empty);
 			return;
 		}
 		finally
@@ -197,6 +197,6 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		}
 
 		var total = Games.Count(g => g.IsSelected);
-		Finished?.Invoke(this, $"\"{_category.Name}\" now has {total} game{(total == 1 ? "" : "s")}.");
+		Finished?.Invoke(this, L.F("\"{0}\" now has {1}.", _category.Name, total == 1 ? L.T("1 game") : L.F("{0} games", total)));
 	}
 }

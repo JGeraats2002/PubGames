@@ -56,8 +56,8 @@ public partial class SavedGamesPage : ContentPage
 	private async void OnDeleteClicked(object? sender, EventArgs e)
 	{
 		var count = _vm.SelectedCount;
-		if (await DisplayAlertAsync(count == 1 ? "Delete this game?" : $"Delete {count} games?",
-			"They're removed from this phone. Results that already count in the stats stay there.", "Delete", "Keep"))
+		if (await DisplayAlertAsync(count == 1 ? L.T("Delete this game?") : L.F("Delete {0} games?", count),
+			L.T("They're removed from this phone. Results that already count in the stats stay there."), L.T("Delete"), L.T("Keep")))
 			await _vm.DeleteSelectedAsync();
 	}
 }

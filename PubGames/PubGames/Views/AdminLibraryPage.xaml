@@ -96,10 +96,10 @@
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="8" />
 							</Border.StrokeShape>
-							<Image Source="{Binding CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+							<Image Source="{Binding ShownCoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
 						</Border>
 						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-							<Label Text="{Binding Name}" />
+							<Label Text="{Binding ShownName}" />
 							<Label Text="{Binding InfoLine}" FontSize="12" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
 							<!-- Games from before main categories existed: what to fill in when editing them. -->
 							<Label Text="{Binding MissingLabel}" FontSize="12" TextColor="{StaticResource Warning}" IsVisible="{Binding HasMissing}" />

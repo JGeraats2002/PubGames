@@ -176,7 +176,19 @@ public class ReviewRequest
 
 	/// <summary>One line: what it asks and about what - New game · "Kings cup".</summary>
 	[Ignore]
-	public string Summary => $"{TypeLabel} · \"{SubjectName}\"";
+	public string Summary => $"{TypeLabel} · \"{ShownSubjectName ?? SubjectName}\"";
+
+	/// <summary>The game's name in the app's language, for the lists; filled in there (null: SubjectName).</summary>
+	[Ignore]
+	public string? ShownSubjectName { get; set; }
+
+	/// <summary>The languages this request touches (translations, a new original), for flags in the list; filled in there.</summary>
+	[Ignore]
+	public List<Services.AppLanguageInfo> TouchedLanguages { get; set; } = [];
+
+	/// <summary>The request touches translations, so their flags show.</summary>
+	[Ignore]
+	public bool TouchesTranslations => TouchedLanguages.Count > 0;
 
 	/// <summary>Who sent it and when, as the list shows it.</summary>
 	[Ignore]

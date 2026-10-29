@@ -159,6 +159,31 @@ public partial class AccountViewModel : ObservableObject
 		_stats = stats;
 	}
 
+	/// <summary>Where it's remembered that this account was asked about its Google picture.</summary>
+	private string GooglePhotoAskedKey => $"googlePhotoAsked:{_auth.AccountId}";
+
+	/// <summary>
+	/// The Google account's profile picture to offer, once: only when the profile has no picture of its own
+	/// and the question wasn't asked on this phone yet. Null otherwise.
+	/// </summary>
+	public async Task<string?> GooglePhotoToOfferAsync()
+	{
+		if (HasPhoto || _auth.CurrentUser is null) return null;
+		try { if (Preferences.Default.Get(GooglePhotoAskedKey, false)) return null; }
+		catch (Exception) { return null; }
+		return await _auth.GetGooglePhotoUrlAsync();
+	}
+
+	/// <summary>The answer to "use your Google picture?": with yes it becomes the profile picture (still changeable).</summary>
+	public async Task AnswerGooglePhotoAsync(string url, bool use)
+	{
+		try { Preferences.Default.Set(GooglePhotoAskedKey, true); }
+		catch (Exception) { }
+		if (!use) return;
+		PhotoRef = url;
+		await SaveAsync(L.T("Picture saved."));
+	}
+
 	/// <param name="withStats">The Settings page shows the stats summary; the Profile page doesn't need it.</param>
 	public async Task LoadAsync(bool withStats = true)
 	{

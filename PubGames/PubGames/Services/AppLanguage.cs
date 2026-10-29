@@ -25,8 +25,10 @@ public sealed record AppLanguageInfo(string Code, string CultureName, string Eng
 }
 
 /// <summary>
-/// The language the app is shown in: chosen once when signing in for the first time, and changed under
-/// Account &gt; Settings. Until then the phone's language is used when the app has it, otherwise English.
+/// The language the app is shown in: chosen per account (several people can sign in on one phone, each in
+/// their own language), the first time that account signs in, and changed under Account &gt; Settings. Signed
+/// out, the language last used on this phone shows; before any choice the phone's language when the app has
+/// it, otherwise English.
 /// </summary>
 public static class AppLanguage
 {
@@ -50,14 +52,39 @@ public static class AppLanguage
 	/// <summary>The language the app is in now.</summary>
 	public static AppLanguageInfo Current { get; private set; } = All[0];
 
-	/// <summary>The user has picked a language (otherwise the language screen shows after signing in).</summary>
+	/// <summary>The signed-in account whose language is used, or null when signed out (see UseAccount).</summary>
+	public static string? AccountId { get; private set; }
+
+	/// <summary>Where an account's language is remembered on this phone.</summary>
+	private static string AccountKey(string accountId) => $"{PreferenceKey}:{accountId}";
+
+	/// <summary>
+	/// The signed-in account has picked a language on this phone (otherwise the language screen shows after
+	/// signing in, unless the team list knows it). Signed out: whether one was ever picked on this phone.
+	/// </summary>
 	public static bool IsChosen
 	{
 		get
 		{
-			try { return Preferences.Default.ContainsKey(PreferenceKey); }
+			try { return Preferences.Default.ContainsKey(AccountId is { } id ? AccountKey(id) : PreferenceKey); }
 			catch (Exception) { return true; }
 		}
+	}
+
+	/// <summary>
+	/// Someone signed in (or out, with null): from now on the language is theirs. Switches to the language
+	/// this account chose on this phone, when it did; otherwise the language stays as it is until it's
+	/// chosen (IsChosen is false then). Doesn't rebuild the screens: the caller shows new ones.
+	/// </summary>
+	public static void UseAccount(string? accountId)
+	{
+		AccountId = accountId;
+		if (accountId is null) return;
+		string? code = null;
+		try { code = Preferences.Default.Get<string?>(AccountKey(accountId), null); }
+		catch (Exception) { }
+		if (Find(code) is { } language && language != Current)
+			Apply(language);
 	}
 
 	/// <summary>Raised after the language changed, so the screens can be built again in it.</summary>
@@ -79,6 +106,8 @@ public static class AppLanguage
 	public static void Set(AppLanguageInfo language, bool notify = true)
 	{
 		Preferences.Default.Set(PreferenceKey, language.Code);
+		if (AccountId is { } accountId)
+			Preferences.Default.Set(AccountKey(accountId), language.Code);
 		Chosen?.Invoke(null, EventArgs.Empty);
 		var changed = language != Current;
 		Apply(language);

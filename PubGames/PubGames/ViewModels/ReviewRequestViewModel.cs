@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using PubGames.Models;
 using PubGames.Services;
 
@@ -104,6 +106,111 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	/// <summary>The game with the proposed changes; what the preview switches back to.</summary>
 	private PubGame? _proposed;
 
+	/// <summary>Every change, sentence by sentence: first how it was, then how it would become.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(HasSentenceChanges))]
+	private List<SentenceChange> sentenceChanges = [];
+
+	/// <summary>There are changes to show sentence by sentence.</summary>
+	public bool HasSentenceChanges => SentenceChanges.Count > 0;
+
+	/// <summary>The whole game (and the side-by-side comparison) shows, not only the changes.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(FullGameButtonText))]
+	private bool showFullGame = true;
+
+	/// <summary>The button that shows or hides the whole game.</summary>
+	public string FullGameButtonText => ShowFullGame ? L.T("Hide the whole game") : L.T("View the whole game");
+
+	/// <summary>Shows or hides the whole game under the changes.</summary>
+	[RelayCommand]
+	private void ToggleFullGame() => ShowFullGame = !ShowFullGame;
+
+	/// <summary>The languages the request touches: translations corrected or checked, a new original.</summary>
+	public ObservableCollection<TranslationChange> TranslationChanges { get; } = [];
+
+	/// <summary>The request touches translations.</summary>
+	[ObservableProperty]
+	private bool hasTranslationChanges;
+
+	/// <summary>The translations that can be put next to the original to check them.</summary>
+	[ObservableProperty]
+	private List<AppLanguageInfo> compareLanguages = [];
+
+	/// <summary>The translation shown next to the original.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(CompareFlag))]
+	private AppLanguageInfo? compareLanguage;
+
+	partial void OnCompareLanguageChanged(AppLanguageInfo? value) => ShowComparison();
+
+	/// <summary>The language the game is written in (with the proposed changes), for the comparison.</summary>
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(OriginalFlag))]
+	private AppLanguageInfo? originalLanguage;
+
+	/// <summary>The original's flag.</summary>
+	public string? OriginalFlag => OriginalLanguage?.Flag;
+
+	/// <summary>The compared translation's flag.</summary>
+	public string? CompareFlag => CompareLanguage?.Flag;
+
+	/// <summary>The original and the chosen translation, piece by piece.</summary>
+	[ObservableProperty]
+	private List<ComparisonRow> comparisonRows = [];
+
+	/// <summary>There's a translation to put next to the original.</summary>
+	[ObservableProperty]
+	private bool hasComparison;
+
+	/// <summary>
+	/// Shows which languages the request touches, who on the team uses the app in each (to ask them to look),
+	/// and the first translation next to the original.
+	/// </summary>
+	private async Task ShowTranslationChangesAsync(PubGame? before, PubGame after)
+	{
+		var changes = TranslationChange.Between(before, after);
+		List<TeamMember> members;
+		try { members = await _team.GetCachedMembersAsync(); }
+		catch (Exception) { members = []; }
+
+		TranslationChanges.Clear();
+		foreach (var change in changes)
+		{
+			var speakers = members.Where(m => m.Language == change.Language.Code).Select(m => m.Label).ToList();
+			TranslationChanges.Add(change with
+			{
+				Speakers = speakers.Count == 0
+					? L.F("Nobody on the team uses the app in {0} yet.", change.Language.Name)
+					: L.F("Uses the app in {0}: {1}", change.Language.Name, string.Join(", ", speakers))
+			});
+		}
+		HasTranslationChanges = TranslationChanges.Count > 0;
+		if (HasTranslationChanges && Changes.Count == 1 && Changes[0] == NothingDiffers)
+			Changes = [];
+
+		OriginalLanguage = AppLanguage.Find(after.SourceLanguageCode);
+		CompareLanguages = changes.Where(c => c.Kind != TranslationChangeKind.NewOriginal)
+			.Select(c => c.Language).Where(l => after.Translations.ContainsKey(l.Code)).ToList();
+		CompareLanguage = CompareLanguages.FirstOrDefault();
+		HasComparison = CompareLanguage is not null;
+	}
+
+	/// <summary>Puts the chosen translation (with the proposed changes) next to the original, piece by piece.</summary>
+	private void ShowComparison()
+	{
+		if ((_proposed ?? Preview) is not { } game || CompareLanguage is not { } language
+			|| !game.Translations.TryGetValue(language.Code, out var translation))
+		{
+			ComparisonRows = [];
+			return;
+		}
+		ComparisonRows = ComparisonRow.Pair(game.Name, game.RulesText, translation, language.Code);
+	}
+
+	/// <summary>The line shown when a change turns out to change nothing.</summary>
+	private static string NothingDiffers => L.T("Nothing differs from the current version any more.");
+
 	/// <summary>The approve button's text, for what approving does.</summary>
 	[ObservableProperty]
 	private string approveButtonText = L.T("Approve");
@@ -196,10 +303,12 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 				Preview = r.ProposedGame(null);
 				ApproveButtonText = L.T("Approve and publish");
 				CanApprove = true;
+				_proposed = Preview;
+				_ = ShowTranslationChangesAsync(null, Preview);
 				break;
 
 			case ReviewRequestType.GameChanges:
-				Headline = L.F("{0} wants to change \"{1}\".", r.SubmitterLabel, _current?.Name ?? r.SubjectName);
+				Headline = L.F("{0} wants to change \"{1}\".", r.SubmitterLabel, _current?.ShownName ?? r.SubjectName);
 				PreviewTitle = L.T("How it will look for players");
 				Preview = r.ProposedGame(_current);
 				Changes = gameGone ? [] : DescribeChanges(_current!, Preview);
@@ -207,10 +316,17 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 				CanApprove = !gameGone;
 				_proposed = Preview;
 				CanSwitch = !gameGone;
+				if (!gameGone)
+				{
+					_ = ShowTranslationChangesAsync(_current, Preview);
+					// First only what changes; the whole game behind a button.
+					SentenceChanges = SentenceChange.Between(_current, Preview);
+					ShowFullGame = SentenceChanges.Count == 0;
+				}
 				break;
 
 			case ReviewRequestType.Deletion:
-				Headline = L.F("{0} wants to delete \"{1}\" from every player's library.", r.SubmitterLabel, _current?.Name ?? r.SubjectName);
+				Headline = L.F("{0} wants to delete \"{1}\" from every player's library.", r.SubmitterLabel, _current?.ShownName ?? r.SubjectName);
 				PreviewTitle = L.T("The game that would be deleted");
 				Preview = _current;
 				ApproveButtonText = L.T("Approve deletion");
@@ -342,6 +458,10 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 		var changes = new List<string>();
 		if (before.Name != after.Name)
 			changes.Add(L.F("Name: \"{0}\" → \"{1}\"", before.Name, after.Name));
+		if (before.SourceLanguageCode != after.SourceLanguageCode)
+			changes.Add(L.F("Written in: {0} → {1}",
+				AppLanguage.Find(before.SourceLanguageCode)?.Name ?? before.SourceLanguageCode,
+				AppLanguage.Find(after.SourceLanguageCode)?.Name ?? after.SourceLanguageCode));
 		if (before.CoverImageUrl != after.CoverImageUrl)
 			changes.Add(string.IsNullOrEmpty(before.CoverImageUrl) ? L.T("Cover image: added")
 				: string.IsNullOrEmpty(after.CoverImageUrl) ? L.T("Cover image: removed")
@@ -366,7 +486,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 				: L.F("How to play: text changed, pictures {0} → {1}", picturesBefore, picturesAfter));
 		}
 		if (changes.Count == 0)
-			changes.Add(L.T("Nothing differs from the current version any more."));
+			changes.Add(NothingDiffers);
 		return changes;
 	}
 
@@ -426,7 +546,7 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 					changed.PublishedAt ??= DateTime.UtcNow;
 					await SaveGameAsync(changed);
 					// The pictures the game showed before the changes, as far as it doesn't show them any more.
-					await ImageCleanup.AfterSaveAsync(_local, _images, changed, RulesImages.Refs(_current.CoverImageUrl, _current.RulesText));
+					await ImageCleanup.AfterSaveAsync(_local, _images, changed, ImageCleanup.RefsOf(_current));
 					break;
 
 				case ReviewRequestType.Deletion when _current is not null:
@@ -477,6 +597,13 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 			_request.Status = ReviewStatus.WaitingForReview;
 			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
 			return;
+		}
+
+		// The pictures it proposed aren't used by anything now: they're removed.
+		if (_request.HasGameProposal)
+		{
+			await _local.SaveReviewRequestAsync(_request);
+			await ImageCleanup.AfterRejectAsync(_local, _images, _request);
 		}
 
 		var informed = await TellModeratorAsync(

@@ -27,6 +27,7 @@ public partial class ProfilePage : ContentPage
 	{
 		base.OnAppearing();
 		await _vm.LoadAsync(withStats: false);
+		await OfferGooglePhotoAsync();
 		if (!_vm.IsOwner) return;
 		_codeTimer ??= Dispatcher.CreateTimer();
 		_codeTimer.Interval = TimeSpan.FromSeconds(20);
@@ -47,5 +48,18 @@ public partial class ProfilePage : ContentPage
 	{
 		if (_vm.FriendCodeValidUntil is not { } until || DateTime.UtcNow >= until)
 			await _vm.LoadFriendCodeAsync();
+	}
+
+	/// <summary>
+	/// Once, when the profile has no picture: asks whether to use the Google account's picture. It can be
+	/// changed in the app at any time.
+	/// </summary>
+	private async Task OfferGooglePhotoAsync()
+	{
+		if (await _vm.GooglePhotoToOfferAsync() is not { } url) return;
+		var use = await DisplayAlertAsync(L.T("Use your Google picture?"),
+			L.T("Your Google account has a profile picture. Do you want to use it in Pub Games too? You can change it in the app at any time."),
+			L.T("Use it"), L.T("Not now"));
+		await _vm.AnswerGooglePhotoAsync(url, use);
 	}
 }

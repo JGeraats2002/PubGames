@@ -4,6 +4,78 @@ using System.Text.Json;
 
 namespace PubGames.Models;
 
+/// <summary>
+/// One sentence (or picture) of a translation, as the cloud keeps it (functions/shared.js, planSegments): the
+/// original sentence, what stood in front of it, its translation and whether a person has looked at it.
+/// </summary>
+public sealed record TranslationSegment
+{
+	/// <summary>Status: translated by the cloud, nobody checked it yet.</summary>
+	public const string Auto = "auto";
+	/// <summary>Status: a person said the translation is right.</summary>
+	public const string Approved = "approved";
+	/// <summary>Status: a person corrected it (counts as checked).</summary>
+	public const string Edited = "edited";
+	/// <summary>Status: a person had checked it, but the original sentence changed since.</summary>
+	public const string Review = "review";
+	/// <summary>
+	/// Status: a person added this sentence in this language. After saving, the cloud puts it (translated) into
+	/// the original and from there into every language; then it becomes Edited, with Origin = Added.
+	/// </summary>
+	public const string Added = "added";
+
+	/// <summary>The sentence in the original, or a picture tag.</summary>
+	public string Src { get; init; } = string.Empty;
+
+	/// <summary>What stands in front of it: nothing, a space, a line break or an empty line.</summary>
+	public string Sep { get; init; } = string.Empty;
+
+	/// <summary>The sentence in this language (the picture tag for a picture).</summary>
+	public string Text { get; init; } = string.Empty;
+
+	/// <summary>auto, approved, edited or review.</summary>
+	public string Status { get; init; } = Auto;
+
+	/// <summary>For review: a fresh automatic translation of the changed sentence, to compare with.</summary>
+	public string? Suggestion { get; init; }
+
+	/// <summary>
+	/// Added: the sentence was added in this language and put into the original by the cloud; someone who
+	/// speaks the original's language still has to approve it there. Null otherwise.
+	/// </summary>
+	public string? Origin { get; init; }
+
+	/// <summary>A picture rather than a sentence.</summary>
+	[System.Text.Json.Serialization.JsonIgnore]
+	public bool IsPicture => (Src.Length > 0 ? Src : Text).StartsWith("![", StringComparison.Ordinal);
+
+	/// <summary>A person has checked this sentence for the original as it is now.</summary>
+	[System.Text.Json.Serialization.JsonIgnore]
+	public bool IsChecked => Status is Approved or Edited;
+
+	/// <summary>As the cloud stores it.</summary>
+	public Dictionary<string, object?> ToMap()
+	{
+		var map = new Dictionary<string, object?> { ["src"] = Src, ["sep"] = Sep, ["text"] = Text, ["status"] = Status };
+		if (Suggestion is not null) map["suggestion"] = Suggestion;
+		if (Origin is not null) map["origin"] = Origin;
+		return map;
+	}
+
+	/// <summary>From the cloud; null when it isn't a segment.</summary>
+	public static TranslationSegment? FromMap(object? value) => value is Dictionary<string, object?> fields
+		? new TranslationSegment
+		{
+			Src = fields.GetValueOrDefault("src") as string ?? string.Empty,
+			Sep = fields.GetValueOrDefault("sep") as string ?? string.Empty,
+			Text = fields.GetValueOrDefault("text") as string ?? string.Empty,
+			Status = fields.GetValueOrDefault("status") as string ?? Auto,
+			Suggestion = fields.GetValueOrDefault("suggestion") as string,
+			Origin = fields.GetValueOrDefault("origin") as string
+		}
+		: null;
+}
+
 /// <summary>Whether a person has checked a translation (see GameTranslation.CheckedHash).</summary>
 public enum TranslationCheck
 {
@@ -35,6 +107,12 @@ public sealed record GameTranslation
 	/// the texts in the order they're on the drawing.
 	/// </summary>
 	public Dictionary<string, List<string>> ImageTexts { get; init; } = [];
+
+	/// <summary>
+	/// The translation per sentence, with a status per sentence (made by the cloud since translator version 3).
+	/// RulesText is these put together. Empty for older translations.
+	/// </summary>
+	public List<TranslationSegment> Segments { get; init; } = [];
 
 	/// <summary>Corrected by hand: the cloud doesn't translate it again.</summary>
 	public bool Manual { get; init; }
@@ -98,7 +176,8 @@ public sealed record GameTranslation
 			["sourceHash"] = t.Value.SourceHash,
 			["engine"] = t.Value.Engine,
 			["checkedHash"] = t.Value.CheckedHash,
-			["checkedBy"] = t.Value.CheckedBy
+			["checkedBy"] = t.Value.CheckedBy,
+			["segments"] = t.Value.Segments.Select(segment => segment.ToMap()).ToList()
 		});
 
 	/// <summary>The translations from their cloud map; empty when there are none.</summary>
@@ -120,7 +199,10 @@ public sealed record GameTranslation
 				SourceHash = fields.GetValueOrDefault("sourceHash") as string ?? string.Empty,
 				Engine = fields.GetValueOrDefault("engine") is long engine ? (int)engine : 0,
 				CheckedHash = fields.GetValueOrDefault("checkedHash") as string ?? string.Empty,
-				CheckedBy = fields.GetValueOrDefault("checkedBy") as string ?? string.Empty
+				CheckedBy = fields.GetValueOrDefault("checkedBy") as string ?? string.Empty,
+				Segments = fields.GetValueOrDefault("segments") is List<object?> segments
+					? segments.Select(TranslationSegment.FromMap).OfType<TranslationSegment>().ToList()
+					: []
 			};
 		}
 		return result;

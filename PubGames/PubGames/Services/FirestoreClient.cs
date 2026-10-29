@@ -172,6 +172,10 @@ public class FirestoreClient
 		{
 			["arrayValue"] = new JsonObject { ["values"] = new JsonArray(list.Select(item => (JsonNode)ToValue(item)).ToArray()) }
 		},
+		IEnumerable<IDictionary<string, object?>> maps => new JsonObject
+		{
+			["arrayValue"] = new JsonObject { ["values"] = new JsonArray(maps.Select(item => (JsonNode)ToValue(item)).ToArray()) }
+		},
 		_ => throw new ArgumentException(L.F("Unsupported Firestore field type {0}", value.GetType().Name))
 	};
 

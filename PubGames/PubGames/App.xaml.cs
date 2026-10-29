@@ -77,11 +77,19 @@ public partial class App : Application
 
 		if (!_auth.IsSignedIn)
 		{
+			AppLanguage.UseAccount(null);
 			await SetRootPageAsync(window, _services.GetRequiredService<LoginPage>());
 			return;
 		}
 
-		// The first time: choose the app's language before anything else.
+		// Each account has its own language, also when several sign in on this phone.
+		AppLanguage.UseAccount(_auth.AccountId);
+		var me = await _team.RefreshMyMembershipAsync();
+
+		// New on this phone: a team member's language comes from the team list (set on another phone);
+		// otherwise it's chosen before anything else.
+		if (!AppLanguage.IsChosen && me?.LanguageInfo is { } known)
+			AppLanguage.Set(known, notify: false);
 		if (!AppLanguage.IsChosen)
 			await LanguagePage.ChooseFirstTimeAsync(window, _services);
 
@@ -91,7 +99,6 @@ public partial class App : Application
 			return;
 		}
 
-		var me = await _team.RefreshMyMembershipAsync();
 		await SetRootPageAsync(window, new AppShell(me));
 	}
 

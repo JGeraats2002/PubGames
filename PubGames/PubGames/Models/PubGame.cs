@@ -61,6 +61,17 @@ public class PubGame
 		return copy;
 	}
 
+	/// <summary>
+	/// The name in the app's language (the translation's name, also a corrected one), for lists that show the
+	/// game itself, like the admins' library. The game keeps its own Name.
+	/// </summary>
+	[Ignore]
+	public string ShownName => InAppLanguage().Name;
+
+	/// <summary>The cover in the app's language (its text translated), for the same lists as ShownName.</summary>
+	[Ignore]
+	public string? ShownCoverImageUrl => InAppLanguage().CoverImageUrl;
+
 	/// <summary>The cover picture's reference (see ImageRef), or null without one.</summary>
 	public string? CoverImageUrl { get; set; }
 

@@ -707,9 +707,11 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			await LoadGameAsync(gameId);
 
 		// From a "translation to check" message: straight to that language on the Languages page.
-		if (query.TryGetValue("language", out var code) && TranslationLanguages.FirstOrDefault(l => l.Code == code as string) is { } language)
+		if (query.TryGetValue("language", out var code) && code is string { Length: > 0 } languageCode)
 		{
-			TranslationLanguage = language;
+			// The original's own language: sentences added in a translation wait at the top of the page.
+			if (TranslationLanguages.FirstOrDefault(l => l.Code == languageCode) is { } language)
+				TranslationLanguage = language;
 			CurrentPage = LanguagesPage;
 		}
 		_savedForm = FormSnapshot();
@@ -734,8 +736,18 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Opens a game to change it: fills the form with it and shows the parts it uses.</summary>
 	private async Task LoadGameAsync(string gameId)
 	{
-		_editing = await _local.GetGameAsync(gameId);
+		// The newest version: the cloud adds translations a minute after saving, which this phone may not have yet.
+		try
+		{
+			_editing = await _cloud.PullGameAsync(gameId) ?? await _local.GetGameAsync(gameId);
+		}
+		catch (Exception)
+		{
+			// Offline: this phone's copy.
+			_editing = await _local.GetGameAsync(gameId);
+		}
 		if (_editing is null) return;
+		_opened = (_editing.RulesText, _editing.SourceLanguageCode, _editing.Translations);
 		IsEditing = true;
 
 		if (IsModerator)
@@ -1200,7 +1212,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 		// What the game showed before and what was tried out here, as far as it's not shown any more.
 		await ImageCleanup.AfterSaveAsync(_local, _images, game,
-			RulesImages.Refs(_editing?.CoverImageUrl, _editing?.RulesText).Concat(_uploadedHere));
+			(_editing is null ? Enumerable.Empty<string>() : ImageCleanup.RefsOf(_editing)).Concat(_uploadedHere));
 
 		StatusMessage = string.Empty;
 		Finished?.Invoke(this, null);
@@ -1370,6 +1382,47 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		&& a.CategoryIds.ToHashSet().SetEquals(b.CategoryIds)
 		&& SameTranslations(a, b);
 
+	/// <summary>The rules, language and translations as the form was opened (or last saved), to see what was changed here.</summary>
+	private (string Rules, string Language, Dictionary<string, GameTranslation> Translations)? _opened;
+
+	/// <summary>
+	/// While the form was open, others (or the cloud) may have changed the game: a translation checked by
+	/// someone else, a sentence added to the original from a translation, the language corrected. What wasn't
+	/// changed on this form is taken from the newest version, so saving doesn't undo their work.
+	/// </summary>
+	private async Task MergeNewerAsync(PubGame game)
+	{
+		if (_opened is not { } loaded) return;
+		PubGame? newest;
+		try
+		{
+			newest = await _cloud.PullGameAsync(game.Id);
+		}
+		catch (Exception)
+		{
+			return;
+		}
+		if (newest is null) return;
+
+		if (game.RulesText == loaded.Rules) game.RulesText = newest.RulesText;
+		if (game.SourceLanguageCode == loaded.Language) game.SourceLanguage = newest.SourceLanguageCode;
+
+		var mine = game.Translations;
+		var merged = new Dictionary<string, GameTranslation>(newest.Translations);
+		foreach (var code in mine.Keys.Union(loaded.Translations.Keys))
+		{
+			mine.TryGetValue(code, out var now);
+			loaded.Translations.TryGetValue(code, out var before);
+			var changedHere = (now is null) != (before is null)
+				|| (now is not null && GameTranslation.ToJson(new() { [code] = now }) != GameTranslation.ToJson(new() { [code] = before! }));
+			if (!changedHere) continue;
+			if (now is null) merged.Remove(code);
+			else merged[code] = now;
+		}
+		merged.Remove(game.SourceLanguageCode);
+		game.Translations = merged;
+	}
+
 	/// <summary>
 	/// Saves the game in the cloud; false (with the reason on the page) when that didn't work.
 	/// </summary>
@@ -1377,7 +1430,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	{
 		try
 		{
+			await MergeNewerAsync(game);
 			await _cloud.SaveGameAsync(game);
+			_opened = (game.RulesText, game.SourceLanguageCode, game.Translations);
 			return true;
 		}
 		catch (HttpRequestException)

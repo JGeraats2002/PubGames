@@ -86,6 +86,7 @@ public partial class ImageEditorPage : ContentPage
 	public static async Task<EditedImage?> OpenAsync(INavigation navigation, bool cover, string? drawing = null)
 	{
 		var page = new ImageEditorPage(cover, drawing);
+		SoftKeyboard.Hide();
 		await navigation.PushModalAsync(page);
 		return await page._result.Task;
 	}

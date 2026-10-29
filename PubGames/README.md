@@ -25,15 +25,15 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 
 ---
 
-## Waar we gebleven zijn (bijgewerkt 28-10-2026)
+## Waar we gebleven zijn (bijgewerkt 29-10-2026)
 
-Laatste commit: "translation feedback fixed" (28-10-2026, gepusht). Versie 3 (1.2) staat bij Closed
-testing. Functions en firestore.rules zijn gedeployed.
+Laatste commit: "final version before publishing - tested" (29-10-2026, niet gepusht). Versie 4 (1.3) is
+gebouwd als `.aab` (zie hieronder waar). Versie 3 (1.2) staat bij Closed testing. Functions en
+firestore.rules zijn gedeployed.
 
-**Gebleven bij: `.aab` versie 4 maken.** Eerst test de gebruiker alles uit punt 10 hieronder in VS 2026.
-Pas als hij zegt dat alles werkt: `ApplicationVersion` naar 4 (`ApplicationDisplayVersion` 1.3) in
-`PubGames.csproj`, een Release-`.aab` bouwen (VS gesloten, zie werkafspraken) en die bij Closed testing
-uploaden.
+**Volgende stap:** de gebruiker uploadt de `.aab` van versie 4 bij Closed testing (Play Console › Testing ›
+Closed testing › Create new release). Daarna: testers uitnodigen (punt 11 hieronder). X3 is opgelost maar nog
+niet opnieuw getest door de gebruiker.
 
 ### Gedaan (27 en 28-10-2026)
 
@@ -127,7 +127,7 @@ uploaden.
    - Cloud-vertaler versie 2 (`TRANSLATOR_VERSION`, `GameTranslation.Engine`): spelnamen worden niet meer
      vertaald, plaatjestekst gelijk aan de naam of zonder letters blijft staan, een vertaling in de eigen
      brontaal wordt verwijderd. Oudere automatische vertalingen worden opnieuw gemaakt bij opslaan.
-     **Functions opnieuw deployen.**
+     Functions gedeployed op 29-10-2026 (ronde 3).
    - Lijsten die in het Engels alfabetisch zijn, blijven alfabetisch na vertaling: knoppen in de
      afbeeldingseditor (`SortedChips`, `AddChoices`) en categorieën (`CategoryGroup.ShownOrder`, alleen
      voor spelers en het spelformulier; de categoriepagina houdt de volgorde van de admins).
@@ -144,6 +144,16 @@ uploaden.
      op die taal (query `language`). Let op: `MessageService.SaveAsync` schrijft de extra velden alleen
      voor TranslationCheck, anders weigeren de regels het markeren als gelezen.
    - Functions en firestore.rules gedeployed op 28-10-2026 (avond), inclusief vertaalcontrole en vlaggen.
+11. Gebouwd 29-10-2026, nog te testen (afvinklijst, onderdeel "Ronde 2"):
+   - Taal per account op één toestel (`AppLanguage.UseAccount`, Preferences `appLanguage:{accountId}`).
+     Teamleden krijgen hun taal uit `team/{email}.language` op een nieuw toestel; anders het taalscherm.
+     `UpdateMyLanguageAsync` schrijft alleen als dit account zijn taal gekozen heeft (anders werd de taal
+     van het vorige account overgenomen).
+   - Review requests: blok Vertalingen (vlag, wat er met die taal gebeurt, wie de app in die taal gebruikt),
+     "Geschreven in: X → Y", en Vertaling vergelijken (origineel en vertaling per alinea, elk met vlag)
+     via `Models/TranslationChange.cs`. Vlaggen in de lijst met verzoeken.
+   - Talen-pagina legt uit dat een spel in je eigen taal het origineel is (testpunt D1).
+   - Testpunt E3 leidde tot een nieuw ontwerp voor vertalingen: zie "Vertalingen per zin" hieronder.
 
 **Fase 3 – Closed test en productie**
 11. Na goedkeuring door Google: opt-in-link (Closed testing → Testers) naar **15+ testers** sturen
@@ -156,6 +166,141 @@ uploaden.
 - **`firebase-functions` bijwerken:** er komen breaking changes; apart doen en testen.
 - De Firebase CLI blijft op deze pc hangen bij `firebase apps:list` (wacht vermoedelijk op een
   vraag); console gebruiken voor zulke dingen.
+
+### Vertalingen per zin (ontwerp 29-10-2026, goedgekeurd door de gebruiker; fase 1 t/m 4 gebouwd, nog te testen)
+
+**Huidige stand:** ronde 2 (taal per account, vlaggen en vergelijken in verzoeken, uitleg D1) is gebouwd
+maar nog niet getest of gecommit. Daarnaast staat er al ongecommitte basiscode voor dit ontwerp, nog niet
+gedeployed: `functions/shared.js` (`segmentsOf`, `matchSegments` (LCS), `carryOver`), tests in
+`functions/test/shared.test.js`, `translateRules`/`updateRules` in `functions/index.js` (nu per **alinea**;
+moet naar per **zin**), en op de Languages-pagina de melding `HasExtraParagraphs` + knop naar Regels
+(vervalt in het nieuwe ontwerp). De gebruiker gaf toestemming om deze code als basis te gebruiken.
+**Niet deployen voordat fase 1 af en getest is.**
+
+**Afspraken met de gebruiker (letterlijk zijn keuzes):**
+1. Het origineel is altijd de taal waarin het spel geschreven is. "Dit het origineel maken" verdwijnt. De
+   tab Languages heet voortaan **Vertalingen** (Translations).
+2. Bij een nieuw spel worden alle talen automatisch vertaald vanuit het origineel.
+3. Eenheid = **zin** (segment). Elk segment heeft per taal een status: automatisch / goedgekeurd / door een
+   persoon aangepast / gewijzigd en wacht op controle.
+4. Vertalingen-pagina per taal: tekst niet vrij bewerkbaar. Knoppen:
+   - **Vertaling akkoord**: niets verandert, alles van die taal is gecontroleerd.
+   - **Toevoegen**: plek in de tekst kiezen, pop-up om vrij te typen; de tekst eromheen blijft onaangetast.
+     Een toevoeging vanuit een vertaling gaat eerst (automatisch vertaald) naar het origineel en vandaar
+     naar alle talen; het stuk in het origineel blijft gemarkeerd tot iemand die die taal spreekt het goedkeurt.
+   - **Aanpassen**: woorden aantikken; alles tussen eerste en laatste geselecteerde woord wordt geselecteerd,
+     nog eens tikken haalt de selectie weg. Pop-up toont de geselecteerde zin met een invoerbalk eronder.
+     Op de achtergrond hoort de wijziging bij de hele zin. Een aanpassing in een vertaling geldt alleen voor
+     die taal (en telt als gecontroleerd); de andere talen worden niet opnieuw vertaald (die komen uit het
+     origineel, opnieuw vertalen verandert niets).
+   - **Verwijderen**: een stuk weghalen; in het origineel verdwijnt het in alle talen.
+5. Origineel aanpassen gebeurt op de pagina **Regels**, zonder pop-ups: de cloud vergelijkt oud en nieuw per
+   zin (LCS) en vertaalt alleen nieuwe en gewijzigde zinnen opnieuw, in alle talen waar die zin nog niet
+   door een persoon is goedgekeurd of aangepast (daar: markeren als "opnieuw bekijken"). Voorwaarde van de
+   gebruiker: er moet genoeg overzicht zijn van wat nog gecontroleerd moet worden; anders toch pop-ups, met
+   de optie om afbeeldingen toe te voegen via de afbeeldingseditor.
+6. Plaatjes blijven zoals nu (teksten onder het plaatje aanpassen). Een plaatje dat uit het origineel
+   verwijderd wordt, verdwijnt na goedkeuring in alle talen.
+7. Wijzigingen blijven gemarkeerd voor mods en admins tot iemand ze goedkeurt: mods via een request, admins
+   direct.
+8. Requests: één request per moderator per spel met **alle** wijzigingen (toevoegingen, aanpassingen,
+   verwijderingen) onder elkaar, telkens "origineel eerst — daarna de nieuwe versie". Nieuwe wijzigingen
+   van dezelfde mod komen bij hetzelfde request. Knop om het spel te openen om alles te zien.
+9. Opruimen: bestaande vertalingen mogen opnieuw gemaakt worden (het origineel blijft overal staan). Mexen
+   mag helemaal leeg (testspel). In de vertalingen van Toepen staat een niet-bewerkbare afbeelding
+   (geüploade foto, geen editor-plaatje): die moet overal weg.
+
+**Stand 29-10-2026: fase 1 GEBOUWD, nog niet gedeployed of getest door de gebruiker.**
+- Cloud (`functions/shared.js`): `segmentize` (zinnen, regels, alinea's, plaatjes; elk segment met `sep`),
+  `joinSegments`, `matchSegments` (LCS), `planSegments` (zelfde zin: vertaling+status blijven; gewijzigde
+  zin die een persoon had gecontroleerd: tekst blijft, status `review`, `suggestion` = nieuwe automatische
+  vertaling; anders opnieuw vertalen), `allChecked`, `storedSegments`. Statussen: auto / approved / edited /
+  review. Tests: `npm test` (13 groen).
+- Cloud (`functions/index.js`, `translateGame`): `TRANSLATOR_VERSION = 3`; vertaling per taal heeft nu
+  `segments: [{src, sep, text, status, suggestion?}]`; `rulesText` = segmenten samengevoegd. Bij een oudere
+  vertaling (engine < 3) wordt alles één keer opnieuw vertaald (mag van de gebruiker). Foto's (plaatjes
+  zonder tekening) gaan uit de vertalingen (`drawnPictures`). "Vertaling akkoord" in de app (checkedHash ==
+  hash) zet alle segmenten op approved. Plaatjesteksten die al vertaald waren blijven staan.
+- App: `TranslationSegment` in `Models/GameTranslation.cs` (+ `Segments`, ToMap/FromMap/JSON), FirestoreClient
+  kan lijsten van maps schrijven. Tussenoplossing tot fase 2: een correctie op de Languages-pagina houdt de
+  segmenten en `Engine` van de vorige vertaling (anders zou de cloud alles opnieuw vertalen). Tests:
+  `dotnet test tests/PubGames.Tests` (23 groen).
+- Nog te doen door de gebruiker voor fase 1: `firebase deploy --only functions`, daarna Toepen één keer
+  opslaan (alle talen worden per zin opnieuw vertaald, de niet-bewerkbare foto verdwijnt uit de
+  vertalingen) en Mexen leegmaken in de app (regels wissen en opslaan). Controleren in Firestore of
+  `translations.xx.segments` er staat.
+- **Fase 2 GEBOUWD (29-10-2026), niet getest:** tab heet Vertalingen; per taal `SentenceRows`
+  (`ViewModels/SentenceRow.cs`: zin, woorden als `WordChip`, kleur per status, suggestie met "Neem deze" /
+  "Laat zo", plaatjes met teksten). Knoppen Toevoegen / Aanpassen / Verwijderen / Vertaling akkoord
+  (`TranslationMode`); woordselectie = eerste t/m laatste aangetikte woord (`_anchors`); pop-ups in
+  `AdminCreateGamePage.xaml.cs` (`DisplayPromptAsync`). Toevoeging = segment met status `added` en lege
+  `src`; de cloud (`addToOriginal` in index.js) vertaalt die terug naar het origineel, zet hem op de goede
+  plek en maakt het segment `edited` met `origin: "added"`; bovenaan de pagina staat "Nieuw in het
+  origineel" met Akkoord (wist `origin`). Overzicht per taal (`ToCheckOverview`). "Dit het origineel
+  maken" en de alinea-melding zijn weg. `Models/Sentences.cs` = zelfde zinsknip als de cloud (gedeelde
+  testgevallen in `tests/shared-cases.json`). Tests: npm 14, dotnet 26 groen.
+- **Fase 3 GEBOUWD (29-10-2026), niet getest:** `SentenceChange.Between` (Models/TranslationChange.cs)
+  geeft per wijziging vlag + kop + Eerst/Daarna: origineel per zin (LCS via `Sentences.Match`) en per
+  vertaling (toevoeging/aanpassing/verwijdering/aantal goedgekeurd). Op de verzoekpagina eerst die lijst,
+  het hele spel en de vergelijking achter "Hele spel bekijken" (`ShowFullGame`). Eén request per mod per
+  spel bestond al.
+- **Fase 4 GEBOUWD:** ⓘ-teksten en vertalingen bijgewerkt, afvinklijst onderdeel "Vertalingen per zin"
+  (V1–V13; D7, H7, R7 vervallen). Inbox-bericht voor de taal van het origineel opent ook Vertalingen.
+- Functions gedeployed op 29-10-2026 (vertalingen per zin live). **Volgende stap:** gebruiker test V1–V13 + Ronde 2. Daarna fouten oplossen,
+  committen op verzoek, en dan `.aab` versie 4.
+- 29-10 ANR bij openen Toepen (app reageerde >10 s niet): een view per woord (FlexLayout met Border+Label+tap)
+  en opbouw bij elke taalwissel. Opgelost met `Views/WordsLabel.cs` (één Label per zin, spans per woord) en
+  zinnen alleen opbouwen als de Vertalingen-pagina open is (`ShowSegments`, `IsLanguagesPage`).
+- Ronde 3 (29-10, na test V8/V10, gedeployed, nog niet getest — afvinklijst W1–W7):
+  - Toevoegen: in de modus Toevoegen ligt een onzichtbare laag over elk zinsblok en elk plaatje (tikbaar), en
+    `TapWord` meldt ook `AddPlaceChosen`. Keuze Tekst / Afbeelding (editor); een afbeelding wordt een
+    `added`-segment met een plaatjestag, `addToOriginal` zet die zonder vertalen in het origineel.
+    **Functions opnieuw deployen.**
+  - V10-oorzaak: de editor laadde de lokale kopie. Nu `LoadGameAsync` → `PullGameAsync` eerst, en bij opslaan
+    `MergeNewerAsync`: regels/taal/vertalingen die op dit formulier niet veranderd zijn komen uit de nieuwste
+    cloudversie (anders maakte een oud geopend formulier goedkeuringen van anderen ongedaan). Nog niet voor
+    review requests (`ApplyProposalTo` neemt de voorgestelde vertalingen helemaal over).
+  - `PubGame.ShownName` (naam in app-taal) in de admin-spellenlijst, Categorie › spellen, verzoekenlijst
+    (`ReviewRequest.ShownSubjectName`) en de kop van een verzoek.
+  - `PubGame.ShownCoverImageUrl` (omslag met vertaalde tekst) in de admin-spellenlijst en Categorie › spellen.
+  - Toetsenbord sluit bij elke paginawissel: `Views/SoftKeyboard.cs`, aangeroepen in `AppShell.OnNavigating`,
+    bij een andere pagina van het spelformulier (`CurrentPage`) en bij het openen van de afbeeldingseditor.
+- Ronde 4 (29-10, gebouwd): Google-profielfoto aanbieden (`AuthService.GetGooglePhotoUrlAsync` via
+  accounts:lookup, vraag één keer op Account/Profiel, `AccountViewModel.AnswerGooglePhotoAsync`);
+  `ImageCleanup` kijkt nu ook naar vertalingen (anders werd een in een vertaling toegevoegde afbeelding direct
+  gewist) en ruimt na afwijzen de voorgestelde afbeeldingen op (let op: opnieuw indienen van een afgewezen
+  verzoek mist die afbeeldingen dan). Ook gebouwd: Toevoegen/Aanpassen/Verwijderen werken per blok (tik op
+  zin of afbeelding; `IsChoosingBlock` bepaalt de onzichtbare laag; woordselectie is vervallen, de pop-up van
+  Aanpassen toont de hele zin). Afbeelding aanpassen = editor + nieuwe upload (segment `Text` = nieuwe tag,
+  `Src` = oude); verwijderen = `Text` leeg. `addToOriginal` vervangt/verwijdert zo'n plaatje in het
+  origineel (en dus overal). Knop Verwerpen naast Opslaan op Vertalingen (`DiscardTranslations` → terug naar
+  `_opened`). Verzoeken tonen oude en nieuwe afbeelding (`SentenceChange.BeforeImage/AfterImage`).
+  Functions gedeployed op 29-10-2026 (ronde 4). Getest 29-10: W1–W9 en X1–X7 werken, behalve X3 (editor
+  opende een lege afbeelding: hij kreeg de voorbeeld-verwijzing `fsimg:ID@preview…`). Opgelost met
+  `SentenceRow.ImageRef` (de echte verwijzing); nog te hertesten.
+- **Volgende stap:** gebruiker hertest X3; daarna committen op verzoek en `.aab` versie 4.
+- **Bekende grenzen:** zinnen worden geknipt na . ! ? … gevolgd door een spatie (afkortingen als "bijv."
+  knippen ook). Een toevoeging komt in dezelfde alinea als de zin waarna hij staat. Woordselectie gaat
+  per woord (spaties).
+
+**Fasen (elke fase eindigt met: tests groen, README bijgewerkt, gebruiker test):**
+- **Fase 1 – cloud:** segmenten per zin (`shared.js`: zinssplitsing naast alinea's en plaatjes, met tests),
+  vertalingen opslaan als segmentenlijst met status per segment, eerste vertaling van een nieuw spel,
+  bijwerken na wijziging van het origineel (LCS per zin), verwijderde plaatjes overal weg, berichten
+  (`notifyTranslationChecks`) op basis van segmenten met status "wacht op controle". Model in de app
+  (`GameTranslation` + segmenten) lezen/schrijven, met tests. Opruimen bestaande spellen (zie 9).
+- **Fase 2 – app, pagina Vertalingen:** tekst per zin tonen met markering per status, knoppen Vertaling
+  akkoord / Toevoegen / Aanpassen / Verwijderen, pop-ups, woordselectie. "Dit het origineel maken" en de
+  melding `HasExtraParagraphs` weg. Tab hernoemen.
+- **Fase 3 – requests:** wijzigingen bundelen per mod per spel, lijst "origineel → nieuw", knop spel openen,
+  goedkeuren per request (mods) of direct (admins).
+- **Fase 4 – afronden:** ⓘ-teksten en alle vertalingen, afvinklijst bijwerken
+  (https://claude.ai/artifact/2bdNcCQqsLQbSR2ihAuRBD), dan pas de gebruiker vragen om te deployen en daarna
+  `.aab` versie 4.
+
+**Werkwijze:** de gebruiker heeft beperkte ruimte. Claude kan de accountstatus niet zien, dus: per fase
+werken, na elke fase de README bijwerken met precies waar het staat en wat de volgende stap is, zodat een
+nieuwe sessie zonder uitleg verder kan.
 
 ### Bekende beperkingen / mogelijke vervolgstappen
 
@@ -183,6 +328,17 @@ uploaden.
   `obj\...\lp`-map (FileNotFound `values-*.xml`). Eerst vragen of VS dicht is. Bouw met
   `dotnet build PubGames/PubGames/PubGames.csproj -f net10.0-android36.0`. Bij vreemde
   resource-fouten: VS sluiten, achtergebleven MSBuild/VBCSCompiler stoppen, bin/obj weggooien.
+
+**Tests (sinds 28-10-2026)**
+- App-logica: `dotnet test tests/PubGames.Tests` (xUnit, net10.0). Linkt bestanden uit de app (zie csproj);
+  `Stubs.cs` vervangt L, AppLanguage, FirestoreClient en FirestoreImageStore. Staat niet in de solution, dus
+  VS bouwt het niet mee. Nieuwe logica die getest moet worden: houd hem vrij van MAUI (zoals `DrawRules`).
+- Cloud Functions: `npm test` in `functions` (node:test, `functions/test`). Kleine regels staan in
+  `functions/shared.js`.
+- `tests/shared-cases.json`: voorbeelden die app en cloud allebei precies zo moeten uitkomen (vingerafdruk
+  van een spel, middelvinger-regel). Verander je `HashOf`/`sourceHash` of `IsRudeHand`, werk dan dit bestand bij.
+- Afvinklijst voor de gebruiker: https://claude.ai/artifact/2bdNcCQqsLQbSR2ihAuRBD (antwoorden in de
+  collectie `results`, te lezen met ArtifactData).
 
 **Stijl (zo gewenst door de gebruiker)**
 - Alle uitleg staat alleen onder de ⓘ-knop (`Models/PageHelp.cs`), niet als tekst op het

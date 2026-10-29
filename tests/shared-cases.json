@@ -1,0 +1,176 @@
+{
+  "_about": "Examples that the app (tests/PubGames.Tests) and the Cloud Functions (functions/test) must both get right in exactly the same way.",
+  "sourceHash": [
+    {
+      "name": "Toepen",
+      "rulesText": "Regels\n\n![image](fsimg:abc)",
+      "cover": "fsimg:cov",
+      "hash": "cab87c6fa36c310c"
+    },
+    {
+      "name": "Mexen",
+      "rulesText": "",
+      "cover": null,
+      "hash": "a4068be26098b01f"
+    },
+    {
+      "name": "Ëén spel – 🍺",
+      "rulesText": "x",
+      "cover": "",
+      "hash": "e441f023ed7cd00e"
+    }
+  ],
+  "rudeHand": [
+    {
+      "about": "only the middle finger",
+      "kind": 4,
+      "neutral": false,
+      "fingers": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "rude": true
+    },
+    {
+      "about": "middle finger and thumb",
+      "kind": 4,
+      "neutral": false,
+      "fingers": [
+        true,
+        false,
+        true,
+        false,
+        false
+      ],
+      "rude": true
+    },
+    {
+      "about": "open hand",
+      "kind": 4,
+      "neutral": true,
+      "fingers": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "rude": false
+    },
+    {
+      "about": "fist",
+      "kind": 4,
+      "neutral": false,
+      "fingers": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "rude": false
+    },
+    {
+      "about": "index and middle (V sign)",
+      "kind": 4,
+      "neutral": false,
+      "fingers": [
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "rude": false
+    },
+    {
+      "about": "middle and ring",
+      "kind": 4,
+      "neutral": false,
+      "fingers": [
+        false,
+        false,
+        true,
+        true,
+        false
+      ],
+      "rude": false
+    },
+    {
+      "about": "middle and pinky",
+      "kind": 4,
+      "neutral": false,
+      "fingers": [
+        false,
+        false,
+        true,
+        false,
+        true
+      ],
+      "rude": false
+    },
+    {
+      "about": "not a hand",
+      "kind": 1,
+      "neutral": false,
+      "fingers": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "rude": false
+    }
+  ],
+  "segments": [
+    {
+      "rules": "Toepen is a card game. You get 4 cards.\nThe highest wins!\n\n![image](fsimg:abc)\n\nDone.",
+      "src": [
+        "Toepen is a card game.",
+        "You get 4 cards.",
+        "The highest wins!",
+        "![image](fsimg:abc)",
+        "Done."
+      ],
+      "sep": [
+        "",
+        " ",
+        "\n",
+        "\n\n",
+        "\n\n"
+      ]
+    },
+    {
+      "rules": "Eén zin? Nog één.\r\n\r\nLaatste regel",
+      "src": [
+        "Eén zin?",
+        "Nog één.",
+        "Laatste regel"
+      ],
+      "sep": [
+        "",
+        " ",
+        "\n\n"
+      ]
+    }
+  ],
+  "join": [
+    {
+      "texts": [
+        "A",
+        "",
+        "C"
+      ],
+      "sep": [
+        "",
+        " ",
+        "\n\n"
+      ],
+      "joined": "A\n\nC"
+    }
+  ]
+}

@@ -4,24 +4,6 @@ using Font = Microsoft.Maui.Graphics.Font;
 
 namespace PubGames.Models;
 
-/// <summary>What can be placed on a drawing in the image editor.</summary>
-public enum DrawKind
-{
-	Arrow,
-	Text,
-	Card,
-	Die,
-	Hand,
-	Drink,
-	Person,
-	Coin,
-	Number,
-	Check,
-	Cross,
-	Coaster,
-	Table
-}
-
 /// <summary>
 /// One thing on a drawing: where it is, how big and how turned, and the
 /// choices for its kind (a card's suit and rank, a die's number, which
@@ -117,13 +99,9 @@ public class DrawItem
 	/// <summary>Which fingers stick out when not neutral; same order as FingerNames.</summary>
 	public bool[] Fingers { get; set; } = new bool[5];
 
-	/// <summary>
-	/// A hand showing only the middle finger (with or without the thumb): an insult, never allowed in a
-	/// picture. Must match isRudeHand in functions/index.js.
-	/// </summary>
+	/// <summary>A hand showing only the middle finger: never allowed in a picture (see DrawRules.IsRudeHand).</summary>
 	[System.Text.Json.Serialization.JsonIgnore]
-	public bool IsRudeHand =>
-		Kind == DrawKind.Hand && !Neutral && Fingers is { Length: 5 } && Fingers[2] && !Fingers[1] && !Fingers[3] && !Fingers[4];
+	public bool IsRudeHand => DrawRules.IsRudeHand(Kind, Neutral, Fingers);
 
 	/// <summary>A left hand instead of a right one.</summary>
 	public bool Mirrored { get; set; }

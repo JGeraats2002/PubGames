@@ -27,6 +27,12 @@ public partial class AdminCreateGamePage : ContentPage
 		InitializeComponent();
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.CreateGame(_vm.IsModerator, _vm.ScoringType));
+		_vm.AddPlaceChosen += OnAddPlaceChosen;
+		// Another page of the form (a tab, or the page a missing choice is on): the keyboard closes.
+		_vm.PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName == nameof(AdminCreateGameViewModel.CurrentPage)) SoftKeyboard.Hide();
+		};
 		_vm.Finished += async (_, message) =>
 		{
 			_leaving = true;
@@ -171,17 +177,130 @@ public partial class AdminCreateGamePage : ContentPage
 	}
 
 	/// <summary>
-	/// Make this the original: after asking, the translation shown becomes the game's name and rules (see
-	/// AdminCreateGameViewModel.MakeOriginalAsync), and the General and Rules pages show it.
+	/// A sentence or picture block was tapped: adding goes after it, changing opens it in a pop-up (or the
+	/// image editor), removing asks first.
 	/// </summary>
-	private async void OnMakeOriginalClicked(object? sender, EventArgs e)
+	private async void OnSentenceTapped(object? sender, TappedEventArgs e)
 	{
-		if (_vm.TranslationLanguage is not { } language || _vm.SourceLanguage is not { } source) return;
-		if (!await DisplayAlertAsync(L.F("Make {0} the original?", language.Name),
-				L.F("The {0} name and rules become the game itself, so you can change them on the General and Rules pages. The {1} text is kept as the {1} translation, as it is now. After saving, the other languages are translated again from {0}; translations corrected by hand stay as they are.", language.Name, source.Name),
-				L.T("Make it the original"), L.T("Cancel")))
+		if (e.Parameter is not SentenceRow row || _askingWhatToAdd) return;
+		_askingWhatToAdd = true;
+		try
+		{
+			switch (_vm.Mode)
+			{
+				case TranslationMode.Adding:
+					_askingWhatToAdd = false;
+					await AddAtAsync(row);
+					break;
+				case TranslationMode.Changing when row.IsPicture:
+					var drawing = await _vm.GetDrawingAsync(row.ImageRef);
+					if (await ImageEditorPage.OpenAsync(Navigation, cover: false, drawing) is { } edited
+						&& await _vm.UploadPictureAsync(edited) is { } reference)
+						_vm.ReplacePicture(row, reference);
+					break;
+				case TranslationMode.Changing:
+					var text = await DisplayPromptAsync(L.T("Change"), L.F("Original: {0}", row.Original),
+						L.T("Change"), L.T("Cancel"), initialValue: row.Segment.Text, maxLength: 2000, keyboard: Keyboard.Chat);
+					if (text is not null) _vm.ReplaceSentence(row, text);
+					break;
+				case TranslationMode.Removing:
+					var what = row.IsPicture
+						? L.T("The picture leaves the original and every language after saving.")
+						: row.Segment.Text;
+					if (await DisplayAlertAsync(L.T("Remove this?"), what, L.T("Remove"), L.T("Keep")))
+						_vm.RemoveRow(row);
+					break;
+			}
+		}
+		finally
+		{
+			_askingWhatToAdd = false;
+		}
+	}
+
+	/// <summary>Discard: after asking, everything changed on the Translations page is undone.</summary>
+	private async void OnDiscardTranslationsClicked(object? sender, EventArgs e)
+	{
+		if (await DisplayAlertAsync(L.T("Discard your changes?"), L.T("Everything you changed on the Translations page since you opened or saved the game is undone."),
+				L.T("Discard"), L.T("Keep editing")))
+			_vm.DiscardTranslations();
+	}
+
+	/// <summary>Adding: a word in a sentence was tapped (the sentence is the place).</summary>
+	private async void OnAddPlaceChosen(object? sender, SentenceRow row) => await AddAtAsync(row);
+
+	/// <summary>Adding at the start of the rules, as a paragraph of its own.</summary>
+	private async void OnAddAtStartClicked(object? sender, EventArgs e) => await AddAtAsync(null);
+
+	/// <summary>A tap on a word also reaches the sentence: only one question at a time.</summary>
+	private bool _askingWhatToAdd;
+
+	/// <summary>
+	/// Asks what to add after the sentence (null: at the start): text, typed in a pop-up, or a picture made in
+	/// the image editor.
+	/// </summary>
+	private async Task AddAtAsync(SentenceRow? after)
+	{
+		if (_askingWhatToAdd) return;
+		_askingWhatToAdd = true;
+		try
+		{
+			var text = L.T("Text");
+			var picture = L.T("Picture (image editor)");
+			var choice = await DisplayActionSheetAsync(L.T("What do you want to add?"), L.T("Cancel"), null, text, picture);
+			if (choice == text)
+			{
+				if (await AskNewSentenceAsync() is { } typed)
+					_vm.AddSentence(after, typed, newParagraph: after is null);
+			}
+			else if (choice == picture
+				&& await ImageEditorPage.OpenAsync(Navigation, cover: false) is { } made
+				&& await _vm.UploadPictureAsync(made) is { } reference)
+			{
+				_vm.AddPicture(after, reference);
+			}
+		}
+		finally
+		{
+			_askingWhatToAdd = false;
+		}
+	}
+
+	/// <summary>The pop-up for something to add, typed freely; null when cancelled.</summary>
+	private async Task<string?> AskNewSentenceAsync()
+	{
+		var text = await DisplayPromptAsync(L.T("Add"),
+			L.F("Type what to add, in {0}. After saving it also goes into the original and every other language.", _vm.TranslationLanguage?.Name ?? string.Empty),
+			L.T("Add"), L.T("Cancel"), maxLength: 2000, keyboard: Keyboard.Chat);
+		return string.IsNullOrWhiteSpace(text) ? null : text;
+	}
+
+	/// <summary>Changing: the pop-up shows the selected words in their sentence, with a bar to type the better version.</summary>
+	private async void OnChangeSelectionClicked(object? sender, EventArgs e)
+	{
+		var selected = _vm.SelectedText();
+		if (selected.Length == 0)
+		{
+			await DisplayAlertAsync(L.T("Nothing selected"), L.T("Tap the first and the last word you want to change."), "OK");
 			return;
-		await _vm.MakeOriginalAsync();
+		}
+		var text = await DisplayPromptAsync(L.T("Change"), L.F("In: {0}\n\nSelected: {1}", _vm.SelectedSentences(), selected),
+			L.T("Change"), L.T("Cancel"), initialValue: selected, maxLength: 2000, keyboard: Keyboard.Chat);
+		if (text is not null && text.Trim() != selected)
+			_vm.ReplaceSelection(text);
+	}
+
+	/// <summary>Removing: after asking, the selected words leave this translation.</summary>
+	private async void OnRemoveSelectionClicked(object? sender, EventArgs e)
+	{
+		var selected = _vm.SelectedText();
+		if (selected.Length == 0)
+		{
+			await DisplayAlertAsync(L.T("Nothing selected"), L.T("Tap the first and the last word you want to remove."), "OK");
+			return;
+		}
+		if (await DisplayAlertAsync(L.T("Remove this?"), selected, L.T("Remove"), L.T("Keep")))
+			_vm.ReplaceSelection(string.Empty);
 	}
 
 	/// <summary>Deletes the game (admins) or asks an admin to (moderators), after asking.</summary>

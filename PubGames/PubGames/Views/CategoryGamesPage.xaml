@@ -36,10 +36,10 @@
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="8" />
 							</Border.StrokeShape>
-							<Image Source="{Binding Game.CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
+							<Image Source="{Binding Game.ShownCoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
 						</Border>
 						<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-							<Label Text="{Binding Game.Name}" />
+							<Label Text="{Binding Game.ShownName}" />
 						</VerticalStackLayout>
 						<CheckBox Grid.Column="2" IsChecked="{Binding IsSelected}" VerticalOptions="Center" />
 					</Grid>

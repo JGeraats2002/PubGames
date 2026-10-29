@@ -36,10 +36,10 @@ public partial class ReviewRequestsViewModel : ObservableObject
 	/// </summary>
 	public async Task LoadAsync()
 	{
-		Show(await _local.GetRequestsWaitingForReviewAsync(CurrentTeamId));
+		await ShowAsync(await _local.GetRequestsWaitingForReviewAsync(CurrentTeamId));
 		try
 		{
-			Show(await _cloud.PullRequestsWaitingForReviewAsync(CurrentTeamId));
+			await ShowAsync(await _cloud.PullRequestsWaitingForReviewAsync(CurrentTeamId));
 			SyncMessage = string.Empty;
 		}
 		catch (Exception ex)
@@ -50,11 +50,20 @@ public partial class ReviewRequestsViewModel : ObservableObject
 		}
 	}
 
-	/// <summary>Shows the requests, oldest first.</summary>
-	private void Show(IEnumerable<ReviewRequest> requests)
+	/// <summary>Shows the requests, with the flags of the languages each one touches.</summary>
+	private async Task ShowAsync(IEnumerable<ReviewRequest> requests)
 	{
+		var list = requests.ToList();
+		foreach (var request in list.Where(r => r.HasGameProposal))
+		{
+			var current = request.Type == ReviewRequestType.GameChanges ? await _local.GetGameAsync(request.GameId) : null;
+			var proposed = request.ProposedGame(current);
+			request.TouchedLanguages = TranslationChange.Between(current, proposed)
+				.Select(c => c.Language).Distinct().ToList();
+			request.ShownSubjectName = proposed.ShownName;
+		}
 		Requests.Clear();
-		foreach (var request in requests)
+		foreach (var request in list)
 			Requests.Add(request);
 	}
 }

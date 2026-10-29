@@ -53,7 +53,8 @@ public partial class AdminLibraryViewModel : ObservableObject
 		var text = SearchText.Trim();
 		var matches = _allGames.Where(g =>
 			Filters.Matches(g)
-			&& (text.Length == 0 || g.Name.Contains(text, StringComparison.CurrentCultureIgnoreCase))).ToList();
+			&& (text.Length == 0 || g.Name.Contains(text, StringComparison.CurrentCultureIgnoreCase)
+			|| g.ShownName.Contains(text, StringComparison.CurrentCultureIgnoreCase))).ToList();
 
 		Games.Clear();
 		foreach (var game in matches)
@@ -202,7 +203,7 @@ public partial class AdminLibraryViewModel : ObservableObject
 	private async Task ShowLocalAsync(bool canReview)
 	{
 		var categories = await _categories.GetCachedAsync();
-		_allGames = (await _local.GetManageableGamesAsync()).OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+		_allGames = (await _local.GetManageableGamesAsync()).OrderBy(g => g.ShownName, StringComparer.CurrentCultureIgnoreCase).ToList();
 
 		// A game another moderator has changes (or its deletion) waiting for stays in the list, but says who,
 		// and can't be changed by the others until an admin decides or it's withdrawn: two sets of changes

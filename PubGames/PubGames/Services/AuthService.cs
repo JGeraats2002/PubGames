@@ -38,6 +38,12 @@ public interface IAuthService
 
 	/// <summary>A fresh Firebase ID token for calling your backend / Firestore, refreshed if near expiry.</summary>
 	Task<string?> GetIdTokenAsync();
+
+	/// <summary>
+	/// The profile picture of the signed-in Google account (a web address), or null when it has none or it
+	/// can't be looked up right now.
+	/// </summary>
+	Task<string?> GetGooglePhotoUrlAsync();
 }
 
 /// <summary>
@@ -159,6 +165,25 @@ public class AuthService : IAuthService
 		ClearSession();
 		try { await _google.SignOutAsync(); } catch { /* best effort: clears the account picker's auto-select */ }
 		SignedInChanged?.Invoke(this, EventArgs.Empty);
+	}
+
+	/// <inheritdoc />
+	public async Task<string?> GetGooglePhotoUrlAsync()
+	{
+		try
+		{
+			if (await GetIdTokenAsync() is not { } idToken) return null;
+			var response = await _http.PostAsJsonAsync(
+				$"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={AuthConfig.FirebaseApiKey}", new { idToken });
+			if (!response.IsSuccessStatusCode) return null;
+			var users = (await response.Content.ReadFromJsonAsync<System.Text.Json.Nodes.JsonObject>())?["users"]?.AsArray();
+			var url = users?.FirstOrDefault()?["photoUrl"]?.GetValue<string>();
+			return string.IsNullOrWhiteSpace(url) || !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ? null : url;
+		}
+		catch (Exception)
+		{
+			return null;
+		}
 	}
 
 	/// <inheritdoc />

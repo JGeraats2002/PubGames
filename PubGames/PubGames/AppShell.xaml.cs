@@ -51,4 +51,11 @@ public partial class AppShell : Shell
 		TeamContent.IsVisible = me?.IsAdmin == true;
 		FeedbackContent.IsVisible = me?.IsAdmin == true;
 	}
+
+	/// <summary>Going to another page (a tab, a page opening or going back): the keyboard closes.</summary>
+	protected override void OnNavigating(ShellNavigatingEventArgs args)
+	{
+		Views.SoftKeyboard.Hide();
+		base.OnNavigating(args);
+	}
 }

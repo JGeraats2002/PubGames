@@ -171,7 +171,9 @@ public class TeamService : ITeamService
 	public async Task UpdateMyLanguageAsync()
 	{
 		var code = AppLanguage.Current.Code;
-		if (Me is not { } me || me.Language == code) return;
+		// Not chosen by this account yet: the language showing may still be the previous account's.
+		if (Me is not { } me || me.Language == code || !AppLanguage.IsChosen
+			|| !string.Equals(AppLanguage.AccountId, _auth.AccountId, StringComparison.Ordinal)) return;
 		try
 		{
 			if (me.IsBuiltInAdmin)

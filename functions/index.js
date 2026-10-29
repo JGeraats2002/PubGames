@@ -26,6 +26,7 @@ const { setGlobalOptions, logger } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const { google } = require("googleapis");
 const crypto = require("crypto");
+const { LANGUAGES, IMAGE_TAG, sourceHash, appLanguageOf, keepsPictureText, isRudeHand, STATUS, isPictureSegment, segmentize, joinSegments, planSegments, allChecked, storedSegments } = require("./shared");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -385,20 +386,10 @@ exports.deleteAccount = onCall(async (request) => {
 // ones are made again. A translation a team member corrected by hand (manual)
 // is never overwritten. Category names are translated the same way.
 
-// The app's language codes, and what Cloud Translation calls them.
-const LANGUAGES = { en: "en", nl: "nl", fr: "fr", de: "de", es: "es", it: "it", pt: "pt-BR", zh: "zh-CN", ar: "ar" };
-
-// A picture in the rules: ![image](reference). Pictures are kept as they are; only the text around them is translated.
-const IMAGE_TAG = /!\[[^\]]*\]\([^)\s]+\)/g;
-
-/** Which version of a game's name and rules a translation is of. Must match GameTranslation.HashOf in the app. */
-function sourceHash(name, rulesText, cover) {
-  return crypto.createHash("sha256").update(`${name}\u001f${rulesText}\u001f${cover || ""}`, "utf8").digest("hex").slice(0, 16);
-}
-
 // The version of the translator below. Automatic translations made by an older one are made again the next
 // time the game is saved (GameTranslation.Engine in the app). 2: names kept as they are, text in pictures.
-const TRANSLATOR_VERSION = 2;
+// 3: per sentence, with a status per sentence (segments; see shared.js).
+const TRANSLATOR_VERSION = 3;
 
 // Text items in a drawing made with Create image (DrawKind.Text in the app).
 const DRAW_KIND_TEXT = 1;
@@ -459,13 +450,6 @@ async function translateTexts(texts, from, to) {
   return result;
 }
 
-/** The app's language code for a code from Cloud Translation (pt-BR -> pt, zh-CN -> zh), or null. */
-function appLanguageOf(code) {
-  if (typeof code !== "string") return null;
-  const base = code.toLowerCase().split("-")[0];
-  return LANGUAGES[base] ? base : null;
-}
-
 /**
  * The language a game is really written in, when Cloud Translation is sure of it: then a wrongly chosen
  * "Written in" doesn't give translations from the wrong language. Null when the text is too short to tell
@@ -484,25 +468,83 @@ async function detectLanguage(text) {
   return best && best.confidence >= 0.7 ? appLanguageOf(best.languageCode) : null;
 }
 
-/** Translates a game's rules, keeping every picture where it is. */
-async function translateRules(rulesText, from, to) {
-  const parts = [];
-  let position = 0;
-  for (const match of rulesText.matchAll(IMAGE_TAG)) {
-    parts.push({ text: rulesText.slice(position, match.index) });
-    parts.push({ image: match[0] });
-    position = match.index + match[0].length;
+/**
+ * Sentences a person added in a translation (status "added"): each is translated into the original's
+ * language and put into the original right after the sentence it follows in that translation. In the
+ * translation it becomes "edited", with origin "added": someone who speaks the original's language still has
+ * to approve it there. Null when nothing was added. The next run translates the new sentences from the
+ * original into every other language.
+ */
+async function addToOriginal(translations, from, rulesText) {
+  const source = segmentize(rulesText);
+  const changed = {};
+  for (const [code, translation] of Object.entries(translations)) {
+    if (code === from || !LANGUAGES[code] || !Array.isArray(translation.segments)) continue;
+    const pictureChanged = (segment) => isPictureSegment(segment.src || "") && segment.text !== segment.src;
+    if (!translation.segments.some((segment) => segment.status === STATUS.added || pictureChanged(segment))) continue;
+    const segments = translation.segments.map((segment) => ({ ...segment }));
+    let at = -1;
+    for (const segment of segments) {
+      if (segment.status !== STATUS.added) {
+        const found = source.findIndex((candidate, index) => index > at && candidate.src === segment.src);
+        // A picture removed or replaced in a translation: pictures are the same everywhere, so the original changes.
+        if (found >= 0 && pictureChanged(segment)) {
+          if (isPictureSegment((segment.text || "").trim())) {
+            source[found] = { ...source[found], src: segment.text.trim() };
+            Object.assign(segment, { src: segment.text.trim(), text: segment.text.trim(), status: STATUS.auto });
+            at = found;
+          } else {
+            source.splice(found, 1);
+            segment.dropped = true;
+          }
+          continue;
+        }
+        if (found >= 0) at = found;
+        continue;
+      }
+      if (typeof segment.text !== "string" || segment.text.trim().length === 0) continue;
+      if (isPictureSegment(segment.text.trim())) {
+        // A picture is the same in every language: it goes into the original as it is.
+        const tag = segment.text.trim();
+        source.splice(at + 1, 0, { src: tag, sep: "\n\n", picture: true });
+        at++;
+        Object.assign(segment, { src: tag, sep: "\n\n", text: tag, status: STATUS.auto });
+        continue;
+      }
+      const [back] = await translateTexts([segment.text.trim()], code, from);
+      const sep = segment.sep || " ";
+      source.splice(at + 1, 0, { src: back, sep, picture: false });
+      at++;
+      Object.assign(segment, { src: back, sep, status: STATUS.edited, origin: "added" });
+    }
+    changed[code] = segments.filter((segment) => segment.status !== STATUS.added && !segment.dropped);
   }
-  parts.push({ text: rulesText.slice(position) });
+  return Object.keys(changed).length === 0 ? null : { rulesText: joinSegments(source), translations: changed };
+}
 
-  const toTranslate = parts.filter((part) => part.text !== undefined && part.text.trim().length > 0);
-  const translated = await translateTexts(toTranslate.map((part) => part.text.trim()), from, to);
-  toTranslate.forEach((part, index) => { part.translated = translated[index]; });
-  return parts
-    .map((part) => part.image || (part.translated !== undefined ? part.translated : ""))
-    .map((piece) => piece.trim())
-    .filter((piece) => piece.length > 0)
-    .join("\n\n");
+/** The picture id in a picture segment ("![image](fsimg:ID)"), or null for a photo or web picture. */
+function pictureId(segment) {
+  const found = /fsimg:([A-Za-z0-9_]+)/.exec(segment);
+  return found ? found[1] : null;
+}
+
+/**
+ * The pictures among these segments that were made in the image editor (they have a drawing). Others are
+ * photos, which games don't use any more: they're left out of translations.
+ */
+async function drawnPictures(segments) {
+  const drawn = new Set();
+  for (const id of new Set(segments.filter((segment) => segment.picture).map((segment) => pictureId(segment.src)).filter(Boolean))) {
+    try {
+      const doc = await db.collection("images").doc(id).get();
+      const drawing = doc.exists ? doc.get("drawing") : null;
+      if (typeof drawing === "string" && drawing.length > 0) drawn.add(id);
+    } catch (error) {
+      // Can't tell right now: keep it.
+      drawn.add(id);
+    }
+  }
+  return drawn;
 }
 
 /**
@@ -519,6 +561,7 @@ exports.translateGame = onDocumentWritten({ document: "games/{gameId}", timeoutS
   const hash = sourceHash(name, rulesText, after.coverImageUrl);
   const existing = after.translations || {};
   let pictures = null;
+  let drawn = null;
 
   const updates = {};
   let from = LANGUAGES[after.sourceLanguage] ? after.sourceLanguage : "en";
@@ -539,30 +582,79 @@ ${rulesText}`);
   // The original's own language has no translation (one can be left from when "Written in" was wrong).
   if (existing[from] && !updates.sourceLanguage) updates[`translations.${from}`] = admin.firestore.FieldValue.delete();
 
+  // Sentences added in a translation go into the original first; the next run translates them onwards.
+  try {
+    const added = await addToOriginal(existing, from, rulesText);
+    if (added) {
+      const newHash = sourceHash(name, added.rulesText, after.coverImageUrl);
+      const changes = { ...updates, rulesText: added.rulesText };
+      for (const [code, segments] of Object.entries(added.translations)) {
+        changes[`translations.${code}.segments`] = storedSegments(segments);
+        changes[`translations.${code}.rulesText`] = joinSegments(segments, (segment) => segment.text);
+        changes[`translations.${code}.sourceHash`] = newHash;
+      }
+      logger.info(`translateGame ${event.params.gameId}: sentences added from ${Object.keys(added.translations).join(", ")} put into the original`);
+      await event.data.after.ref.update(changes);
+      return;
+    }
+  } catch (error) {
+    logger.error(`translateGame ${event.params.gameId}: adding sentences to the original failed`, error);
+  }
+
   for (const to of Object.keys(LANGUAGES)) {
     if (to === from) continue;
     const current = existing[to];
-    if (current && (current.manual === true || (current.sourceHash === hash && (current.engine || 1) >= TRANSLATOR_VERSION))) continue;
+    // Made per sentence by this translator, for the language the game is written in.
+    const bySentence = current && (current.engine || 0) >= TRANSLATOR_VERSION && Array.isArray(current.segments) && !updates.sourceLanguage;
+    if (bySentence && current.sourceHash === hash) {
+      // "Translation is fine" in the app checks the whole language: every sentence counts as approved.
+      if (current.checkedHash === hash && !allChecked(current.segments.map((segment) => ({ ...segment, picture: isPictureSegment(segment.src) }))))
+        updates[`translations.${to}.segments`] = current.segments.map((segment) => (isPictureSegment(segment.src) || segment.status === STATUS.edited
+          ? segment : { src: segment.src, sep: segment.sep, text: segment.text, status: STATUS.approved }));
+      continue;
+    }
     try {
-      // Text in pictures: translated per picture. Empty texts, numbers and the game's name stay as they are.
+      // Sentences that stayed the same keep their translation and status; only new and changed ones are
+      // translated (see planSegments). A changed sentence a person had checked keeps their text, marked to
+      // look at again, with a fresh automatic translation as a suggestion.
+      const source = segmentize(rulesText);
+      drawn = drawn || await drawnPictures(source);
+      const plan = planSegments(bySentence ? current.segments : null, source)
+        .filter((segment) => !segment.picture || drawn.has(pictureId(segment.src)));
+      const toTranslate = plan.filter((segment) => segment.text === null);
+      const toSuggest = plan.filter((segment) => segment.status === STATUS.review && segment.suggestion === null);
+      const translated = await translateTexts([...toTranslate, ...toSuggest].map((segment) => segment.src), from, to);
+      toTranslate.forEach((segment, index) => { segment.text = translated[index]; });
+      toSuggest.forEach((segment, index) => { segment.suggestion = translated[toTranslate.length + index]; });
+
+      // Text in pictures: pictures that were translated before keep their texts (also corrected ones);
+      // new pictures get theirs translated. Empty texts, numbers and the game's name stay as they are.
       pictures = pictures || await pictureTexts(rulesText, after.coverImageUrl);
-      const sameAsName = (text) => text.trim().toLowerCase() === name.trim().toLowerCase();
-      const keep = (text) => text.trim().length === 0 || sameAsName(text) || !/\p{L}/u.test(text);
+      const keep = (text) => keepsPictureText(text, name);
       const imageTexts = {};
       for (const [id, texts] of Object.entries(pictures)) {
-        const translated = await translateTexts(texts.filter((text) => !keep(text)), from, to);
+        const before = bySentence && current.imageTexts ? current.imageTexts[id] : null;
+        if (Array.isArray(before) && before.length === texts.length) { imageTexts[id] = before; continue; }
+        const translatedTexts = await translateTexts(texts.filter((text) => !keep(text)), from, to);
         let next = 0;
-        imageTexts[id] = texts.map((text) => (keep(text) ? text : translated[next++]));
+        imageTexts[id] = texts.map((text) => (keep(text) ? text : translatedTexts[next++]));
       }
-      // A game's name is a name: it isn't translated (Toepen stays Toepen). It can be corrected by hand.
+
+      const checked = bySentence && allChecked(plan);
+      // A game's name is a name: it isn't translated (Toepen stays Toepen). A correction by hand stays.
       updates[`translations.${to}`] = {
-        name,
-        rulesText: await translateRules(rulesText, from, to),
+        name: bySentence && current.name ? current.name : name,
+        rulesText: joinSegments(plan, (segment) => segment.text),
+        segments: storedSegments(plan),
         imageTexts,
         manual: false,
         sourceHash: hash,
-        engine: TRANSLATOR_VERSION
+        engine: TRANSLATOR_VERSION,
+        checkedHash: checked ? hash : "",
+        checkedBy: checked ? (current.checkedBy || "") : ""
       };
+      const changed = toTranslate.length + toSuggest.length;
+      logger.info(`translateGame ${event.params.gameId} -> ${to}: ${changed} sentence(s) translated, ${plan.length - changed} kept`);
     } catch (error) {
       logger.error(`translateGame ${event.params.gameId} -> ${to} failed`, error);
     }
@@ -586,6 +678,9 @@ async function notifyTranslationChecks(gameId, game, from, hash) {
     const translations = game.translations || {};
     const toCheck = Object.keys(LANGUAGES).filter((code) => code !== from && translations[code]
       && translations[code].checkedHash !== hash);
+    const addedToOriginal = Object.values(translations).some((translation) =>
+      Array.isArray(translation.segments) && translation.segments.some((segment) => segment.origin === "added"));
+    if (addedToOriginal) toCheck.push(from);
 
     const sent = await db.collection("messages").where("gameId", "==", gameId).get();
     const already = new Set();
@@ -654,14 +749,6 @@ async function translateName(event) {
 }
 
 exports.translateCategory = onDocumentWritten("categories/{categoryId}", translateName);
-
-/** A hand showing only the middle finger (thumb either way). Must match DrawItem.IsRudeHand in the app. */
-function isRudeHand(item) {
-  const HAND = 4;
-  const fingers = item.Fingers;
-  return item.Kind === HAND && item.Neutral === false && Array.isArray(fingers) && fingers.length === 5
-    && fingers[2] === true && !fingers[1] && !fingers[3] && !fingers[4];
-}
 
 /**
  * The app doesn't save a picture with a rude hand in it; one that still gets here (from a changed app) is

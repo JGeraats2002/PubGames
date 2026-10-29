@@ -33,6 +33,76 @@
 				</VerticalStackLayout>
 			</Border>
 
+			<!-- Translations it touches, with who on the team uses the app in each language. -->
+			<Border IsVisible="{Binding HasTranslationChanges}" BackgroundColor="{StaticResource SurfaceMuted}"
+			        StrokeThickness="0" Padding="12,10">
+				<Border.StrokeShape>
+					<RoundRectangle CornerRadius="8" />
+				</Border.StrokeShape>
+				<VerticalStackLayout Spacing="10">
+					<Label Text="{loc:T ReviewRequest_Translations}" FontAttributes="Bold" />
+					<Label Text="{loc:T ReviewRequest_TranslationsHint}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+					<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding TranslationChanges}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="models:TranslationChange">
+								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+									<Border WidthRequest="28" HeightRequest="28" StrokeThickness="1" Stroke="{StaticResource Border}"
+									        StrokeShape="Ellipse" VerticalOptions="Start">
+										<Image Source="{Binding Flag}" Aspect="AspectFill" />
+									</Border>
+									<VerticalStackLayout Grid.Column="1" Spacing="2">
+										<Label Text="{Binding Label}" FontSize="14" FontAttributes="Bold" />
+										<Label Text="{Binding Speakers}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+									</VerticalStackLayout>
+								</Grid>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+				</VerticalStackLayout>
+			</Border>
+
+			<!-- Every change, sentence by sentence: first how it was, then how it would become. -->
+			<VerticalStackLayout Spacing="10" IsVisible="{Binding HasSentenceChanges}">
+				<Label Text="{loc:T ReviewRequest_Changes}" FontSize="16" />
+				<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding SentenceChanges}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="models:SentenceChange">
+							<Border Padding="12,10" StrokeThickness="1" Stroke="{StaticResource Border}">
+								<Border.StrokeShape>
+									<RoundRectangle CornerRadius="8" />
+								</Border.StrokeShape>
+								<VerticalStackLayout Spacing="6">
+									<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+										<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse">
+											<Image Source="{Binding Flag}" Aspect="AspectFill" />
+										</Border>
+										<Label Grid.Column="1" Text="{Binding Heading}" FontSize="13" FontAttributes="Bold" VerticalOptions="Center" />
+									</Grid>
+									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasBefore}">
+										<Label Text="{loc:T ReviewRequest_Before}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding Before}" FontSize="14" TextColor="{StaticResource TextSecondary}" />
+									</VerticalStackLayout>
+									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasBeforeImage}">
+										<Label Text="{loc:T ReviewRequest_Before}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<views:RulesImage ImageRef="{Binding BeforeImage}" />
+									</VerticalStackLayout>
+									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasAfter}">
+										<Label Text="{loc:T ReviewRequest_After}" FontSize="11" TextColor="{StaticResource Accent}" />
+										<Label Text="{Binding After}" FontSize="14" />
+									</VerticalStackLayout>
+									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasAfterImage}">
+										<Label Text="{loc:T ReviewRequest_After}" FontSize="11" TextColor="{StaticResource Accent}" />
+										<views:RulesImage ImageRef="{Binding AfterImage}" />
+									</VerticalStackLayout>
+								</VerticalStackLayout>
+							</Border>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+				<Button Text="{Binding FullGameButtonText}" Command="{Binding ToggleFullGameCommand}" HeightRequest="48"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			</VerticalStackLayout>
+
 			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" />
 
 			<!-- A moderator looking at another moderator's request: nothing to decide, but they can get in touch. -->
@@ -50,6 +120,38 @@
 				<Button Grid.Column="1" Text="{Binding ApproveButtonText}" Clicked="OnApproveClicked"
 				        IsEnabled="{Binding CanApprove}" />
 			</Grid>
+
+			<!-- The whole game: shown at once for new games, behind a button when there's a list of changes. -->
+			<VerticalStackLayout Spacing="12" IsVisible="{Binding ShowFullGame}">
+			<!-- The original and a translation piece by piece, each with its flag, to judge the translation. -->
+			<VerticalStackLayout Spacing="10" IsVisible="{Binding HasComparison}" Margin="0,16,0,0">
+				<Label Text="{loc:T ReviewRequest_CompareTheTranslation}" FontSize="16" />
+				<Picker Title="{loc:T ReviewRequest_ChooseATranslation}" ItemsSource="{Binding CompareLanguages}"
+				        ItemDisplayBinding="{Binding Name}" SelectedItem="{Binding CompareLanguage}" />
+				<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding ComparisonRows}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="models:ComparisonRow">
+							<VerticalStackLayout Spacing="6">
+								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsText}">
+									<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse" VerticalOptions="Start">
+										<Image Source="{Binding OriginalFlag, Source={RelativeSource AncestorType={x:Type vm:ReviewRequestViewModel}}, x:DataType=vm:ReviewRequestViewModel}" Aspect="AspectFill" />
+									</Border>
+									<Label Grid.Column="1" Text="{Binding Original}" FontSize="14" TextColor="{StaticResource TextSecondary}" />
+								</Grid>
+								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsText}">
+									<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse" VerticalOptions="Start">
+										<Image Source="{Binding CompareFlag, Source={RelativeSource AncestorType={x:Type vm:ReviewRequestViewModel}}, x:DataType=vm:ReviewRequestViewModel}" Aspect="AspectFill" />
+									</Border>
+									<Label Grid.Column="1" Text="{Binding Translation}" FontSize="15" />
+								</Grid>
+								<Label Text="{loc:T ReviewRequest_NotTranslated}" FontSize="12" TextColor="{StaticResource Warning}" IsVisible="{Binding HasNoTranslation}" />
+								<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" />
+								<BoxView HeightRequest="1" Color="{StaticResource Border}" IsVisible="{Binding IsText}" />
+							</VerticalStackLayout>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
+			</VerticalStackLayout>
 
 			<!-- Preview, laid out like the rules page players see. Not for category requests. -->
 			<VerticalStackLayout Spacing="12" IsVisible="{Binding HasGamePreview}">
@@ -118,6 +220,7 @@
 						</Grid>
 					</DataTemplate>
 				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
 			</VerticalStackLayout>
 			</VerticalStackLayout>
 

@@ -4,6 +4,7 @@
              xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
+             xmlns:services="clr-namespace:PubGames.Services"
              x:Class="PubGames.Views.ReviewRequestsPage"
              x:DataType="vm:ReviewRequestsViewModel"
              Title="{loc:T ReviewRequests_Requests}">
@@ -28,6 +29,17 @@
 						<Grid ColumnDefinitions="*,Auto">
 							<VerticalStackLayout Spacing="2">
 								<Label Text="{Binding Summary}" />
+								<!-- The languages it touches: someone who speaks them should review it. -->
+								<HorizontalStackLayout Spacing="4" IsVisible="{Binding TouchesTranslations}" BindableLayout.ItemsSource="{Binding TouchedLanguages}">
+									<BindableLayout.ItemTemplate>
+										<DataTemplate x:DataType="services:AppLanguageInfo">
+											<Border WidthRequest="20" HeightRequest="20" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse"
+											        SemanticProperties.Description="{Binding Name}">
+												<Image Source="{Binding Flag}" Aspect="AspectFill" />
+											</Border>
+										</DataTemplate>
+									</BindableLayout.ItemTemplate>
+								</HorizontalStackLayout>
 								<Label Text="{Binding SubmittedLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 							</VerticalStackLayout>
 							<Label Grid.Column="1" Text="{loc:T ReviewRequests_Review}" VerticalOptions="Center" TextColor="{StaticResource Primary}" />

@@ -133,7 +133,7 @@ public partial class CategoryGamesViewModel : ObservableObject, IQueryAttributab
 		Games.Clear();
 		foreach (var game in (await _local.GetManageableGamesAsync())
 			.Where(g => g.Status == GameStatus.Published)
-			.OrderBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase))
+			.OrderBy(g => g.ShownName, StringComparer.CurrentCultureIgnoreCase))
 			Games.Add(new GameChoice { Game = game, IsSelected = game.CategoryIds.Contains(_category.Id) });
 
 		// The clouds filter by the games' saved categories; only categories that have games.

@@ -21,6 +21,7 @@ public partial class AccountPage : ContentPage
 	{
 		base.OnAppearing();
 		await _vm.LoadAsync();
+		await OfferGooglePhotoAsync();
 	}
 
 	/// <summary>Opens Profile: picture, name, nickname and player code.</summary>
@@ -73,5 +74,18 @@ public partial class AccountPage : ContentPage
 	{
 		if (await DisplayAlertAsync(L.T("Sign out?"), L.T("You can sign in again with any Google account."), L.T("Sign out"), L.T("Cancel")))
 			await _vm.SignOutCommand.ExecuteAsync(null);
+	}
+
+	/// <summary>
+	/// Once, when the profile has no picture: asks whether to use the Google account's picture. It can be
+	/// changed in the app at any time.
+	/// </summary>
+	private async Task OfferGooglePhotoAsync()
+	{
+		if (await _vm.GooglePhotoToOfferAsync() is not { } url) return;
+		var use = await DisplayAlertAsync(L.T("Use your Google picture?"),
+			L.T("Your Google account has a profile picture. Do you want to use it in Pub Games too? You can change it in the app at any time."),
+			L.T("Use it"), L.T("Not now"));
+		await _vm.AnswerGooglePhotoAsync(url, use);
 	}
 }

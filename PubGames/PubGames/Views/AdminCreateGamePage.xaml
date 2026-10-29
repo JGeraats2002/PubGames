@@ -329,10 +329,46 @@
 				        BorderColor="{StaticResource Border}" BorderWidth="1" />
 			</VerticalStackLayout>
 
-			<!-- ===== Page 4: languages =====
-			     The translations the cloud made after saving; correct one here and it's kept as it is. -->
+			<!-- ===== Page 4: translations =====
+			     The cloud translates the original sentence by sentence; here a person checks each language and
+			     changes, adds or removes what isn't right. The text itself isn't typed in freely. -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsLanguagesPage}">
-				<Label Text="{loc:T AdminCreateGame_Language}" Style="{StaticResource SectionTitle}" />
+				<Label Text="{Binding WrittenInMyLanguageHint}" IsVisible="{Binding WrittenInMyLanguage}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+				<Label Text="{Binding ToCheckOverview}" FontSize="13" FontAttributes="Bold" />
+
+				<!-- Sentences that came into the original from a translation: for someone who speaks the original's language. -->
+				<Border IsVisible="{Binding HasAddedToOriginal}" BackgroundColor="{StaticResource ScoreWarningTint}" StrokeThickness="0" Padding="12,10">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="8" />
+					</Border.StrokeShape>
+					<VerticalStackLayout Spacing="10">
+						<Label Text="{loc:T AdminCreateGame_NewInTheOriginal}" FontSize="13" FontAttributes="Bold" />
+						<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding AddedToOriginal}">
+							<BindableLayout.ItemTemplate>
+								<DataTemplate x:DataType="vm:AddedToOriginal">
+									<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+										<VerticalStackLayout Spacing="2">
+											<Label Text="{Binding Sentence}" FontSize="14" />
+											<Label FontSize="12" TextColor="{StaticResource TextSecondary}">
+												<Label.FormattedText>
+													<FormattedString>
+														<Span Text="{Binding LanguageName}" />
+														<Span Text=": " />
+														<Span Text="{Binding AddedAs}" />
+													</FormattedString>
+												</Label.FormattedText>
+											</Label>
+										</VerticalStackLayout>
+										<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Approve}" HeightRequest="48" VerticalOptions="Center"
+										        Command="{Binding ApproveAddedToOriginalCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}"
+										        CommandParameter="{Binding .}" />
+									</Grid>
+								</DataTemplate>
+							</BindableLayout.ItemTemplate>
+						</VerticalStackLayout>
+					</VerticalStackLayout>
+				</Border>
+
 				<Picker Title="{loc:T AdminCreateGame_ChooseALanguage}" ItemsSource="{Binding TranslationLanguages}" ItemDisplayBinding="{Binding Name}"
 				        SelectedItem="{Binding TranslationLanguage}" />
 				<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,10">
@@ -341,7 +377,6 @@
 					</Border.StrokeShape>
 					<VerticalStackLayout Spacing="6">
 						<Label Text="{Binding TranslationStatus}" FontSize="13" />
-						<!-- Whether a person has checked it: green when checked against the original as it is now. -->
 						<Label Text="{Binding CheckStatus}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Warning}">
 							<Label.Triggers>
 								<DataTrigger TargetType="Label" Binding="{Binding IsChecked}" Value="True">
@@ -371,20 +406,106 @@
 					</VerticalStackLayout>
 				</VerticalStackLayout>
 
-				<Label Text="{loc:T AdminCreateGame_HowToPlay}" Style="{StaticResource SectionTitle}" />
-				<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
-					<Border.StrokeShape>
-						<RoundRectangle CornerRadius="8" />
-					</Border.StrokeShape>
-					<VerticalStackLayout Spacing="0" BindableLayout.ItemsSource="{Binding TranslatedBlocks}">
-						<BindableLayout.ItemTemplate>
-							<DataTemplate x:DataType="vm:TranslationBlock">
-								<VerticalStackLayout>
-									<views:PlainEditor Text="{Binding Text}" IsVisible="{Binding IsText}" AutoSize="TextChanges" />
-									<!-- The picture with the texts in this language, drawn again as they're corrected. -->
-									<views:RulesImage ImageRef="{Binding PreviewRef}" IsVisible="{Binding IsImage}" Margin="0,14,0,6" />
-									<!-- The texts in the picture: the original small, the translation to correct below it. -->
-									<VerticalStackLayout Spacing="8" Margin="0,0,0,14" IsVisible="{Binding HasTexts}">
+				<!-- What to do with the translation: check it, or add, change or remove sentences. -->
+				<VerticalStackLayout Spacing="8" IsVisible="{Binding HasSentences}">
+					<Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" IsVisible="{Binding IsBrowsing}">
+						<Button Text="{loc:T AdminCreateGame_Add}" Command="{Binding StartAddingCommand}" HeightRequest="48"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+						<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Change}" Command="{Binding StartChangingCommand}" HeightRequest="48"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+						<Button Grid.Column="2" Text="{loc:T AdminCreateGame_Remove}" Command="{Binding StartRemovingCommand}" HeightRequest="48"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Danger}" BorderWidth="1" />
+					</Grid>
+					<Button Text="{loc:T AdminCreateGame_TranslationIsFine}" Command="{Binding ApproveTranslationCommand}"
+					        IsVisible="{Binding CanApproveTranslation}" />
+
+					<!-- Adding: tap the sentence to add after, or add at the start. -->
+					<VerticalStackLayout Spacing="8" IsVisible="{Binding IsAdding}">
+						<Label Text="{loc:T AdminCreateGame_TapWhereToAdd}" FontSize="13" TextColor="{StaticResource Warning}" />
+						<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+							<Button Text="{loc:T AdminCreateGame_AddAtTheStart}" Clicked="OnAddAtStartClicked" HeightRequest="48"
+							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+							<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Cancel}" Command="{Binding CancelModeCommand}" HeightRequest="48"
+							        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						</Grid>
+					</VerticalStackLayout>
+
+					<!-- Changing or removing: tap the sentence or picture. -->
+					<VerticalStackLayout Spacing="8" IsVisible="{Binding IsSelecting}">
+						<Label Text="{loc:T AdminCreateGame_TapToChange}" FontSize="13" TextColor="{StaticResource Warning}" IsVisible="{Binding IsChangingWords}" />
+						<Label Text="{loc:T AdminCreateGame_TapToRemove}" FontSize="13" TextColor="{StaticResource Warning}" IsVisible="{Binding IsRemovingWords}" />
+						<Button Text="{loc:T AdminCreateGame_Cancel}" Command="{Binding CancelModeCommand}" HeightRequest="48"
+						        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+					</VerticalStackLayout>
+				</VerticalStackLayout>
+
+				<!-- The translation sentence by sentence: the original small above, a colour per status. -->
+				<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding SentenceRows}">
+					<BindableLayout.ItemTemplate>
+						<DataTemplate x:DataType="vm:SentenceRow">
+							<VerticalStackLayout Spacing="0">
+								<Grid IsVisible="{Binding IsSentence}">
+								<Border Padding="10,8" StrokeThickness="1" Stroke="{StaticResource Border}">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="8" />
+									</Border.StrokeShape>
+									<Border.Triggers>
+										<DataTrigger TargetType="Border" Binding="{Binding IsAuto}" Value="True">
+											<Setter Property="BackgroundColor" Value="{StaticResource ScoreWarningTint}" />
+										</DataTrigger>
+										<DataTrigger TargetType="Border" Binding="{Binding IsReview}" Value="True">
+											<Setter Property="BackgroundColor" Value="{StaticResource ScoreWarningTint}" />
+											<Setter Property="Stroke" Value="{StaticResource ScoreWarning}" />
+										</DataTrigger>
+										<DataTrigger TargetType="Border" Binding="{Binding IsAdded}" Value="True">
+											<Setter Property="Stroke" Value="{StaticResource Accent}" />
+										</DataTrigger>
+									</Border.Triggers>
+									<Border.GestureRecognizers>
+										<TapGestureRecognizer Tapped="OnSentenceTapped" CommandParameter="{Binding .}" />
+									</Border.GestureRecognizers>
+									<VerticalStackLayout Spacing="4">
+										<Label Text="{Binding Original}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+										<!-- One label per sentence; its words can be tapped while choosing what to change or remove. -->
+										<views:WordsLabel Words="{Binding Words}" FontSize="15"
+										                  TapCommand="{Binding TapWordCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}" />
+										<Label Text="{Binding StatusLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<!-- The original changed after a person checked it: the new automatic translation to compare with. -->
+										<VerticalStackLayout Spacing="6" IsVisible="{Binding HasSuggestion}">
+											<Label FontSize="13">
+												<Label.FormattedText>
+													<FormattedString>
+														<Span Text="{loc:T AdminCreateGame_Suggestion}" FontAttributes="Bold" />
+														<Span Text="{Binding Segment.Suggestion}" />
+													</FormattedString>
+												</Label.FormattedText>
+											</Label>
+											<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+												<Button Text="{loc:T AdminCreateGame_TakeTheSuggestion}" HeightRequest="48" FontSize="13"
+												        Command="{Binding TakeSuggestionCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}"
+												        CommandParameter="{Binding .}" />
+												<Button Grid.Column="1" Text="{loc:T AdminCreateGame_KeepItAsItIs}" HeightRequest="48" FontSize="13"
+												        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1"
+												        Command="{Binding KeepTranslationCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}"
+												        CommandParameter="{Binding .}" />
+											</Grid>
+										</VerticalStackLayout>
+									</VerticalStackLayout>
+								</Border>
+								<!-- Adding: the whole block is the place to add after (a tap on the words would otherwise go to them). -->
+								<ContentView BackgroundColor="#01FFFFFF"
+								             IsVisible="{Binding IsChoosingBlock, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}">
+									<ContentView.GestureRecognizers>
+										<TapGestureRecognizer Tapped="OnSentenceTapped" CommandParameter="{Binding .}" />
+									</ContentView.GestureRecognizers>
+								</ContentView>
+								</Grid>
+
+								<!-- A picture, with its texts in this language to correct. -->
+								<Grid IsVisible="{Binding IsPicture}">
+								<VerticalStackLayout Spacing="8" Margin="0,6">
+									<views:RulesImage ImageRef="{Binding PreviewRef}" />
+									<VerticalStackLayout Spacing="8" IsVisible="{Binding HasTexts}">
 										<Label Text="{loc:T AdminCreateGame_TextInThePicture}" FontSize="13" FontAttributes="Bold" />
 										<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Texts}">
 											<BindableLayout.ItemTemplate>
@@ -398,23 +519,21 @@
 										</VerticalStackLayout>
 									</VerticalStackLayout>
 								</VerticalStackLayout>
-							</DataTemplate>
-						</BindableLayout.ItemTemplate>
-					</VerticalStackLayout>
-				</Border>
+								<!-- Adding: the picture is the place to add after. -->
+								<ContentView BackgroundColor="#01FFFFFF"
+								             IsVisible="{Binding IsChoosingBlock, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}">
+									<ContentView.GestureRecognizers>
+										<TapGestureRecognizer Tapped="OnSentenceTapped" CommandParameter="{Binding .}" />
+									</ContentView.GestureRecognizers>
+								</ContentView>
+								</Grid>
+							</VerticalStackLayout>
+						</DataTemplate>
+					</BindableLayout.ItemTemplate>
+				</VerticalStackLayout>
 
 				<Button Text="{loc:T AdminCreateGame_UseTheAutomaticTranslationAgain}" Command="{Binding UseAutomaticTranslationCommand}"
 				        IsVisible="{Binding CanUseAutomaticTranslation}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
-
-				<!-- A person has read it against the original and it's right. -->
-				<Button Text="{loc:T AdminCreateGame_TranslationIsFine}" Command="{Binding ApproveTranslationCommand}"
-				        IsVisible="{Binding CanApproveTranslation}" />
-
-				<!-- This language becomes the original, so the game can be changed in it. -->
-				<Button Text="{loc:T AdminCreateGame_MakeThisTheOriginal}" Clicked="OnMakeOriginalClicked"
-				        IsVisible="{Binding CanMakeOriginal}"
 				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>
@@ -441,7 +560,12 @@
 				                   HeightRequest="20" WidthRequest="20" VerticalOptions="Center" />
 				<Label Grid.Column="1" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontSize="13" />
 			</Grid>
-			<Button Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" HeightRequest="52" />
+			<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+				<!-- On Translations: undo what was changed there. -->
+				<Button Text="{loc:T AdminCreateGame_Discard}" Clicked="OnDiscardTranslationsClicked" HeightRequest="52" IsVisible="{Binding IsLanguagesPage}"
+				        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Danger}" BorderWidth="1" />
+				<Button Grid.Column="1" Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" HeightRequest="52" />
+			</Grid>
 		</VerticalStackLayout>
 	</VerticalStackLayout>
 

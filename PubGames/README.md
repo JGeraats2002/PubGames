@@ -27,8 +27,10 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass.
 
 ## Waar we gebleven zijn (bijgewerkt 29-10-2026)
 
-Laatste commit: "final version before publishing - tested" (29-10-2026, niet gepusht). Versie 4 (1.3) is
-gebouwd als `.aab` (zie hieronder waar). Versie 3 (1.2) staat bij Closed testing. Functions en
+Laatste commits: "final version before publishing - tested" + README-update (29-10-2026, gepusht).
+Versie 4 (1.3) is gebouwd als ondertekende `.aab`: `%USERPROFILE%\PubGamesBuilds\pubgames-v4-1.3.aab`
+(buiten de repo; handtekening gecontroleerd met jarsigner). Gebouwd uit een kopie van de broncode zodat VS
+open kon blijven. Versie 3 (1.2) staat bij Closed testing. Functions en
 firestore.rules zijn gedeployed.
 
 **Volgende stap:** de gebruiker uploadt de `.aab` van versie 4 bij Closed testing (Play Console › Testing ›

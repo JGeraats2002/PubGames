@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:loc="clr-namespace:PubGames.Services"
+             xmlns:models="clr-namespace:PubGames.Models"
+             xmlns:vm="clr-namespace:PubGames.ViewModels"
+             x:Class="PubGames.Views.AgreementsPage"
+             Title="{loc:T Agreements_Title}">
+
+	<Grid RowDefinitions="*,Auto" Padding="20" RowSpacing="12">
+
+		<ScrollView x:Name="PageScroll">
+			<VerticalStackLayout Spacing="16">
+				<!-- Why this page opened first: not agreed yet, or the agreements changed. -->
+				<Border x:Name="NoticeBox" BackgroundColor="{StaticResource ScoreWarningTint}" StrokeThickness="0" Padding="12,10">
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="8" />
+					</Border.StrokeShape>
+					<Label x:Name="NoticeLabel" FontSize="14" />
+				</Border>
+
+				<!-- Reading: the agreements. -->
+				<VerticalStackLayout x:Name="ReadPanel" Spacing="16">
+					<Label Text="{loc:T Agreements_Intro}" FontSize="15" LineHeight="1.3" />
+					<VerticalStackLayout x:Name="SectionsList" Spacing="14">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="models:HelpSection">
+								<VerticalStackLayout Spacing="4">
+									<Label Text="{Binding Heading}" FontSize="17" FontAttributes="Bold" />
+									<Label Text="{Binding Text}" FontSize="15" LineHeight="1.3" />
+								</VerticalStackLayout>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+				</VerticalStackLayout>
+
+				<!-- The owner editing: every section's heading and text; ✕ removes one. -->
+				<VerticalStackLayout x:Name="EditPanel" Spacing="12" IsVisible="False">
+					<Label Text="{loc:T Agreements_EditHint}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+					<VerticalStackLayout x:Name="EditList" Spacing="12">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="vm:EditableAgreement">
+								<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="8" />
+									</Border.StrokeShape>
+									<VerticalStackLayout Spacing="6">
+										<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+											<Entry Text="{Binding Heading}" Placeholder="{loc:T Agreements_Heading}" FontAttributes="Bold" />
+											<Button Grid.Column="1" Text="✕" Clicked="OnRemoveSectionClicked" SemanticProperties.Description="{loc:T Agreements_RemoveSection}"
+											        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
+											        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+										</Grid>
+										<Editor Text="{Binding Text}" Placeholder="{loc:T Agreements_Text}" AutoSize="TextChanges" MinimumHeightRequest="96" />
+									</VerticalStackLayout>
+								</Border>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+					<Button Text="{loc:T Agreements_AddSection}" Clicked="OnAddSectionClicked" HorizontalOptions="Start"
+					        HeightRequest="48" Padding="14,0" FontSize="13"
+					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+					<Button Text="{loc:T Agreements_BackToBuiltIn}" Clicked="OnBuiltInClicked" HorizontalOptions="Start"
+					        HeightRequest="48" Padding="14,0" FontSize="13"
+					        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+					<Label x:Name="EditMessage" TextColor="{StaticResource Danger}" FontSize="13" IsVisible="False" />
+				</VerticalStackLayout>
+			</VerticalStackLayout>
+		</ScrollView>
+
+		<!-- Agreed: says so. Not yet: the admin pages stay closed until this is tapped. Editing: Cancel and Save. -->
+		<VerticalStackLayout Grid.Row="1" Spacing="8">
+			<Label x:Name="AgreedLabel" Text="{loc:T Agreements_Agreed}" FontSize="13" FontAttributes="Bold"
+			       TextColor="{StaticResource PrimaryDark}" HorizontalTextAlignment="Center" />
+			<Button x:Name="AgreeButton" Text="{loc:T Agreements_Agree}" Clicked="OnAgreeClicked" HeightRequest="52" />
+			<Grid x:Name="EditButtons" ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="False">
+				<Button Text="{loc:T Agreements_Cancel}" Clicked="OnCancelEditClicked" HeightRequest="52"
+				        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+				<Button Grid.Column="1" x:Name="SaveButton" Text="{loc:T Agreements_Save}" Clicked="OnSaveClicked" HeightRequest="52" />
+			</Grid>
+		</VerticalStackLayout>
+
+	</Grid>
+
+</ContentPage>

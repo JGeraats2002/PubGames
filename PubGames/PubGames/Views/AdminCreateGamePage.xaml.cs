@@ -1,3 +1,4 @@
+using PubGames.Services;
 using Microsoft.Maui.Platform;
 using PubGames.Models;
 using PubGames.ViewModels;
@@ -22,10 +23,11 @@ public partial class AdminCreateGamePage : ContentPage
 	/// Sets up the game form: its view model, the ⓘ help, what happens once it's saved or deleted, and asking
 	/// before leaving with unsaved changes.
 	/// </summary>
-	public AdminCreateGamePage(AdminCreateGameViewModel vm)
+	public AdminCreateGamePage(AdminCreateGameViewModel vm, TestRun testRun)
 	{
 		InitializeComponent();
 		BindingContext = _vm = vm;
+		_testRun = testRun;
 		InfoButton.Attach(this, () => Help.CreateGame(_vm.IsModerator, _vm.ScoringType));
 		_vm.AddPlaceChosen += OnAddPlaceChosen;
 		// Another page of the form (a tab, or the page a missing choice is on): the keyboard closes.
@@ -46,6 +48,35 @@ public partial class AdminCreateGamePage : ContentPage
 
 	/// <summary>Saved, deleted, withdrawn or chosen not to save: going back doesn't ask (again).</summary>
 	private bool _leaving;
+
+	/// <summary>Test as player: plays the game as filled in now, with made-up players.</summary>
+	private readonly TestRun _testRun;
+
+	/// <summary>
+	/// Test as player: choose how many made-up players, then the game opens
+	/// the way players see it (its rules first). Nothing is saved, and the
+	/// form stays as it is; Stop test comes back here.
+	/// </summary>
+	private async void OnTestClicked(object? sender, EventArgs e)
+	{
+		if (_vm.FormAsTestGame() is not { } game) return;
+		var (min, max) = _vm.TestPlayerRange();
+		var counts = Enumerable.Range(min, max - min + 1).Select(n => L.F("{0} players", n)).ToArray();
+		var count = min;
+		if (counts.Length > 1)
+		{
+			var choice = await DisplayActionSheetAsync(L.T("Test with how many players?"), L.T("Cancel"), null, counts);
+			var index = Array.IndexOf(counts, choice);
+			if (index < 0) return;
+			count = min + index;
+		}
+		await _testRun.StartAsync(game, count);
+		await Shell.Current.GoToAsync(nameof(GameRulesPage), new ShellNavigationQueryParameters
+		{
+			["game"] = game,
+			["players"] = _testRun.Players
+		});
+	}
 
 	/// <summary>The phone's back button: ask first.</summary>
 	protected override bool OnBackButtonPressed()
@@ -86,6 +117,9 @@ public partial class AdminCreateGamePage : ContentPage
 	protected override async void OnAppearing()
 	{
 		base.OnAppearing();
+		// Back from a test: nothing of it is kept.
+		if (_testRun.IsActive && !_testRun.IsRestarting)
+			await _testRun.StopAsync();
 		await _vm.LoadCategoriesAsync();
 	}
 

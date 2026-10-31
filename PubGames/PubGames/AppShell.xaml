@@ -36,6 +36,10 @@
 			<ShellContent x:Name="TeamContent" Title="{loc:T AppShell_Team}"
 			              ContentTemplate="{DataTemplate views:AdminTeamPage}"
 			              Route="team" />
+			<!-- The rules and agreements for admins and moderators: opens first until they agreed (see AppShell.xaml.cs). -->
+			<ShellContent Title="{loc:T AppShell_Agreements}"
+			              ContentTemplate="{DataTemplate views:AgreementsPage}"
+			              Route="agreements" />
 		</Tab>
 
 		<!-- Opens on Settings: Profile, My stats, Blocked players, Feedback and Sign out. -->

@@ -12,13 +12,18 @@ public partial class StandingsPage : ContentPage
 	private readonly StandingsViewModel _vm;
 	private readonly GameNight _gameNight;
 
+	/// <summary>Test as player: Play again starts the test over, Quit stops it.</summary>
+	private readonly TestRun _testRun;
+
 	/// <summary>
 	/// Sets up the standings page with its view model, the ⓘ help, and the game night to start Play again
 	/// from.
 	/// </summary>
-	public StandingsPage(StandingsViewModel vm, GameNight gameNight)
+	public StandingsPage(StandingsViewModel vm, GameNight gameNight, TestRun testRun)
 	{
 		InitializeComponent();
+		_testRun = testRun;
+		testRun.AttachStopButton(this);
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.Standings(_vm.IsFinal));
 		_gameNight = gameNight;
@@ -34,6 +39,19 @@ public partial class StandingsPage : ContentPage
 		if (!_vm.IsFinal)
 		{
 			await Shell.Current.GoToAsync("..");
+			return;
+		}
+
+		if (_testRun.IsActive && _vm.AccountId == TestRun.AccountId)
+		{
+			// A test: nothing is kept. Play again starts the whole test over, at the rules; Quit ends the test.
+			var restart = await DisplayAlertAsync(L.T("Test finished"),
+				L.T("Play the test again from the start, or stop the test and go back to the game form?"),
+				L.T("Play again"), L.T("Quit"));
+			if (restart)
+				await _testRun.RestartAsync();
+			else
+				await _testRun.StopAndReturnAsync();
 			return;
 		}
 

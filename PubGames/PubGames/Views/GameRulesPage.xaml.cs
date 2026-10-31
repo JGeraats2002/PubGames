@@ -16,9 +16,10 @@ public partial class GameRulesPage : ContentPage
 	/// Sets up the rules page with its view model and the ⓘ help, and opens the scoreboard once the game has
 	/// started.
 	/// </summary>
-	public GameRulesPage(GameRulesViewModel vm)
+	public GameRulesPage(GameRulesViewModel vm, TestRun testRun)
 	{
 		InitializeComponent();
+		testRun.AttachStopButton(this);
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.GameStart);
 

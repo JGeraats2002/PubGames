@@ -37,9 +37,10 @@ public partial class ScoreboardPage : ContentPage
 	/// Sets up the scoreboard: its view model, the buttons stay above the keyboard, and the cards are rebuilt
 	/// whenever the players, the screen size or the subgame change.
 	/// </summary>
-	public ScoreboardPage(ScoreboardViewModel vm, GameNight gameNight)
+	public ScoreboardPage(ScoreboardViewModel vm, GameNight gameNight, TestRun testRun)
 	{
 		InitializeComponent();
+		testRun.AttachStopButton(this);
 		// The page ends above the keyboard, so Previous / Next stay right on top of it.
 		KeyboardWatcher.Track(this, covered => Root.Padding = new Thickness(RootPadding, RootPadding, RootPadding, RootPadding + covered));
 		BindingContext = _vm = vm;

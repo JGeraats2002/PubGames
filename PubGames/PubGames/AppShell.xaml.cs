@@ -14,6 +14,15 @@ public partial class AppShell : Shell
 	/// <summary>Admin tab > Inbox page, from anywhere.</summary>
 	public const string InboxRoute = "//main/admin/inbox";
 
+	/// <summary>Admin tab > Library page, from anywhere.</summary>
+	public const string LibraryRoute = "//main/admin/library";
+
+	/// <summary>Admin tab > the agreements for admins and moderators, from anywhere.</summary>
+	public const string AgreementsRoute = "//main/admin/agreements";
+
+	/// <summary>The user's team membership; null for players.</summary>
+	private readonly TeamMember? _me;
+
 	static AppShell()
 	{
 		// Pages pushed on top of a tab with parameters: the game-night flow
@@ -46,16 +55,40 @@ public partial class AppShell : Shell
 	public AppShell(TeamMember? me)
 	{
 		InitializeComponent();
+		_me = me;
 		AdminTab.IsVisible = me is not null;
 		RequestsContent.IsVisible = me?.IsAdmin == true;
 		TeamContent.IsVisible = me?.IsAdmin == true;
 		FeedbackContent.IsVisible = me?.IsAdmin == true;
+
+		// The first time as an admin or moderator (or after the agreements changed): the agreements open first.
+		Loaded += async (_, _) =>
+		{
+			if (!AdminAgreements.IsAgreed(_me))
+				await GoToAsync(AgreementsRoute);
+		};
 	}
 
-	/// <summary>Going to another page (a tab, a page opening or going back): the keyboard closes.</summary>
+	/// <summary>
+	/// Going to another page (a tab, a page opening or going back): the keyboard closes. Until the agreements
+	/// are agreed to, the other admin pages open the agreements instead.
+	/// </summary>
 	protected override void OnNavigating(ShellNavigatingEventArgs args)
 	{
 		Views.SoftKeyboard.Hide();
 		base.OnNavigating(args);
+
+		var target = args.Target?.Location.OriginalString ?? string.Empty;
+
+		// Test as player happens on the Admin tab: another tab ends the test, and nothing of it is kept.
+		if (!target.Contains("/admin/", StringComparison.Ordinal)
+			&& IPlatformApplication.Current?.Services.GetService<Services.TestRun>() is { IsActive: true } test)
+			_ = test.StopAsync();
+
+		if (AdminAgreements.IsAgreed(_me) || !target.Contains("/admin/", StringComparison.Ordinal)
+			|| target.Contains("/admin/agreements", StringComparison.Ordinal) || !args.CanCancel)
+			return;
+		args.Cancel();
+		Dispatcher.Dispatch(async () => await GoToAsync(AgreementsRoute));
 	}
 }

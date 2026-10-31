@@ -766,3 +766,38 @@ exports.checkImage = onDocumentWritten("images/{imageId}", async (event) => {
   await event.data.after.ref.delete();
 });
 exports.translateCategoryGroup = onDocumentWritten("categoryGroups/{groupId}", translateName);
+
+/**
+ * The admin agreements, after the owner changed them in the app (agreements/current): every heading and
+ * text is translated into each app language. translations holds, per language, the sections as JSON, the
+ * same shape as sectionsJson; translatedFrom says which text they belong to, so they're made once.
+ */
+exports.translateAgreements = onDocumentWritten("agreements/{agreementsId}", async (event) => {
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after || typeof after.sectionsJson !== "string" || after.translatedFrom === after.sectionsJson) return;
+  let sections;
+  try {
+    sections = JSON.parse(after.sectionsJson);
+  } catch (error) {
+    return;
+  }
+  if (!Array.isArray(sections)) return;
+
+  const from = LANGUAGES[after.sourceLanguage] ? after.sourceLanguage : "en";
+  const texts = sections.flatMap((section) => [String(section.Heading || ""), String(section.Text || "")]);
+  // Empty texts aren't sent: they stay empty.
+  const filled = texts.map((text, index) => ({ text, index })).filter((item) => item.text.trim().length > 0);
+  const translations = {};
+  for (const to of Object.keys(LANGUAGES)) {
+    if (to === from) continue;
+    try {
+      const out = await translateTexts(filled.map((item) => item.text), from, to);
+      const all = texts.slice();
+      filled.forEach((item, position) => { all[item.index] = out[position]; });
+      translations[to] = JSON.stringify(sections.map((_, index) => ({ Heading: all[index * 2], Text: all[index * 2 + 1] })));
+    } catch (error) {
+      logger.error(`translateAgreements -> ${to} failed`, error);
+    }
+  }
+  await event.data.after.ref.update({ translations, translatedFrom: after.sectionsJson });
+});

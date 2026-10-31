@@ -31,6 +31,8 @@
 							</FormattedString>
 						</Label.FormattedText>
 					</Label>
+					<!-- Whether they agreed to the admin agreements (the Agreements page). -->
+					<Label Text="{Binding AgreementText}" IsVisible="{Binding HasAgreementText}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
 
 					<HorizontalStackLayout Spacing="8" IsVisible="{Binding HasActions}">
 						<Button Text="{loc:T AdminTeam_MakeAdmin}" Clicked="OnMakeAdminClicked" IsVisible="{Binding CanPromote}"

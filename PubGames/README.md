@@ -33,7 +33,7 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
   `PubGames/PubGames/bin/Release/net10.0-android36.0/publish/com.pubgems.pubgames-Signed.aab`
   (kopie: `%USERPROFILE%\PubGamesBuilds\pubgames-v5-1.4.aab`). Versie 4 (1.3) staat in closed testing
   (kopie: `pubgames-v4-1.3.aab`). Closed test loopt met 12+ testers.
-- Functions en firestore.rules zijn gedeployed. Alles is gecommit; nog niet gepusht.
+- Functions (ook `translateAgreements`) en firestore.rules zijn gedeployed (31-10-2026). Alles is gecommit en gepusht.
 - Alles is door de gebruiker getest (afvinklijst https://claude.ai/artifact/2bdNcCQqsLQbSR2ihAuRBD),
   behalve één hertest: X3 (Vertalingen › Aanpassen › afbeelding opent de echte afbeelding in de editor).
 
@@ -51,8 +51,17 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
 - Ook in versie 5: toetsenbord weg = focus weg, overal in de app (`Platforms/Android/MainActivity.cs`).
   Handmatig plus/min telt een getypt bedrag pas op bij + of − (Volgende / Gereed tellen niets meer op).
   "+ Je regels toevoegen" staat vast onder de tabbladen van het spelformulier.
-- **Idee in bespreking, nog niet gebouwd:** pagina "Regels en afspraken" voor admins en mods (prijsafspraken
-  gratis / €0,99 / €1,99, inhoudsregels), die bij de eerste keer inloggen als admin of mod eerst opent.
+- **Na versie 5, nog niet in een .aab (nodig: versie 6), nog niet door de gebruiker getest:**
+  - Pagina **Afspraken** (laatste pagina van het Admin-tabblad, `Views/AgreementsPage`, `Models/AdminAgreements.cs`):
+    regels voor admins en mods (rollen, prijzen gratis / €0,99 / €1,99, inhoud, drankspellen, kwaliteit, misbruik).
+    Opent als eerste bij de eerste keer als admin/mod; tot "Gelezen en akkoord" zijn de andere admin-pagina's dicht
+    (`AppShell.OnNavigating`). Akkoord per account: `team/{email}.agreedRules` (versie) en op de telefoon
+    (`Preferences agreedRules:{email}`, eigenaars alleen daar). Team-pagina toont wie akkoord is.
+    De eigenaar bewerkt de tekst met ✏ Bewerken: Firestore `agreements/current` (alleen eigenaars schrijven),
+    vertaald door de functie `translateAgreements`. "Afspraken gewijzigd" verhoogt de versie: iedereen opnieuw akkoord.
+  - **▶ Testen** in het spelformulier (`Services/TestRun.cs`): speelt het spel zoals ingevuld met Speler 1, 2, ...
+    onder account `test-run` (niet in stats, opgeslagen spellen of spelerslijst), kopie van het spel als `Deleted`.
+    ⏹ Test stoppen op elke spelpagina; ander tabblad of terug naar het formulier stopt de test ook.
 
 ### Volgende stappen
 

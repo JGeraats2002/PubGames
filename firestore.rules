@@ -159,18 +159,32 @@ service cloud.firestore {
       allow read: if isOnTeam() || (isSignedIn() && email == myEmail());
       allow create: if isBuiltInAdmin()
         || (isAdmin() && request.resource.data.role == 'Moderator');
-      // Members may change their own name on the list (from their profile) and the language they use the
-      // app in (shown as a flag on the Team page), and nothing else.
+      // Members may change their own name on the list (from their profile), the language they use the
+      // app in (shown as a flag on the Team page) and the version of the admin agreements they agreed to,
+      // and nothing else.
       allow update: if isBuiltInAdmin()
         || (isAdmin() && resource.data.role == 'Moderator' && request.resource.data.role == 'Moderator')
         || (isSignedIn() && email == myEmail()
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'language'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'language', 'agreedRules'])
             && request.resource.data.get('displayName', '') is string
             && request.resource.data.get('displayName', '').size() <= 40
             && request.resource.data.get('language', '') is string
-            && request.resource.data.get('language', '').size() <= 5);
+            && request.resource.data.get('language', '').size() <= 5
+            && request.resource.data.get('agreedRules', 0) is int
+            && request.resource.data.get('agreedRules', 0) >= resource.data.get('agreedRules', 0));
       allow delete: if isBuiltInAdmin()
         || (isAdmin() && resource.data.role == 'Moderator');
+    }
+
+    // The admin agreements as the owner changed them in the app (agreements/current). Every admin and
+    // moderator reads them; only the owners write them. The cloud function translateAgreements adds the
+    // translations (it isn't held to these rules).
+    match /agreements/{agreementsId} {
+      allow read: if isOnTeam();
+      allow write: if isBuiltInAdmin()
+        && request.resource.data.version is int
+        && request.resource.data.sectionsJson is string
+        && request.resource.data.sectionsJson.size() <= 50000;
     }
 
     // Player profiles: what others see when they add you by your personal code.

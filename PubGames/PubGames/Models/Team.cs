@@ -69,6 +69,18 @@ public class TeamMember
 	/// <summary>When the member was added (UTC).</summary>
 	public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
+	/// <summary>The version of the admin agreements (AdminAgreements.Version) the member agreed to; 0 is none yet.</summary>
+	public int AgreedRulesVersion { get; set; }
+
+	/// <summary>"Agreements: agreed" or "not agreed yet", for the Team page; empty for the owners, who write them.</summary>
+	[Ignore]
+	public string AgreementText => IsBuiltInAdmin ? string.Empty
+		: AgreedRulesVersion >= AdminAgreements.Version ? L.T("✓ Agreed to the agreements") : L.T("Hasn't agreed to the agreements yet");
+
+	/// <summary>Whether the Team page shows whether the member agreed.</summary>
+	[Ignore]
+	public bool HasAgreementText => !IsBuiltInAdmin;
+
 	/// <summary>
 	/// Admins listed in AuthConfig.AdminEmails. They aren't stored in the team
 	/// collection and can't be removed or demoted from inside the app.

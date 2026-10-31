@@ -17,6 +17,10 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	private readonly IAuthService _auth;
 	private readonly GameNight _gameNight;
 	private readonly IStoreService _store;
+	private readonly TestRun _testRun;
+
+	/// <summary>Test as player: the game being tested is never locked, and its game is kept apart.</summary>
+	private bool IsTest => _testRun.IsActive && _game?.Id == TestRun.GameId;
 
 	/// <summary>A paid game the account doesn't own: the rules can be read, but Unlock replaces Skip rules and Start game.</summary>
 	[ObservableProperty]
@@ -74,8 +78,9 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	/// Gets the services it works with - the phone's database, the sign-in, the game night and the store -
 	/// from the app (dependency injection).
 	/// </summary>
-	public GameRulesViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IStoreService store)
+	public GameRulesViewModel(ILocalDatabaseService local, IAuthService auth, GameNight gameNight, IStoreService store, TestRun testRun)
 	{
+		_testRun = testRun;
 		_store = store;
 		_local = local;
 		_auth = auth;
@@ -97,7 +102,7 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 			RulesBlocks = string.IsNullOrWhiteSpace(game.RulesText)
 				? [new RulesBlock(L.T("No rules written for this game yet."), null)]
 				: RulesBlock.Parse(game.RulesText);
-			IsLocked = !_store.Owns(game);
+			IsLocked = !IsTest && !_store.Owns(game);
 		}
 
 		if (query.TryGetValue("players", out var p) && p is List<Player> players)
@@ -115,7 +120,7 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 	public void CheckUnlocked()
 	{
 		if (_game is not null)
-			IsLocked = !_store.Owns(_game);
+			IsLocked = !IsTest && !_store.Owns(_game);
 	}
 
 	/// <summary>The game's price as Google Play shows it.</summary>
@@ -148,7 +153,7 @@ public partial class GameRulesViewModel : ObservableObject, IQueryAttributable
 		if (_game is null || IsLocked) return;
 
 		// Seat order follows the order players were added on the first screen.
-		var sessionId = await _gameNight.StartSessionAsync(_game, _players, SubgameCount, _auth.AccountId);
+		var sessionId = await _gameNight.StartSessionAsync(_game, _players, SubgameCount, IsTest ? TestRun.AccountId : _auth.AccountId);
 		SessionStarted?.Invoke(this, sessionId);
 	}
 }

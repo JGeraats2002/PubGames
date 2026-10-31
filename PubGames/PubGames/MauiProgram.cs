@@ -34,6 +34,8 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ITeamService, TeamService>();
 		builder.Services.AddSingleton<ICategoryService, CategoryService>();
 		builder.Services.AddSingleton<GameNight>();
+		builder.Services.AddSingleton<TestRun>();
+		builder.Services.AddSingleton<AgreementsService>();
 		builder.Services.AddSingleton<SavedGames>();
 		builder.Services.AddSingleton<IProfileService, ProfileService>();
 		builder.Services.AddSingleton<IStatsService, StatsService>();
@@ -101,6 +103,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<SubscriptionPage>();
 		builder.Services.AddTransient<LoginPage>();
 		builder.Services.AddTransient<LanguagePage>();
+		builder.Services.AddTransient<AgreementsPage>();
 
 		return builder.Build();
 	}

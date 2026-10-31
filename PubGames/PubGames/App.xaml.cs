@@ -85,6 +85,9 @@ public partial class App : Application
 		// Each account has its own language, also when several sign in on this phone.
 		AppLanguage.UseAccount(_auth.AccountId);
 		var me = await _team.RefreshMyMembershipAsync();
+		// Admins and moderators: the newest agreements, so the shell knows whether they still have to agree.
+		if (me is not null)
+			await _services.GetRequiredService<AgreementsService>().RefreshAsync();
 
 		// New on this phone: a team member's language comes from the team list (set on another phone);
 		// otherwise it's chosen before anything else.

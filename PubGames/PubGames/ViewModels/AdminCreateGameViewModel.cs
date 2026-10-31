@@ -1200,6 +1200,33 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			await SubmitForReviewAsync();
 	}
 
+	/// <summary>
+	/// Test as player: the game as it's filled in now, or null with
+	/// StatusMessage saying what to fix first (the scoring must work).
+	/// Nothing is saved.
+	/// </summary>
+	public PubGame? FormAsTestGame()
+	{
+		if (ReadScoringSettings() is null)
+		{
+			CurrentPage = ScoringPage;
+			return null;
+		}
+		StatusMessage = string.Empty;
+		var game = FormAsGame(_editing);
+		if (game.Name.Length == 0)
+			game.Name = L.T("Test game");
+		return game;
+	}
+
+	/// <summary>Test as player: how many made-up players the test can have, within the game's number of players.</summary>
+	public (int Min, int Max) TestPlayerRange()
+	{
+		ReadPlayers(out var min, out var max);
+		var low = Math.Clamp(min ?? 2, 1, 12);
+		return (low, Math.Clamp(max ?? 8, low, 12));
+	}
+
 	/// <summary>The form's content applied to a copy, so nothing changes until it's saved or approved.</summary>
 	private PubGame FormAsGame(PubGame? basedOn)
 	{

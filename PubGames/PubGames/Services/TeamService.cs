@@ -43,6 +43,13 @@ public interface ITeamService
 	/// Does nothing for someone who isn't on the team, or when it's already there; never throws.
 	/// </summary>
 	Task UpdateMyLanguageAsync();
+
+	/// <summary>
+	/// The signed-in member agrees to the current admin agreements: remembered
+	/// on this phone, and on the team list so admins see it and another phone
+	/// doesn't ask again. Offline it's remembered on this phone only.
+	/// </summary>
+	Task AgreeToRulesAsync();
 }
 
 /// <summary>
@@ -102,6 +109,9 @@ public class TeamService : ITeamService
 			Me = ToMember(doc);
 			await _local.SaveTeamMemberAsync(Me);
 			_ = UpdateMyLanguageAsync();
+			// Agreed on this phone while offline: put it on the list now.
+			if (Me.AgreedRulesVersion < AdminAgreements.Version && AdminAgreements.IsAgreed(Me))
+				_ = AgreeToRulesAsync();
 		}
 		catch (Exception ex) when (ex is HttpRequestException or CloudException or InvalidOperationException)
 		{
@@ -146,7 +156,8 @@ public class TeamService : ITeamService
 			["displayName"] = member.DisplayName,
 			["role"] = member.Role.ToString(),
 			["language"] = member.Language,
-			["addedAt"] = member.AddedAt
+			["addedAt"] = member.AddedAt,
+			["agreedRules"] = member.AgreedRulesVersion
 		});
 		await _local.SaveTeamMemberAsync(member);
 	}
@@ -200,6 +211,25 @@ public class TeamService : ITeamService
 	}
 
 	/// <inheritdoc />
+	public async Task AgreeToRulesAsync()
+	{
+		if (Me is not { } me) return;
+		Preferences.Default.Set(AdminAgreements.LocalKey(me.Email), AdminAgreements.Version);
+		if (me.IsBuiltInAdmin) return; // the owners write the agreements and have no place on the list
+		try
+		{
+			// Only this field: the rules let members change nothing else about themselves.
+			await _firestore.UpdateFieldsAsync(Collection, me.Email, new Dictionary<string, object?> { ["agreedRules"] = AdminAgreements.Version });
+			me.AgreedRulesVersion = AdminAgreements.Version;
+			await _local.SaveTeamMemberAsync(me);
+		}
+		catch (Exception)
+		{
+			// Offline (or the rules not deployed yet): this phone remembers it; the list follows next time.
+		}
+	}
+
+	/// <inheritdoc />
 	public async Task RemoveMemberAsync(TeamMember member)
 	{
 		if (member.IsBuiltInAdmin)
@@ -249,6 +279,7 @@ public class TeamService : ITeamService
 		DisplayName = f.GetValueOrDefault("displayName") as string ?? string.Empty,
 		Role = Enum.TryParse<TeamRole>(f.GetValueOrDefault("role") as string, out var role) ? role : TeamRole.Moderator,
 		Language = f.GetValueOrDefault("language") as string ?? string.Empty,
-		AddedAt = f.GetValueOrDefault("addedAt") as DateTime? ?? DateTime.UtcNow
+		AddedAt = f.GetValueOrDefault("addedAt") as DateTime? ?? DateTime.UtcNow,
+		AgreedRulesVersion = f.GetValueOrDefault("agreedRules") is { } agreed ? Convert.ToInt32(agreed, System.Globalization.CultureInfo.InvariantCulture) : 0
 	};
 }

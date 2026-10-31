@@ -1,3 +1,4 @@
+using PubGames.Services;
 using PubGames.Models;
 using PubGames.ViewModels;
 
@@ -15,9 +16,10 @@ public partial class RoundResultPage : ContentPage
 	/// Sets up the result page: its view model, the ⓘ help, and the questions it may ask (extra subgame,
 	/// duel) and where it goes once saved.
 	/// </summary>
-	public RoundResultPage(RoundResultViewModel vm)
+	public RoundResultPage(RoundResultViewModel vm, TestRun testRun)
 	{
 		InitializeComponent();
+		testRun.AttachStopButton(this);
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.RoundResult(_vm.Mode, _vm.LowestWins, _vm.Settings));
 		_vm.AskExtraSubgame = tie => DisplayAlertAsync(L.T("It's a tie"),

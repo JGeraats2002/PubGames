@@ -1,3 +1,4 @@
+using PubGames.Services;
 using PubGames.Models;
 using PubGames.ViewModels;
 
@@ -11,9 +12,10 @@ public partial class SessionPlayersPage : ContentPage
 	private readonly SessionPlayersViewModel _vm;
 
 	/// <summary>Sets up the page with its view model (handed in by the app) and the ⓘ help.</summary>
-	public SessionPlayersPage(SessionPlayersViewModel vm)
+	public SessionPlayersPage(SessionPlayersViewModel vm, TestRun testRun)
 	{
 		InitializeComponent();
+		testRun.AttachStopButton(this);
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.SessionPlayers);
 	}

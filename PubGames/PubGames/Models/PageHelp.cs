@@ -75,12 +75,15 @@ public static class Help
 		{
 			ScoringType.PlusMinus => L.T("Tap + or − next to a player to add or subtract the game's step."),
 			ScoringType.ManualPlusMinus => L.T("Type an amount in the box next to a player, then tap + to add it or − to subtract it. Only amounts the game's rules allow are accepted; if an amount isn't, the message at the top says what you can enter. Tap ⓘ and choose the rules to see them."),
+			ScoringType.ScoreSheet => L.T("The score sheet has a column per player. Tap a cell and type the score; it counts once you tap the keyboard's Done key, close the keyboard or tap elsewhere. A score the row's rules don't allow stays in the cell in red and doesn't count yet: the red line at the top says what you can fill in. Empty a cell to take its score out. A row with a fixed score, like Full house (25), has ✓ to tick it off and, if 0 is allowed, ✗ for a failed throw; tap a ticked cell to empty it again. Bonuses with a total are added by themselves. A bonus per time is counted with − and +; 🔒 means it can't be scored yet, because the row it needs has no score. The totals add up for you, and the best total is highlighted. With many players the sheet scrolls sideways."),
 			_ => L.T("Tap + or − next to a player, or tap a score to type any amount.")
 		}),
 		.. settings.FixedTurnOrder
 			? [new HelpSection(L.T("Whose turn"), L.T("This game has a fixed input order: seat 1 first, then seat 2, and so on. The player whose turn it is has a thick dark border and ▶ instead of their seat number; only they can enter a score. ") +
 				(type == ScoringType.ManualPlusMinus
-					? L.T("Type the amount and tap + or −, or Next above the keyboard: the turn then passes on. No points? Type 0 - it has to be entered too.")
+					? L.T("Type the amount and tap + or −: the turn then passes on. No points? Type 0 - it has to be entered too.")
+					: type == ScoringType.ScoreSheet
+					? L.T("Fill in or tick off one row: the turn then passes on. A bonus doesn't end the turn, so count it before you fill in the row. Crossing a row out? Type 0 or tap ✗.")
 					: L.T("Tap + or − as often as needed, then Turn done to pass the turn on - also when the score stays the same.")))]
 			: Array.Empty<HelpSection>(),
 		.. settings.EndScore is { } end
@@ -90,10 +93,15 @@ public static class Help
 					? L.F("Once a player reaches {0}, the players after them in seat order get one last turn. When the turn is back at seat 1, the subgame ends by itself and you note its result.", end)
 					: L.F("Once a player reaches {0}, the subgame ends by itself and you note its result.", end))]
 			: Array.Empty<HelpSection>(),
-		.. type == ScoringType.ManualPlusMinus
-			? [new HelpSection(L.T("Typing scores"), L.T("The screen moves up so the box you type in stays above the keyboard. ◀ Previous and Next ▶ above the keyboard (or the keyboard's own Next key) go to the other players' boxes; Next first adds the amount you typed - use a minus sign to subtract."))]
+		.. type == ScoringType.ScoreSheet && settings.SheetFullEnds
+			? [new HelpSection(L.T("End of a subgame"), settings.EndMode == EndMode.Manual
+				? L.T("Once everyone filled in every row, the line at the top says so. End the subgame yourselves with Next subgame or Finish game.")
+				: L.T("Once everyone filled in every row, the subgame ends by itself and you note its result."))]
 			: Array.Empty<HelpSection>(),
-		new(L.T("Warning and limits"), L.T("A player at the game's warning score gets a dashed orange border and a ⚠ WARNING badge. At the maximum or minimum score the whole card turns dark blue with a ▲ MAX REACHED or ▼ MIN REACHED badge. Scores never go past the maximum or minimum.")),
+		.. type == ScoringType.ManualPlusMinus
+			? [new HelpSection(L.T("Typing scores"), L.T("The screen moves up so the box you type in stays above the keyboard. ◀ Previous and Next ▶ above the keyboard go to the other players' boxes. What you type stays in the box, also when you close the keyboard, until you tap + to add it or − to subtract it."))]
+			: Array.Empty<HelpSection>(),
+		.. type == ScoringType.ScoreSheet ? Array.Empty<HelpSection>() : [new HelpSection(L.T("Warning and limits"), L.T("A player at the game's warning score gets a dashed orange border and a ⚠ WARNING badge. At the maximum or minimum score the whole card turns dark blue with a ▲ MAX REACHED or ▼ MIN REACHED badge. Scores never go past the maximum or minimum."))],
 		new(L.T("Subgames"), L.T("The top shows which subgame you're playing. + subgame and − subgame change how many there are. Next subgame lets you note the result of this one and then starts the next, with everyone back at the starting score. On the last subgame the button is Finish game.")),
 		new(L.T("Stats"), L.T("Stats shows everyone's wins, losses or points so far. The winner stays a surprise until you finish the game.")),
 		new(L.T("Change players"), L.T("Move players to another seat, replace someone, add a player or take someone out - see the ⓘ on that page."))
@@ -191,10 +199,13 @@ public static class Help
 			new(L.T("Pictures"), L.T("The cover and the pictures in the rules are made in the image editor, where you place arrows, text, cards, dice, hands, drinks and more - so every game is explained in the same style. Photos from your phone can't be used. A picture can be changed later: tap the cover button again and choose Edit this image, or hold the picture in the rules. Only a cover can have a background colour; pictures in the rules are always on cream.")),
 			new(L.T("Price"), L.T("Choose Free or one of the fixed prices: €0.99 for a standard game, €1.99 for a big game. They're in line with the Pub Games Pass (a game costs as much as a week of it). The account that buys a game plays it with everyone at the table, for good; with the pass, every paid game is unlocked. A paid game is put up for sale in Google Play by itself when it's published."))
 		};
-		sections.Add(type == ScoringType.ManualPlusMinus
+		sections.Add(type == ScoringType.ScoreSheet
+			? new(L.T("Scoring: Score sheet"), L.T("A sheet like Yatzy's: on the scoreboard a column per player and a row per score. + Add list adds a list (like Upper section) and gives it a name. In each list, + Add row adds a row with its name (like Threes). A row's score is typed in, and if you like it gets rules: + Add rule, with AND / OR just like the amount rules. Or tick Fixed score and fill in the score (like Full house, 25): players then tick the row off, and the score shows in brackets behind its name. 0 allowed lets players fill in 0 (or tap ✗) when a throw failed; untick it when 0 means nothing, like when the score is the number of throws needed. + Add bonus adds a bonus to a list: Automatic gives its points once the list's rows add up to at least a total (Yatzy: 63 or more gives 35); Per time is counted by the players with − and +, with an optional most times (Yatzy: 100 for a 2nd and 3rd Yatzy, at most 2 times). Below its kind you choose whether a bonus is always possible or only with a score in a row (the Yatzy bonus: only with a score in Yatzy). A player's score is the sheet's total. Under Subgame you choose which total wins and how a subgame ends: once everyone filled in every row, or at an end score. A tie-break duel isn't played on the sheet: choose Type in the score for it."))
+			: type == ScoringType.ManualPlusMinus
 			? new(L.T("Scoring: Manual plus / minus"), L.T("On the scoreboard players type an amount next to a player and tap + or − to add or subtract it. Set the starting score, and use the switches for a maximum, a minimum and a warning score."))
 			: new(L.T("Scoring: Plus / minus"), L.T("Every tap on + or − changes a player's score by the step. Set the starting score, and use the switches for a maximum, a minimum and a warning score.")));
-		sections.Add(new(L.T("Warning and limits"), L.T("On the scoreboard a player at the warning gets a dashed orange border and a ⚠ WARNING badge; at the maximum or minimum the card turns dark blue with a ▲ MAX / ▼ MIN badge. Scores never go past the maximum or minimum.")));
+		if (type != ScoringType.ScoreSheet)
+			sections.Add(new(L.T("Warning and limits"), L.T("On the scoreboard a player at the warning gets a dashed orange border and a ⚠ WARNING badge; at the maximum or minimum the card turns dark blue with a ▲ MAX / ▼ MIN badge. Scores never go past the maximum or minimum.")));
 		if (type == ScoringType.ManualPlusMinus)
 			sections.Add(new(L.T("Rules for entered amounts"), L.T("+ Add rule adds a rule; ✕ removes it. Lower than 11 allows 10; lower than or equal to 11 also allows 11; between includes both numbers. Amounts may be negative. Tap AND / OR above a rule to switch how it links to the rule above: OR goes first, so rules linked with OR form a group where one must be true, and AND joins groups that must all be true. The bold line below the rules shows exactly what's allowed. No rules: any amount.")));
 		sections.Add(new(L.T("Subgame"), L.T("Everything in it is optional. Result of each subgame: how it's noted - the winner(s), everyone's place, or the loser(s) - and which score wins, loses or is 1st; after each subgame the app fills this in from the scores and the players can change it. Not chosen: the winner is noted and the highest score wins. The players choose how many subgames they play (1 unless they change it). Who starts the next subgame: the seats turn so that player sits in seat 1 - everyone keeps their neighbours. Left of a player is the next seat, right of a player the seat before. Fixed input order: scores are entered seat by seat and everyone has to enter one, also 0. A subgame ends at score: once a player reaches it the subgame ends, automatically or when the players end it. With an automatic end and a fixed input order you can add an equalizing turn: the players after the one who reached it still get their turn in that round.")));

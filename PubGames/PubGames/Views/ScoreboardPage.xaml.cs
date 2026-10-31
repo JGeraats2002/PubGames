@@ -21,6 +21,12 @@ public partial class ScoreboardPage : ContentPage
 	/// <summary>Manual plus / minus: each player's amount box, read when their + or − is tapped.</summary>
 	private readonly Dictionary<ParticipantRow, Entry> _amountBoxes = new();
 
+	/// <summary>
+	/// Manual plus / minus: what's typed in each player's amount box and not
+	/// added yet, so it stays when the cards are built again (e.g. the keyboard closed).
+	/// </summary>
+	private readonly Dictionary<ParticipantRow, string> _amountDrafts = new();
+
 	private readonly ScoreboardViewModel _vm;
 	private readonly GameNight _gameNight;
 
@@ -45,9 +51,15 @@ public partial class ScoreboardPage : ContentPage
 			_typingRow = null;
 			KeyboardBar.IsVisible = false;
 			Footer.IsVisible = true;
-			ScoreMessage.IsVisible = _vm.Rules.ManualAmounts is not null;
-			TurnDoneButton.IsVisible = _vm.FixedTurnOrder && _vm.Rules.ManualAmounts is null;
+			ScoreMessage.IsVisible = _vm.Rules.ManualAmounts is not null || _vm.IsSheet;
+			// On a score sheet a filled-in cell is the whole turn.
+			TurnDoneButton.IsVisible = _vm.FixedTurnOrder && _vm.Rules.ManualAmounts is null && !_vm.IsSheet;
 			ScoreMessage.Text = string.Empty;
+			_amountDrafts.Clear();
+			_sheetDrafts.Clear();
+			foreach (var followed in _sheetFollowed)
+				followed.PropertyChanged -= OnSheetPlayerChanged;
+			_sheetFollowed.Clear();
 			_builtForCount = -1; // other players may sit in the same number of seats
 			UpdateFooter();
 			BuildBoard();
@@ -106,7 +118,7 @@ public partial class ScoreboardPage : ContentPage
 	private ParticipantRow? _typingRow;
 
 	/// <summary>An amount box has the keyboard (Previous / Next show instead of the buttons).</summary>
-	private bool IsTyping => _typingRow is not null || _amountBoxes.Values.Any(b => b.IsFocused);
+	private bool IsTyping => _typingRow is not null || _amountBoxes.Values.Any(b => b.IsFocused) || IsTypingInSheet;
 
 	/// <summary>
 	/// Back from "Change players" or a subgame's result: show the new line-up,
@@ -235,7 +247,17 @@ public partial class ScoreboardPage : ContentPage
 		_cards.Clear();
 		Board.RowDefinitions.Clear();
 		Board.ColumnDefinitions.Clear();
-		Board.HeightRequest = available;
+
+		// A score sheet is a table that scrolls; the cards fill the screen exactly.
+		BoardScroll.Orientation = _vm.IsSheet ? ScrollOrientation.Both : ScrollOrientation.Vertical;
+		Board.HeightRequest = _vm.IsSheet ? -1 : available;
+		Board.WidthRequest = -1;
+		Board.RowSpacing = Board.ColumnSpacing = 8;
+		if (_vm.IsSheet && rows.Count > 0)
+		{
+			BuildSheet(width);
+			return;
+		}
 
 		if (rows.Count == 0)
 		{
@@ -612,20 +634,22 @@ public partial class ScoreboardPage : ContentPage
 		var box = new Entry
 		{
 			Placeholder = "0",
+			Text = _amountDrafts.GetValueOrDefault(row, string.Empty),
 			Keyboard = Keyboard.Telephone, // has a minus sign, for negative amounts
 			FontSize = fontSize,
 			HorizontalTextAlignment = TextAlignment.End,
 			VerticalOptions = LayoutOptions.Center,
 			MaxLength = 7,
-			// The keyboard's action key goes to the next player; on the last one it closes the keyboard.
-			ReturnType = row == _vm.Rows.LastOrDefault() ? ReturnType.Done : ReturnType.Next
+			// The keyboard's action key only closes the keyboard: the amount waits for + or −.
+			ReturnType = ReturnType.Done
 		};
+		box.TextChanged += (_, e) => _amountDrafts[row] = e.NewTextValue ?? string.Empty;
 		// Stays readable on the dark card of a player at a limit.
 		box.Triggers.Add(When<Entry>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Colors.White)));
 		box.SetBinding(IsEnabledProperty, static (ParticipantRow r) => r.CanEnter);
 		box.Focused += (_, _) => OnAmountBoxFocused(row);
 		box.Unfocused += (_, _) => OnAmountBoxUnfocused();
-		box.Completed += async (_, _) => await MoveToBoxAsync(row, +1, apply: true);
+		box.Completed += (_, _) => box.Unfocus();
 		_amountBoxes[row] = box;
 		return box;
 	}
@@ -673,29 +697,12 @@ public partial class ScoreboardPage : ContentPage
 	}
 
 	/// <summary>
-	/// Previous (-1) or Next (+1) above the keyboard, or the keyboard's own
-	/// action key. Going forward first adds the typed amount (a minus sign
-	/// subtracts it); if it isn't allowed, the box stays so it can be fixed.
-	/// Past the last player the keyboard closes.
+	/// Previous (-1) or Next (+1) above the keyboard. What's typed stays in
+	/// the box until + or − is tapped; nothing is added by moving on. Past the
+	/// last player the keyboard closes.
 	/// </summary>
-	private async Task MoveToBoxAsync(ParticipantRow from, int direction, bool apply)
+	private void MoveToBox(ParticipantRow from, int direction)
 	{
-		if (apply && _vm.Rules.ManualAmounts is { } manual && _amountBoxes.TryGetValue(from, out var box))
-		{
-			if (string.IsNullOrWhiteSpace(box.Text))
-			{
-				if (_vm.FixedTurnOrder)
-				{
-					ShowScoreMessage(L.F("{0}: enter a score first - type 0 for no points.", from.Player.Name));
-					return;
-				}
-			}
-			else if (!await ApplyTypedAmountAsync(from, manual, subtract: false, keepFocus: true))
-				return;
-			if (_vm.FixedTurnOrder)
-				await _vm.EndTurnAsync();
-		}
-
 		var index = _vm.Rows.IndexOf(from) + direction;
 		if (index < 0) return;
 		if (index >= _vm.Rows.Count)
@@ -709,17 +716,17 @@ public partial class ScoreboardPage : ContentPage
 	}
 
 	/// <summary>Goes to the previous player's amount box.</summary>
-	private async void OnPreviousBoxClicked(object? sender, EventArgs e)
+	private void OnPreviousBoxClicked(object? sender, EventArgs e)
 	{
 		if (_typingRow is { } row)
-			await MoveToBoxAsync(row, -1, apply: false);
+			MoveToBox(row, -1);
 	}
 
-	/// <summary>Adds what's typed and goes to the next player's amount box.</summary>
-	private async void OnNextBoxClicked(object? sender, EventArgs e)
+	/// <summary>Goes to the next player's amount box; what's typed waits for + or −.</summary>
+	private void OnNextBoxClicked(object? sender, EventArgs e)
 	{
 		if (_typingRow is { } row)
-			await MoveToBoxAsync(row, +1, apply: true);
+			MoveToBox(row, +1);
 	}
 
 	/// <summary>
@@ -728,7 +735,7 @@ public partial class ScoreboardPage : ContentPage
 	/// at the top says why and what can be entered; the amount stays so it can
 	/// be corrected. True when the amount was added.
 	/// </summary>
-	private async Task<bool> ApplyTypedAmountAsync(ParticipantRow row, Models.ScoringSettings manual, bool subtract, bool keepFocus = false)
+	private async Task<bool> ApplyTypedAmountAsync(ParticipantRow row, Models.ScoringSettings manual, bool subtract)
 	{
 		if (!_amountBoxes.TryGetValue(row, out var box)) return false;
 		var text = box.Text?.Trim() ?? string.Empty;
@@ -753,8 +760,7 @@ public partial class ScoreboardPage : ContentPage
 
 		ScoreMessage.Text = string.Empty;
 		box.Text = string.Empty;
-		if (!keepFocus)
-			box.Unfocus();
+		box.Unfocus();
 		await _vm.AdjustScoreAsync(row, subtract ? -amount : amount);
 		return true;
 	}

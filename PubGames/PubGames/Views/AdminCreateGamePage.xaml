@@ -46,7 +46,7 @@
 	<Grid RowDefinitions="Auto,*,Auto">
 
 	<!-- General, Scoring, Rules. Players see none of this: they see the game as before. -->
-	<Grid Padding="20,12,20,8" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+	<Grid Padding="20,12,20,8" ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8">
 		<Button Text="{loc:T AdminCreateGame_General}" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsGeneralPage}" Value="True">
@@ -79,6 +79,12 @@
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
+		<!-- Scoring page: only the scoring type is always there (a game needs one); this adds the other parts.
+		     It stays here above the form, so it's in reach however far down the page is scrolled. -->
+		<Button Grid.Row="1" Grid.ColumnSpan="4" Margin="0,8,0,0" Text="{loc:T AdminCreateGame_AddYourRules}" Clicked="OnAddSectionClicked"
+		        IsVisible="{Binding CanAddSection}"
+		        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+		        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 	</Grid>
 
 	<BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" VerticalOptions="End" />
@@ -175,11 +181,6 @@
 			<!-- ===== Page 2: scoring ===== -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsScoringPage}">
 
-				<!-- Only the scoring type is always there (a game needs one); this adds the other parts. They always show in the same order. -->
-				<Button Text="{loc:T AdminCreateGame_AddYourRules}" Clicked="OnAddSectionClicked" IsVisible="{Binding CanAddSection}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
-
 				<VerticalStackLayout Spacing="14">
 					<Label Text="{loc:T AdminCreateGame_ScoringType}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
 					<views:ScoringEditorView BindingContext="{Binding Scoring}" />
@@ -213,13 +214,23 @@
 								       VerticalOptions="Center" />
 							</Grid>
 
-							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12">
+							<Grid ColumnDefinitions="*,Auto,100" ColumnSpacing="12" IsVisible="{Binding IsNotSheetGame}">
 								<Label Text="{loc:T AdminCreateGame_ASubgameEndsAtScore}" VerticalOptions="Center" />
 								<Switch Grid.Column="1" IsToggled="{Binding HasEndScore}" VerticalOptions="Center" />
 								<Entry Grid.Column="2" Text="{Binding EndScore}" Keyboard="Telephone" Placeholder="e.g. 100"
 								       HorizontalTextAlignment="End" IsVisible="{Binding HasEndScore}" />
 							</Grid>
-							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasEndScore}">
+							<!-- Score sheet: a subgame ends one way, once the sheet is full or at an end score. -->
+							<VerticalStackLayout Spacing="10" IsVisible="{Binding IsSheetGame}">
+								<Label Text="{loc:T AdminCreateGame_SheetEnd}" />
+								<Picker ItemsSource="{Binding SheetEndOptions}" SelectedIndex="{Binding SheetEndIndex}" />
+								<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding HasEndScore}">
+									<Label Text="{loc:T AdminCreateGame_SheetEndScore}" VerticalOptions="Center" />
+									<Entry Grid.Column="1" Text="{Binding EndScore}" Keyboard="Telephone" Placeholder="e.g. 300"
+									       HorizontalTextAlignment="End" />
+								</Grid>
+							</VerticalStackLayout>
+							<VerticalStackLayout Spacing="10" IsVisible="{Binding ShowsEndMode}">
 								<Label Text="{loc:T AdminCreateGame_HowTheSubgameEnds}" />
 								<Picker Title="{loc:T AdminCreateGame_ChooseHowItEnds}" ItemsSource="{Binding EndModeOptions}" SelectedItem="{Binding SelectedEndMode}" />
 								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding CanHaveEqualizingTurn}">

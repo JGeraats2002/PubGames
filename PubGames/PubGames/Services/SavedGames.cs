@@ -139,7 +139,7 @@ public class SavedGames(ILocalDatabaseService local, IAuthService auth)
 			var participants = await local.GetParticipantsAsync(session.Id);
 			var results = await local.GetRoundResultsAsync(session.Id);
 			var startScore = ScoringRules.For(game).StartScore;
-			var hasScore = session.EndedAt is not null || results.Count > 0 || participants.Any(p => p.Score != startScore);
+			var hasScore = session.EndedAt is not null || results.Count > 0 || participants.Any(p => p.Score != startScore || p.SheetText is not null);
 			if (!hasScore)
 			{
 				if (!waitingForStats) delete.Add(session.Id);

@@ -174,13 +174,15 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	{
 		var seat = Rows.IndexOf(row);
 		var score = row.Participant.Score;
+		var sheet = row.Participant.SheetText;
 		row.Participant.IsActive = false;
 		row.Participant.Score = _startScore;
+		row.Participant.SheetText = null;
 		await _local.SaveParticipantAsync(row.Participant);
 		Rows.Remove(row);
 
 		await _local.TransferRoundResultsAsync(_sessionId, row.Player.Id, replacement.Id);
-		await SeatAsync(replacement, seat, startScore: score);
+		await SeatAsync(replacement, seat, startScore: score, sheetText: sheet);
 		await LoadAsync();
 		StatusMessage = L.F("{0} took {1}'s seat, score and results.", replacement.Name, row.Player.Name);
 	}
@@ -188,15 +190,19 @@ public partial class SessionPlayersViewModel : ObservableObject, IQueryAttributa
 	/// <summary>
 	/// Puts a player on a seat (0-based), shifting later seats down. A null
 	/// startScore reuses the score from an earlier stint in this game, if any;
-	/// someone new starts at the game's starting score.
+	/// someone new starts at the game's starting score. sheetText is the
+	/// score sheet that goes with startScore (score sheet games only).
 	/// </summary>
-	private async Task SeatAsync(Player player, int seat, int? startScore)
+	private async Task SeatAsync(Player player, int seat, int? startScore, string? sheetText = null)
 	{
 		var participant = _allParticipants.FirstOrDefault(p => p.PlayerId == player.Id && !p.IsActive)
 			?? new SessionParticipant { SessionId = _sessionId, PlayerId = player.Id, Score = _startScore };
 		participant.IsActive = true;
 		if (startScore is { } score)
+		{
 			participant.Score = score;
+			participant.SheetText = sheetText; // a score sheet goes with its score
+		}
 
 		var row = new ParticipantRow { Participant = participant, Player = player };
 		Rows.Insert(Math.Clamp(seat, 0, Rows.Count), row);

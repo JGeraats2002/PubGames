@@ -192,7 +192,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		// Subgame is shown when something in it isn't the default: winner(s) and highest score wins,
 		// the seats stay, no fixed input order, no end score.
 		SetAdded(GameFormSection.Subgame, (_resultModeChosen && (ResultMode != ResultMode.Winner || _lowestWins == true))
-			|| _startRotation != StartRotation.None || FixedTurnOrder || HasEndScore);
+			|| _startRotation != StartRotation.None || FixedTurnOrder || HasEndScore || _endMode != EndMode.Automatic);
 		SetAdded(GameFormSection.Ties, !AllowTies);
 	}
 
@@ -529,12 +529,36 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	/// <summary>A subgame ends when a player reaches the end score.</summary>
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(CanHaveEqualizingTurn))]
+	[NotifyPropertyChangedFor(nameof(CanHaveEqualizingTurn), nameof(ShowsEndMode), nameof(SheetEndIndex))]
 	private bool hasEndScore;
 
 	/// <summary>Text, like the score settings; checked on save.</summary>
 	[ObservableProperty]
 	private string endScore = string.Empty;
+
+	/// <summary>The game is scored on a score sheet: a subgame ends at a full sheet or at an end score.</summary>
+	public bool IsSheetGame => Scoring.IsSheet;
+
+	/// <summary>Any other scoring type: the end score has its own switch.</summary>
+	public bool IsNotSheetGame => !Scoring.IsSheet;
+
+	/// <summary>Score sheet: the two ways a subgame can end, one of them.</summary>
+	public List<string> SheetEndOptions { get; } = [L.T("When everyone filled in every row"), L.T("At an end score")];
+
+	/// <summary>Score sheet: 0 ends the subgame when the sheet is full, 1 at the end score.</summary>
+	public int SheetEndIndex
+	{
+		get => HasEndScore ? 1 : 0;
+		set
+		{
+			if (value < 0 || (value == 1) == HasEndScore) return;
+			HasEndScore = value == 1;
+			OnPropertyChanged();
+		}
+	}
+
+	/// <summary>Whether something ends the subgame, so it matters how: by itself or by the players.</summary>
+	public bool ShowsEndMode => HasEndScore || IsSheetGame;
 
 	/// <summary>How a subgame ends at its end score, for the picker.</summary>
 	public List<EndModeOption> EndModeOptions { get; } = EndModeOption.All;
@@ -681,6 +705,14 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		_permissions = permissions;
 
 		IsModerator = _team.Me is { } me && !_permissions.CanChangeGamesDirectly(me);
+		// A score sheet can also end when it's full: that option shows only then.
+		Scoring.PropertyChanged += (_, e) =>
+		{
+			if (e.PropertyName != nameof(ScoringEditor.IsSheet)) return;
+			OnPropertyChanged(nameof(IsSheetGame));
+			OnPropertyChanged(nameof(IsNotSheetGame));
+			OnPropertyChanged(nameof(ShowsEndMode));
+		};
 		// A new game; replaced once an existing game or request has loaded.
 		_savedForm = FormSnapshot();
 	}
@@ -900,7 +932,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 				AllowTies = settings.AllowTies, TieBreakMoment = settings.TieBreakMoment, TieBreakScope = settings.TieBreakScope,
 				DuelSameScoring = settings.DuelSameScoring, DuelScoringType = settings.DuelScoringType, DuelSettings = settings.DuelSettings,
 				StartRotation = settings.StartRotation, FixedTurnOrder = settings.FixedTurnOrder,
-				EndScore = settings.EndScore, EndMode = settings.EndMode, EqualizingTurn = settings.EqualizingTurn
+				EndScore = settings.EndScore, EndMode = settings.EndMode, EqualizingTurn = settings.EqualizingTurn,
+				SheetFullEnds = settings.SheetFullEnds
 			};
 		}
 		Scoring.Show(type, settings);
@@ -989,7 +1022,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			DuelSameScoring = false,
 			StartRotation = _startRotation, FixedTurnOrder = FixedTurnOrder,
 			EndScore = endScore, EndMode = _endMode,
-			EqualizingTurn = CanHaveEqualizingTurn && EqualizingTurn
+			EqualizingTurn = CanHaveEqualizingTurn && EqualizingTurn,
+			// A score sheet ends one way: at the end score, or else once it's full.
+			SheetFullEnds = endScore is null
 		};
 		if (Scoring.Read(basis, out var problem) is not { } settings)
 		{

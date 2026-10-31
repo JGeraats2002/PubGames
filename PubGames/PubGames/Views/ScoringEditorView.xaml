@@ -81,6 +81,132 @@
 				</VerticalStackLayout>
 			</VerticalStackLayout>
 		</Border>
+
+		<!-- Score sheet: lists with named rows (each with its own rules) and bonuses. Players fill it in on the scoreboard. -->
+		<VerticalStackLayout IsVisible="{Binding IsSheet}" Spacing="10">
+			<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Sections}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="vm:EditableSheetSection">
+						<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="8" />
+							</Border.StrokeShape>
+							<VerticalStackLayout Spacing="8">
+								<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+									<Entry Text="{Binding Name}" Placeholder="{loc:T ScoringEditorView_ListName}" FontAttributes="Bold" />
+									<Button Grid.Column="1" SemanticProperties.Description="{loc:T ScoringEditorView_RemoveList}" Text="✕" Clicked="OnRemoveSectionClicked"
+										        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
+										        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+								</Grid>
+
+								<!-- The rows, each with a name and its own rules. -->
+								<Label Text="{loc:T ScoringEditorView_Rows}" FontAttributes="Bold" FontSize="13" />
+								<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
+									<BindableLayout.ItemTemplate>
+										<DataTemplate x:DataType="vm:EditableSheetRow">
+											<Border StrokeThickness="1" Stroke="{StaticResource Border}" Padding="8">
+												<Border.StrokeShape>
+													<RoundRectangle CornerRadius="6" />
+												</Border.StrokeShape>
+												<VerticalStackLayout Spacing="6">
+													<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+														<Entry Text="{Binding Name}" Placeholder="{loc:T ScoringEditorView_RowName}" />
+														<Button Grid.Column="1" SemanticProperties.Description="{loc:T ScoringEditorView_RemoveRow}" Text="✕" Clicked="OnRemoveRowClicked"
+															        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
+															        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+													</Grid>
+													<!-- A fixed score is ticked off on the scoreboard, like Full house (25); otherwise it's typed within the rules. -->
+													<Grid ColumnDefinitions="Auto,*,100" ColumnSpacing="8">
+														<CheckBox IsChecked="{Binding IsFixed}" VerticalOptions="Center" />
+														<Label Grid.Column="1" Text="{loc:T ScoringEditorView_FixedScore}" VerticalOptions="Center" />
+														<Entry Grid.Column="2" Text="{Binding FixedScore}" Keyboard="Telephone" Placeholder="e.g. 25"
+														       HorizontalTextAlignment="End" IsVisible="{Binding IsFixed}" />
+													</Grid>
+													<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+														<CheckBox IsChecked="{Binding AllowsZero}" VerticalOptions="Center" />
+														<Label Grid.Column="1" Text="{loc:T ScoringEditorView_ZeroAllowed}" VerticalOptions="Center" />
+													</Grid>
+													<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Rules}" IsVisible="{Binding IsTyped}">
+														<BindableLayout.ItemTemplate>
+															<DataTemplate x:DataType="vm:EditableScoreRule">
+																<VerticalStackLayout Spacing="4">
+																	<Button Text="{Binding JoinerText}" Clicked="OnJoinerClicked" IsVisible="{Binding HasJoiner}"
+																	        HorizontalOptions="Start" HeightRequest="48" Padding="14,0" FontSize="12" FontAttributes="Bold"
+																	        BackgroundColor="{StaticResource PrimaryDark}" TextColor="White" />
+																	<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
+																		<Picker Title="{loc:T ScoringEditorView_ChooseRule}" ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" VerticalOptions="Center" />
+																		<Entry Grid.Column="1" Text="{Binding Value}" Placeholder="{Binding ValuePlaceholder}" Keyboard="Telephone"
+																		       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding NeedsValue}" />
+																		<Entry Grid.Column="2" Text="{Binding Value2}" Placeholder="{loc:T ScoringEditorView_To}" Keyboard="Telephone"
+																		       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding IsBetween}" />
+																		<Button SemanticProperties.Description="{loc:T ScoringEditorView_RemoveRule}" Grid.Column="3" Text="✕" Clicked="OnRemoveRowRuleClicked" WidthRequest="48" HeightRequest="48"
+																		        Padding="0" FontSize="14" VerticalOptions="Center"
+																		        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+																	</Grid>
+																</VerticalStackLayout>
+															</DataTemplate>
+														</BindableLayout.ItemTemplate>
+													</VerticalStackLayout>
+													<Label Text="{Binding RulesPreview}" FontSize="12" />
+													<Button Text="{loc:T ScoringEditorView_AddRule}" Clicked="OnAddRowRuleClicked" HorizontalOptions="Start" IsVisible="{Binding IsTyped}"
+														        HeightRequest="48" Padding="14,0" FontSize="12"
+														        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+												</VerticalStackLayout>
+											</Border>
+										</DataTemplate>
+									</BindableLayout.ItemTemplate>
+								</VerticalStackLayout>
+								<Button Text="{loc:T ScoringEditorView_AddRow}" Clicked="OnAddRowClicked" HorizontalOptions="Start"
+									        HeightRequest="48" Padding="14,0" FontSize="13"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+
+								<!-- The bonuses: automatic at a total of the rows, or filled in per time. -->
+								<Label Text="{loc:T ScoringEditorView_Bonuses}" FontAttributes="Bold" FontSize="13" Margin="0,6,0,0" />
+								<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Bonuses}">
+									<BindableLayout.ItemTemplate>
+										<DataTemplate x:DataType="vm:EditableSheetBonus">
+											<Border StrokeThickness="1" Stroke="{StaticResource Border}" Padding="8">
+												<Border.StrokeShape>
+													<RoundRectangle CornerRadius="6" />
+												</Border.StrokeShape>
+												<VerticalStackLayout Spacing="6">
+													<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+														<Entry Text="{Binding Name}" Placeholder="{loc:T ScoringEditorView_BonusName}" />
+														<Button Grid.Column="1" SemanticProperties.Description="{loc:T ScoringEditorView_RemoveBonus}" Text="✕" Clicked="OnRemoveBonusClicked"
+															        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
+															        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+													</Grid>
+													<Picker ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" />
+													<!-- Like the Yatzy bonus: only possible once the Yatzy row has a score. -->
+													<Picker ItemsSource="{Binding RowChoices}" SelectedItem="{Binding RequiredRow}" />
+													<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding IsTotalAtLeast}">
+														<Label Text="{loc:T ScoringEditorView_BonusAtTotal}" VerticalOptions="Center" />
+														<Entry Grid.Column="1" Text="{Binding Threshold}" Keyboard="Telephone" Placeholder="e.g. 63" HorizontalTextAlignment="End" />
+													</Grid>
+													<Grid ColumnDefinitions="*,100" ColumnSpacing="12">
+														<Label Text="{loc:T ScoringEditorView_BonusPoints}" VerticalOptions="Center" />
+														<Entry Grid.Column="1" Text="{Binding Points}" Keyboard="Telephone" Placeholder="e.g. 35" HorizontalTextAlignment="End" />
+													</Grid>
+													<Grid ColumnDefinitions="*,100" ColumnSpacing="12" IsVisible="{Binding IsPerTime}">
+														<Label Text="{loc:T ScoringEditorView_BonusMostTimes}" VerticalOptions="Center" />
+														<Entry Grid.Column="1" Text="{Binding MaxTimes}" Keyboard="Numeric" Placeholder="e.g. 2" HorizontalTextAlignment="End" />
+													</Grid>
+												</VerticalStackLayout>
+											</Border>
+										</DataTemplate>
+									</BindableLayout.ItemTemplate>
+								</VerticalStackLayout>
+								<Button Text="{loc:T ScoringEditorView_AddBonus}" Clicked="OnAddBonusClicked" HorizontalOptions="Start"
+									        HeightRequest="48" Padding="14,0" FontSize="13"
+									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+							</VerticalStackLayout>
+						</Border>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</VerticalStackLayout>
+			<Button Text="{loc:T ScoringEditorView_AddList}" Clicked="OnAddSectionClicked" HorizontalOptions="Start"
+			        HeightRequest="48" Padding="14,0" FontSize="13" />
+		</VerticalStackLayout>
 	</VerticalStackLayout>
 
 </ContentView>

@@ -90,7 +90,7 @@ public class PubGame
 
 	/// <summary>The scoring type as the admin library shows it.</summary>
 	[Ignore]
-	public string ScoringLabel => ScoringType is ScoringType.PlusMinus or ScoringType.ManualPlusMinus
+	public string ScoringLabel => ScoringType is ScoringType.PlusMinus or ScoringType.ManualPlusMinus or ScoringType.ScoreSheet
 		? $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.SummaryFor(ScoringType)} · {ScoringSettings.TieSummaryFor(ScoringType)})"
 		: $"{ScoringTypeOption.LabelFor(ScoringType)} ({ScoringSettings.ResultSummary} · {ScoringSettings.TieSummaryFor(ScoringType)})";
 

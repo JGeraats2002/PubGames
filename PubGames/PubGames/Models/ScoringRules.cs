@@ -15,6 +15,7 @@ namespace PubGames.Models;
 /// <param name="MaxScore">Scores never go above this (null: no maximum).</param>
 /// <param name="WarningScore">A player's card is highlighted once their score reaches this (null: no warning).</param>
 /// <param name="ManualAmounts">Manual plus / minus: + and − ask for an amount, checked against these settings' rules.</param>
+/// <param name="Sheet">Score sheet: its lists; null for every other scoring type.</param>
 public record ScoringRules(
 	string Unit,
 	string Explanation,
@@ -26,7 +27,8 @@ public record ScoringRules(
 	int? MinScore = null,
 	int? MaxScore = null,
 	int? WarningScore = null,
-	ScoringSettings? ManualAmounts = null)
+	ScoringSettings? ManualAmounts = null,
+	IReadOnlyList<ScoreSheetSection>? Sheet = null)
 {
 	/// <summary>The rules for a game; its scoring settings fill in Plus / minus.</summary>
 	public static ScoringRules For(PubGame? game) => game is null
@@ -41,6 +43,13 @@ public record ScoringRules(
 	{
 		ScoringType.PlusMinus => PlusMinus(settings ?? ScoringSettings.Default),
 		ScoringType.ManualPlusMinus => ManualPlusMinus(settings ?? ScoringSettings.Default),
+
+		// The sheet is filled in on the scoreboard itself; a player's score is the sheet's total.
+		ScoringType.ScoreSheet => new("points",
+			L.T("Fill in each player's scores in the rows of the sheet. Bonuses and totals are added up for you.")
+				+ ((settings ?? ScoringSettings.Default).LowestWins ? L.T(" The lowest total is best.") : L.T(" The highest total is best.")),
+			MinusStep: null, PlusStep: 0, AllowsTypedAmount: false,
+			HighestWins: !(settings ?? ScoringSettings.Default).LowestWins, Sheet: settings?.Sheet ?? []),
 
 		ScoringType.TypedScore => new("points",
 			L.T("Play the duel, then type in everyone's score."),

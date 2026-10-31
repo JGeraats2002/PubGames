@@ -15,7 +15,8 @@ public enum ScoringType
 	Custom,           // admin-defined notation (free text rules, manual score entry)
 	PlusMinus,        // + and − by a set step, optional min/max and warning (see ScoringSettings)
 	ManualPlusMinus,  // + and − by an amount typed in each time, within the game's amount rules
-	TypedScore        // only for a tie-break duel: everyone's final duel score is typed in at once
+	TypedScore,       // only for a tie-break duel: everyone's final duel score is typed in at once
+	ScoreSheet        // a Yatzy-style sheet: named rows per list, typed in per player, with bonuses (see ScoreSheet)
 }
 
 /// <summary>A scoring type as the dropdown shows it.</summary>
@@ -28,16 +29,16 @@ public sealed record ScoringTypeOption(ScoringType Type)
 	public override string ToString() => Label;
 
 	/// <summary>
-	/// What admins can pick. Only Plus / minus for now; the other types still
-	/// work for games that already use them, but can't be chosen any more.
+	/// What admins can pick. The older types still work for games that already
+	/// use them, but can't be chosen any more.
 	/// </summary>
-	public static List<ScoringTypeOption> All { get; } = [new(ScoringType.PlusMinus), new(ScoringType.ManualPlusMinus)];
+	public static List<ScoringTypeOption> All { get; } = [new(ScoringType.PlusMinus), new(ScoringType.ManualPlusMinus), new(ScoringType.ScoreSheet)];
 
 	/// <summary>Whether admins can still choose this scoring type for a new game.</summary>
 	public static bool IsOffered(ScoringType type) => All.Any(o => o.Type == type);
 
-	/// <summary>What admins can pick for a tie-break duel: the game's types, or typing in the duel's score.</summary>
-	public static List<ScoringTypeOption> DuelOptions { get; } = [.. All, new(ScoringType.TypedScore)];
+	/// <summary>What admins can pick for a tie-break duel: plus / minus, or typing in the duel's score (no score sheet).</summary>
+	public static List<ScoringTypeOption> DuelOptions { get; } = [new(ScoringType.PlusMinus), new(ScoringType.ManualPlusMinus), new(ScoringType.TypedScore)];
 
 	/// <summary>What a scoring type is called in the app.</summary>
 	public static string LabelFor(ScoringType type) => type switch
@@ -45,6 +46,7 @@ public sealed record ScoringTypeOption(ScoringType Type)
 		ScoringType.PlusMinus => L.T("Plus / minus"),
 		ScoringType.ManualPlusMinus => L.T("Manual plus / minus"),
 		ScoringType.TypedScore => L.T("Type in the score"),
+		ScoringType.ScoreSheet => L.T("Score sheet"),
 		ScoringType.PointTally => L.T("Point tally"),
 		ScoringType.SipCounter => L.T("Sip counter"),
 		ScoringType.WinLoseRounds => L.T("Win/lose rounds"),

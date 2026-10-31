@@ -81,4 +81,10 @@ public class SessionParticipant
 
 	/// <summary>False if this player was removed mid-session; their past score stays on record.</summary>
 	public bool IsActive { get; set; } = true;
+
+	/// <summary>
+	/// Score sheet: what the player filled in this subgame, as JSON (see
+	/// ScoreSheet.ReadCells). Score is always the sheet's total. Null when empty.
+	/// </summary>
+	public string? SheetText { get; set; }
 }

@@ -62,6 +62,9 @@ public partial class ParticipantRow : ObservableObject
 		ShortStatus = rules.ShortStatusFor(Score);
 	}
 
+	/// <summary>Score sheet: what the player filled in, by row (or bonus) id.</summary>
+	public Dictionary<string, int> Cells => ScoreSheet.ReadCells(Participant.SheetText);
+
 	/// <summary>Call after mutating Participant.Score or Position so bound UI refreshes.</summary>
 	public void NotifyChanged()
 	{
@@ -112,6 +115,9 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 
 	/// <summary>Whether the game is finished.</summary>
 	public bool IsFinished => Session?.EndedAt is not null;
+
+	/// <summary>The game is scored on a score sheet: the page shows a table instead of cards.</summary>
+	public bool IsSheet => Game?.ScoringType == ScoringType.ScoreSheet;
 
 	/// <summary>Scores are entered seat by seat (see ScoringSettings.FixedTurnOrder).</summary>
 	public bool FixedTurnOrder => Settings.FixedTurnOrder && !IsFinished;
@@ -271,11 +277,22 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 	/// </summary>
 	private async Task CheckEndAsync(bool turnEnded)
 	{
-		if (Session is null || IsFinished || Settings.EndScore is null) return;
+		if (Session is null || IsFinished) return;
+		var key = (Session.Id, CurrentRound);
+
+		// Score sheet: everyone filled in every row.
+		if (IsSheetFull && Settings.SheetFullEnds && Settings.EndMode == EndMode.Automatic && _endedRound != key)
+		{
+			_endedRound = key;
+			UpdateEndMessage();
+			SubgameEnded?.Invoke(this, EventArgs.Empty);
+			return;
+		}
+
+		if (Settings.EndScore is null) return;
 		if (FixedTurnOrder && !turnEnded) return;
 
 		var reached = Rows.Where(r => Settings.ReachesEnd(r.Score)).ToList();
-		var key = (Session.Id, CurrentRound);
 
 		if (Settings.EndMode == EndMode.Automatic && Settings.EqualizingTurn && FixedTurnOrder)
 		{
@@ -306,9 +323,17 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		UpdateEndMessage();
 	}
 
-	/// <summary>The line above the cards about the end score.</summary>
+	/// <summary>Score sheet: every player filled in every row.</summary>
+	private bool IsSheetFull => IsSheet && Rows.Count > 0 && Rows.All(r => ScoreSheet.IsComplete(Rules.Sheet ?? [], r.Cells));
+
+	/// <summary>The line above the cards about the end score, or that the score sheet is full.</summary>
 	private void UpdateEndMessage()
 	{
+		if (IsSheetFull && !IsFinished)
+		{
+			EndMessage = L.F("📋 Everyone filled in the whole sheet. End the subgame with {0}.", (CanGoNext ? L.T("Next subgame") : L.T("Finish game")));
+			return;
+		}
 		if (Settings.EndScore is not { } end || IsFinished)
 		{
 			EndMessage = string.Empty;
@@ -356,6 +381,42 @@ public partial class ScoreboardViewModel : ObservableObject, IQueryAttributable
 		row.UpdateStatus(Rules);
 		UpdateLeaders();
 		await CheckEndAsync(turnEnded: false);
+	}
+
+	/// <summary>
+	/// Score sheet: fills in (or with null empties) one cell of a player's
+	/// sheet. Their score becomes the sheet's total, with the bonuses. With a
+	/// fixed input order a filled-in row is the player's whole turn; a bonus
+	/// (`endsTurn` false) comes with a row, so it doesn't end the turn.
+	/// </summary>
+	public async Task SetSheetCellAsync(ParticipantRow row, string cellId, int? value, bool endsTurn = true)
+	{
+		if (IsFinished || Rules.Sheet is not { } sheet) return;
+		var cells = row.Cells;
+		if (value is { } filled)
+		{
+			if (cells.TryGetValue(cellId, out var old) && old == filled) return;
+			cells[cellId] = filled;
+		}
+		else if (!cells.Remove(cellId))
+			return;
+
+		row.Participant.SheetText = ScoreSheet.WriteCells(cells);
+		row.Participant.Score = Rules.StartScore + ScoreSheet.Total(sheet, cells);
+		await _local.SaveParticipantAsync(row.Participant);
+		if (Session is not null)
+		{
+			// Saved games are kept counting from the last score (see SavedGames).
+			Session.LastPlayedAt = DateTime.UtcNow;
+			await _local.SaveSessionAsync(Session);
+		}
+		row.NotifyChanged();
+		UpdateLeaders();
+		if (value is not null && endsTurn && FixedTurnOrder && row.IsTurn)
+			await EndTurnAsync(); // also checks the end score
+		else
+			await CheckEndAsync(turnEnded: false);
+		UpdateEndMessage();
 	}
 
 	/// <summary>Highlights whoever is winning right now (nobody while all scores are equal).</summary>

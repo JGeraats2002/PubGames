@@ -32,6 +32,9 @@ public sealed record ScoringSettings
 	/// <summary>Manual plus / minus: every amount a player types in must meet all of these.</summary>
 	public List<ScoreRule> AmountRules { get; init; } = [];
 
+	/// <summary>Score sheet: its lists, each with named rows and bonuses (see ScoreSheet).</summary>
+	public List<ScoreSheetSection> Sheet { get; init; } = [];
+
 	/// <summary>How the result of each subgame is noted: winner(s), a ranking or loser(s).</summary>
 	public ResultMode ResultMode { get; init; } = ResultMode.Winner;
 
@@ -96,6 +99,13 @@ public sealed record ScoringSettings
 	/// had as many turns.
 	/// </summary>
 	public bool EqualizingTurn { get; init; }
+
+	/// <summary>
+	/// Score sheet: the subgame ends once every player filled in every row
+	/// (by itself or by the players, see EndMode). False: only the end score
+	/// ends it, or the players.
+	/// </summary>
+	public bool SheetFullEnds { get; init; } = true;
 
 	// How a duel ends - only used in a duel's own settings (DuelSettings).
 
@@ -176,7 +186,10 @@ public sealed record ScoringSettings
 
 	/// <summary>How a duel is scored, given the game's own scoring type.</summary>
 	public (ScoringType Type, ScoringSettings Settings) DuelScoring(ScoringType gameType) =>
-		DuelSameScoring || DuelSettings is null ? (gameType, this) : (DuelScoringType, DuelSettings);
+		DuelSameScoring || DuelSettings is null
+			// A duel can't be played on a score sheet: the players type in the duel's score.
+			? (gameType == ScoringType.ScoreSheet ? ScoringType.TypedScore : gameType, this)
+			: (DuelScoringType, DuelSettings);
 
 	/// <summary>"ties allowed" or "no ties: duel after every subgame and the final total, for 1st place / the loser, same scoring as the game".</summary>
 	public string TieSummaryFor(ScoringType gameType)
@@ -202,6 +215,15 @@ public sealed record ScoringSettings
 	public string SummaryFor(ScoringType type, bool withResult = true)
 	{
 		var parts = new List<string>();
+		if (type == ScoringType.ScoreSheet)
+		{
+			parts.Add(ScoreSheet.Summary(Sheet));
+			if (withResult) parts.Add(ResultSummary);
+			if (withResult && SheetFullEnds)
+				parts.Add(EndMode == EndMode.Automatic ? L.T("subgame ends automatically when the sheet is full") : L.T("subgame can end when the sheet is full"));
+			if (withResult && TurnSummary.Length > 0) parts.Add(TurnSummary);
+			return string.Join(" · ", parts);
+		}
 		if (type == ScoringType.PlusMinus) parts.Add(L.F("steps of {0}", Step));
 		if (type == ScoringType.ManualPlusMinus)
 			parts.Add(AmountRules.Count == 0 ? L.T("any amount") : L.F("amounts {0}", AmountRulesText));
@@ -291,6 +313,8 @@ public sealed record ScoringSettings
 			return L.T("An equalizing turn needs an end score that ends the subgame automatically, and a fixed input order (so the app knows whose turn it is).");
 		if (type == ScoringType.ManualPlusMinus && AmountRulesProblem() is { } amountProblem)
 			return amountProblem;
+		if (type == ScoringType.ScoreSheet && ScoreSheet.Problem(Sheet) is { } sheetProblem)
+			return sheetProblem;
 		if (!AllowTies && !DuelSameScoring && DuelSettings is { } duelSettings
 			&& (duelSettings.DuelEndProblem() ?? duelSettings.Problem(DuelScoringType)) is { } duelProblem)
 			return L.F("Duel: {0}", duelProblem);
@@ -352,6 +376,7 @@ public sealed record ScoringSettings
 		["lowestWins"] = LowestWins,
 		// As JSON text: the Firestore client doesn't write lists of maps.
 		["amountRules"] = JsonSerializer.Serialize(AmountRules),
+		["scoreSheet"] = JsonSerializer.Serialize(Sheet),
 		["allowTies"] = AllowTies,
 		["tieBreakMoment"] = TieBreakMoment.ToString(),
 		["tieBreakScope"] = TieBreakScope.ToString(),
@@ -362,7 +387,8 @@ public sealed record ScoringSettings
 		["fixedTurnOrder"] = FixedTurnOrder,
 		["endScore"] = EndScore,
 		["endMode"] = EndMode.ToString(),
-		["equalizingTurn"] = EqualizingTurn
+		["equalizingTurn"] = EqualizingTurn,
+		["sheetFullEnds"] = SheetFullEnds
 	};
 
 	/// <summary>
@@ -383,6 +409,7 @@ public sealed record ScoringSettings
 			ResultMode = map.TryGetValue("resultMode", out var mode) && Enum.TryParse<ResultMode>(mode as string, out var m) ? m : ResultMode.Winner,
 			LowestWins = map.TryGetValue("lowestWins", out var lowest) && lowest is true,
 			AmountRules = map.TryGetValue("amountRules", out var rules) && rules is string json ? RulesFromJson(json) : [],
+			Sheet = map.TryGetValue("scoreSheet", out var sheet) && sheet is string sheetJson ? SheetFromJson(sheetJson) : [],
 			// Games from before ties could be switched off allow them.
 			AllowTies = !map.TryGetValue("allowTies", out var ties) || ties is not false,
 			TieBreakMoment = map.TryGetValue("tieBreakMoment", out var moment) && Enum.TryParse<TieBreakMoment>(moment as string, out var tm) ? tm : TieBreakMoment.SubgamesAndFinal,
@@ -394,8 +421,22 @@ public sealed record ScoringSettings
 			FixedTurnOrder = map.TryGetValue("fixedTurnOrder", out var fixedOrder) && fixedOrder is true,
 			EndScore = Number("endScore"),
 			EndMode = map.TryGetValue("endMode", out var endMode) && Enum.TryParse<EndMode>(endMode as string, out var em) ? em : EndMode.Automatic,
-			EqualizingTurn = map.TryGetValue("equalizingTurn", out var equalizing) && equalizing is true
+			EqualizingTurn = map.TryGetValue("equalizingTurn", out var equalizing) && equalizing is true,
+			SheetFullEnds = !map.TryGetValue("sheetFullEnds", out var sheetFull) || sheetFull is not false
 		};
+	}
+
+	/// <summary>Reads a score sheet's lists from JSON; unreadable becomes no lists.</summary>
+	private static List<ScoreSheetSection> SheetFromJson(string json)
+	{
+		try
+		{
+			return JsonSerializer.Deserialize<List<ScoreSheetSection>>(json) ?? [];
+		}
+		catch (JsonException)
+		{
+			return [];
+		}
 	}
 
 	/// <summary>Reads the rules for entered amounts from JSON; unreadable becomes no rules.</summary>

@@ -465,9 +465,10 @@ public partial class RoundResultViewModel : ObservableObject, IQueryAttributable
 			else
 			{
 				// Every subgame starts fresh, also for players sitting out who may rejoin.
-				foreach (var participant in _participants.Where(p => p.Score != _rules.StartScore))
+				foreach (var participant in _participants.Where(p => p.Score != _rules.StartScore || p.SheetText is not null))
 				{
 					participant.Score = _rules.StartScore;
+					participant.SheetText = null; // a score sheet starts empty too
 					await _local.SaveParticipantAsync(participant);
 				}
 				await RotateSeatsAsync();

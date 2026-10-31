@@ -33,6 +33,8 @@
 		<Compile Include="..\..\PubGames\PubGames\Models\RulesBlock.cs" Link="App\RulesBlock.cs" />
 		<Compile Include="..\..\PubGames\PubGames\Services\TranslatedPictures.cs" Link="App\TranslatedPictures.cs" />
 		<Compile Include="..\..\PubGames\PubGames\Models\Sentences.cs" Link="App\Sentences.cs" />
+		<Compile Include="..\..\PubGames\PubGames\Models\ScoreRule.cs" Link="App\ScoreRule.cs" />
+		<Compile Include="..\..\PubGames\PubGames\Models\ScoreSheet.cs" Link="App\ScoreSheet.cs" />
 	</ItemGroup>
 
 	<!-- The examples the Cloud Functions are tested with too (functions/test). -->

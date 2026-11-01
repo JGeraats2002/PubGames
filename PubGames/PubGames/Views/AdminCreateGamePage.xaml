@@ -549,6 +549,11 @@
 				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>
 
+			<!-- A new game: saved as a draft the whole team sees, so nobody makes it twice; only you finish it. -->
+			<Button Text="{loc:T AdminCreateGame_SaveAsDraft}" Margin="0,24,0,0" Command="{Binding SaveDraftCommand}" IsVisible="{Binding CanSaveDraft}"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+
 			<!-- On every page, away from the save button so they're never tapped by mistake. -->
 			<Button Text="{loc:T AdminCreateGame_WithdrawRequest}" Margin="0,24,0,0" Clicked="OnWithdrawClicked" IsVisible="{Binding CanWithdraw}"
 			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"

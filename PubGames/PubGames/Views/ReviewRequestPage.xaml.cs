@@ -18,6 +18,7 @@ public partial class ReviewRequestPage : ContentPage
 		InitializeComponent();
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.ReviewRequest);
+		ReportButton.Attach(this, () => new ReportContext(L.F("Review request: {0}", _vm.ReportSubject), _vm.SubmitterEmail));
 		_vm.Finished += async (_, message) =>
 		{
 			if (!string.IsNullOrEmpty(message))

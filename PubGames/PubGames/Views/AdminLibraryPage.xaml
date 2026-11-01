@@ -77,6 +77,29 @@
 						</BindableLayout.ItemTemplate>
 					</VerticalStackLayout>
 
+					<!-- Games being made by the team, so nobody makes one twice. Your own open to finish; the others can be
+					     tested, given a tip, or taken over after 3 days without changes. -->
+					<Label Text="{loc:T AdminLibrary_Drafts}" FontSize="16" Margin="0,10,0,0" IsVisible="{Binding HasDrafts}" />
+					<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Drafts}">
+						<BindableLayout.ItemTemplate>
+							<DataTemplate x:DataType="models:GameDraft">
+								<Border Padding="12,10" Stroke="{StaticResource Border}" StrokeDashArray="4,3">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="8" />
+									</Border.StrokeShape>
+									<Border.GestureRecognizers>
+										<TapGestureRecognizer Tapped="OnDraftTapped" CommandParameter="{Binding .}" />
+									</Border.GestureRecognizers>
+									<VerticalStackLayout Spacing="2">
+										<Label Text="{Binding Name}" />
+										<Label Text="{Binding InfoLine}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding StaleLabel}" FontSize="12" TextColor="{StaticResource Warning}" IsVisible="{Binding IsStale}" />
+									</VerticalStackLayout>
+								</Border>
+							</DataTemplate>
+						</BindableLayout.ItemTemplate>
+					</VerticalStackLayout>
+
 					<Label Text="{loc:T AdminLibrary_Games}" FontSize="16" Margin="0,10,0,0" IsVisible="{Binding HasMyRequests}" />
 				</VerticalStackLayout>
 			</CollectionView.Header>

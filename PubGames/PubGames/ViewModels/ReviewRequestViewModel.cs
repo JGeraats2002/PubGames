@@ -231,6 +231,12 @@ public partial class ReviewRequestViewModel : ObservableObject, IQueryAttributab
 	/// <summary>Who sent the request, for the confirmation questions.</summary>
 	public string SubmitterLabel => _request?.SubmitterLabel ?? L.T("the moderator");
 
+	/// <summary>Who submitted the request, for a report made on this page.</summary>
+	public string? SubmitterEmail => _request?.SubmittedByEmail;
+
+	/// <summary>What the request is, for a report made on this page.</summary>
+	public string ReportSubject => _request is null ? string.Empty : $"{_request.Summary} · {_request.SubmitterLabel}";
+
 	/// <summary>
 	/// Gets the services it works with - the phone's database, cloud sync, the permissions, the sign-in, the
 	/// team, the categories, the Inbox and the picture store - from the app (dependency injection).

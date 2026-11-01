@@ -768,6 +768,55 @@ exports.checkImage = onDocumentWritten("images/{imageId}", async (event) => {
 exports.translateCategoryGroup = onDocumentWritten("categoryGroups/{groupId}", translateName);
 
 /**
+ * Drafts nobody worked on for 3 days: once a day, everyone on the team except the draft's owner gets one
+ * message to take it over (staleAnnouncedAt remembers it, so it's sent once per time the draft lies still).
+ */
+exports.announceStaleDrafts = onSchedule({ schedule: "every day 09:00", timeZone: "Europe/Amsterdam" }, async () => {
+  const db = admin.firestore();
+  const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  const drafts = await db.collection("drafts").where("updatedAt", "<", cutoff).get();
+  if (drafts.empty) return;
+
+  const team = await db.collection("team").get();
+  const emails = new Set(OWNER_EMAILS);
+  for (const member of team.docs.map((doc) => doc.data()))
+    if (typeof member.email === "string" && member.email.length > 0) emails.add(member.email.toLowerCase());
+
+  for (const doc of drafts.docs) {
+    const draft = doc.data();
+    const updated = draft.updatedAt && draft.updatedAt.toDate ? draft.updatedAt.toDate() : null;
+    const announced = draft.staleAnnouncedAt && draft.staleAnnouncedAt.toDate ? draft.staleAnnouncedAt.toDate() : null;
+    if (!updated || (announced && announced > updated)) continue;
+
+    const owner = String(draft.ownerEmail || "").toLowerCase();
+    const batch = db.batch();
+    for (const email of emails) {
+      if (email === owner) continue;
+      const ref = db.collection("messages").doc();
+      // The same fields the app writes back when it's marked read (firestore.rules only lets isRead change).
+      batch.set(ref, {
+        id: ref.id,
+        toEmail: email,
+        fromEmail: "",
+        fromName: "Pub Games",
+        text: `The draft "${draft.name || ""}" can be taken over.`,
+        sentAt: new Date(),
+        isRead: false,
+        kind: "DraftTakeover",
+        reviewRequestId: null,
+        offersResubmit: false,
+        gameId: doc.id,
+        gameName: draft.name || "",
+        aboutEmail: owner,
+        aboutName: draft.ownerName || owner
+      });
+    }
+    batch.update(doc.ref, { staleAnnouncedAt: new Date() });
+    await batch.commit();
+  }
+});
+
+/**
  * The admin agreements, after the owner changed them in the app (agreements/current): every heading and
  * text is translated into each app language. translations holds, per language, the sections as JSON, the
  * same shape as sectionsJson; translatedFrom says which text they belong to, so they're made once.

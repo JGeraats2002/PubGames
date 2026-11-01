@@ -21,12 +21,65 @@ public record MessageRecipient(string Email, string Label, string Detail = "", b
 	public string LanguageName => Language?.Name ?? string.Empty;
 }
 
+/// <summary>One filter above the Inbox: all messages, or one category, with how many there are.</summary>
+public partial class InboxFilter : ObservableObject
+{
+	/// <summary>The category; null is everything.</summary>
+	public InboxCategory? Category { get; init; }
+
+	/// <summary>"Reports (2)".</summary>
+	[ObservableProperty]
+	private string text = string.Empty;
+
+	/// <summary>The filter that's on.</summary>
+	[ObservableProperty]
+	private bool isSelected;
+}
+
 /// <summary>
-/// Admin tab > Inbox: short messages between admins and moderators, and the
-/// review decisions moderators receive. Each message can be kept or deleted.
+/// Admin tab > Inbox: short messages between admins and moderators, the
+/// review decisions moderators receive, tips, reports and drafts to take
+/// over. Filtered by category; the categories that matter most come first.
+/// Each message can be kept or deleted.
 /// </summary>
 public partial class InboxViewModel : ObservableObject
 {
+	/// <summary>Every message loaded, before filtering.</summary>
+	private List<InboxMessage> _all = [];
+
+	/// <summary>The filters: all, then each category in order of priority.</summary>
+	public ObservableCollection<InboxFilter> Filters { get; } = new(
+		new InboxFilter[] { new() { IsSelected = true } }
+			.Concat(Enum.GetValues<InboxCategory>().Select(c => new InboxFilter { Category = c })));
+
+	/// <summary>Shows only the messages of a filter's category (or all).</summary>
+	public void Choose(InboxFilter filter)
+	{
+		foreach (var other in Filters)
+			other.IsSelected = other == filter;
+		ShowFiltered();
+	}
+
+	/// <summary>
+	/// The messages of the chosen filter: the most important categories
+	/// first (reports, review decisions), newest first within each.
+	/// </summary>
+	private void ShowFiltered()
+	{
+		var category = Filters.FirstOrDefault(f => f.IsSelected)?.Category;
+		Messages.Clear();
+		foreach (var message in _all.Where(m => category is null || m.Category == category)
+			.OrderBy(m => m.Category).ThenByDescending(m => m.SentAt))
+			Messages.Add(message);
+		foreach (var filter in Filters)
+		{
+			var count = filter.Category is { } c ? _all.Count(m => m.Category == c) : _all.Count;
+			var unread = filter.Category is { } d ? _all.Count(m => m.Category == d && m.IsUnread) : _all.Count(m => m.IsUnread);
+			var name = filter.Category is { } e ? InboxMessage.LabelFor(e) : L.T("All");
+			filter.Text = unread > 0 ? L.F("{0} ({1}, {2} new)", name, count, unread) : L.F("{0} ({1})", name, count);
+		}
+	}
+
 	private readonly IMessageService _messages;
 	private readonly ITeamService _team;
 	private readonly IAuthService _auth;
@@ -49,8 +102,9 @@ public partial class InboxViewModel : ObservableObject
 	/// Gets the services it works with - the Inbox, the team, the sign-in, the phone's database and cloud
 	/// sync - from the app (dependency injection).
 	/// </summary>
-	public InboxViewModel(IMessageService messages, ITeamService team, IAuthService auth, ILocalDatabaseService local, ICloudSyncService cloud)
+	public InboxViewModel(IMessageService messages, ITeamService team, IAuthService auth, ILocalDatabaseService local, ICloudSyncService cloud, DraftService drafts)
 	{
+		_drafts = drafts;
 		_messages = messages;
 		_team = team;
 		_auth = auth;
@@ -59,6 +113,58 @@ public partial class InboxViewModel : ObservableObject
 	}
 
 	private string MyEmail => TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
+
+	/// <summary>Drafts, to take one over from its message.</summary>
+	private readonly DraftService _drafts;
+
+	/// <summary>
+	/// Take over from a "draft to take over" message: the draft's id to open
+	/// when it's yours now, or null with StatusMessage saying why not.
+	/// </summary>
+	public async Task<string?> TakeOverAsync(InboxMessage message)
+	{
+		if (message.GameId is not { } id) return null;
+		GameDraft? draft;
+		try
+		{
+			draft = await _drafts.GetAsync(id);
+		}
+		catch (Exception)
+		{
+			StatusMessage = L.T("No connection - try again when you're online.");
+			return null;
+		}
+		if (draft is null)
+		{
+			StatusMessage = L.T("This draft isn't there any more: it was finished or removed.");
+			return null;
+		}
+		if (draft.OwnerEmail == MyEmail) return draft.Id;
+		if (!draft.IsStale)
+		{
+			StatusMessage = L.F("{0} is working on it again, or took it over first.", string.IsNullOrEmpty(draft.OwnerName) ? draft.OwnerEmail : draft.OwnerName);
+			return null;
+		}
+		var previous = draft.OwnerEmail;
+		try
+		{
+			await _drafts.TakeOverAsync(draft);
+		}
+		catch (Exception)
+		{
+			StatusMessage = L.T("This draft can't be taken over (any more): someone worked on it in the last 3 days, or took it over first.");
+			return null;
+		}
+		try
+		{
+			await _messages.SendAsync(previous, L.F("I've taken over your draft \"{0}\", because nobody had worked on it for 3 days.", draft.Name));
+		}
+		catch (Exception)
+		{
+			// The take-over counts; the message is a courtesy.
+		}
+		return draft.Id;
+	}
 
 	/// <summary>
 	/// Shows the messages as saved on the phone, then refreshes them from the cloud and marks them read.
@@ -79,24 +185,22 @@ public partial class InboxViewModel : ObservableObject
 		}
 
 		// Unread ones keep their "New" label for this visit; next time they're read.
-		foreach (var message in Messages.Where(m => !m.IsRead).ToList())
+		foreach (var message in _all.Where(m => !m.IsRead).ToList())
 			await _messages.MarkReadAsync(message);
 	}
 
 	/// <summary>Shows the messages, newest first.</summary>
 	private void Show(IEnumerable<InboxMessage> messages)
 	{
-		Messages.Clear();
-		foreach (var message in messages)
+		// Show "New" based on the state when loaded, even after marking it read.
+		_all = messages.Select(message => new InboxMessage
 		{
-			// Show "New" based on the state when loaded, even after marking it read.
-			Messages.Add(new InboxMessage
-			{
-				Id = message.Id, ToEmail = message.ToEmail, FromEmail = message.FromEmail, FromName = message.FromName, Text = message.Text,
-				SentAt = message.SentAt, IsRead = message.IsRead, Kind = message.Kind, ReviewRequestId = message.ReviewRequestId,
-				OffersResubmit = message.OffersResubmit, GameId = message.GameId, GameName = message.GameName, Language = message.Language
-			});
-		}
+			Id = message.Id, ToEmail = message.ToEmail, FromEmail = message.FromEmail, FromName = message.FromName, Text = message.Text,
+			SentAt = message.SentAt, IsRead = message.IsRead, Kind = message.Kind, ReviewRequestId = message.ReviewRequestId,
+			OffersResubmit = message.OffersResubmit, GameId = message.GameId, GameName = message.GameName, Language = message.Language,
+			AboutEmail = message.AboutEmail, AboutName = message.AboutName, ReportCategory = message.ReportCategory, PageName = message.PageName
+		}).ToList();
+		ShowFiltered();
 	}
 
 	/// <summary>
@@ -167,7 +271,8 @@ public partial class InboxViewModel : ObservableObject
 		try
 		{
 			await _messages.DeleteAsync(message);
-			Messages.Remove(message);
+			_all.Remove(message);
+			ShowFiltered();
 			StatusMessage = string.Empty;
 		}
 		catch (Exception ex)

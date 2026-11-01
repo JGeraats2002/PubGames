@@ -33,7 +33,7 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
   `PubGames/PubGames/bin/Release/net10.0-android36.0/publish/com.pubgems.pubgames-Signed.aab`
   (kopie: `%USERPROFILE%\PubGamesBuilds\pubgames-v5-1.4.aab`). Versie 4 (1.3) staat in closed testing
   (kopie: `pubgames-v4-1.3.aab`). Closed test loopt met 12+ testers.
-- Functions (ook `translateAgreements`) en firestore.rules zijn gedeployed (31-10-2026). Alles is gecommit en gepusht.
+- Functions (ook `translateAgreements` en `announceStaleDrafts`) en firestore.rules zijn gedeployed (01-11-2026). Alles is gecommit en gepusht.
 - Alles is door de gebruiker getest (afvinklijst https://claude.ai/artifact/2bdNcCQqsLQbSR2ihAuRBD),
   behalve één hertest: X3 (Vertalingen › Aanpassen › afbeelding opent de echte afbeelding in de editor).
 
@@ -62,6 +62,15 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
   - **▶ Testen** in het spelformulier (`Services/TestRun.cs`): speelt het spel zoals ingevuld met Speler 1, 2, ...
     onder account `test-run` (niet in stats, opgeslagen spellen of spelerslijst), kopie van het spel als `Deleted`.
     ⏹ Test stoppen op elke spelpagina; ander tabblad of terug naar het formulier stopt de test ook.
+  - **Afbeeldingseditor:** Selecteren + Groeperen (`DrawItem.Group`; groep alleen slepen, kopiëren, verwijderen,
+    opheffen), ✓ / ✕ als 1 teken (Kind wisselt), tekst met Enter (Editor); vertaalde tekst breekt af op de
+    langste regel van het origineel (`DrawItem.FitTranslation`, in `ImageStore`).
+  - **Concepten** (`Firestore drafts/{id}`, `Services/DraftService.cs`, `Models/GameDraft.cs`): Opslaan als concept
+    voor nieuwe spellen; lijst in de bibliotheek voor het hele team; alleen de eigenaar wijzigt en maakt af,
+    anderen testen of sturen een tip. Na 3 dagen zonder wijziging overnemen (regels checken dit); de functie
+    `announceStaleDrafts` (dagelijks 09:00) stuurt iedereen 1 bericht. Publiceren/indienen verwijdert het concept.
+  - **Inbox:** filters per categorie met prioriteit (rapportage, beoordeling, concept, vertaling, tip, bericht).
+  - **Rapporteren** (📣 naast ⓘ, `Views/ReportButton.cs`): wie, categorie, uitleg en pagina; alleen naar de eigenaar.
 
 ### Volgende stappen
 

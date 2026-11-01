@@ -71,8 +71,10 @@ public class CloudSyncService : ICloudSyncService
 	}
 
 	/// <inheritdoc />
-	public Task SaveGameAsync(PubGame game) =>
-		_firestore.SetAsync(GamesCollection, game.Id, new Dictionary<string, object?>
+	public Task SaveGameAsync(PubGame game) => _firestore.SetAsync(GamesCollection, game.Id, GameFields(game));
+
+	/// <summary>A game's cloud fields: for the games collection, and inside a draft (DraftService).</summary>
+	public static Dictionary<string, object?> GameFields(PubGame game) => new()
 		{
 			// Also the document id; duplicated as a field so reads don't have to parse document names.
 			["id"] = game.Id,
@@ -94,7 +96,7 @@ public class CloudSyncService : ICloudSyncService
 			["status"] = game.Status.ToString(),
 			["createdAt"] = game.CreatedAt,
 			["publishedAt"] = game.PublishedAt
-		});
+		};
 
 	/// <inheritdoc />
 	public async Task PullPublishedGamesAsync()
@@ -133,7 +135,7 @@ public class CloudSyncService : ICloudSyncService
 	}
 
 	/// <summary>Reads a game from its cloud document; null when the document isn't a game.</summary>
-	private static PubGame? ToGame(Dictionary<string, object?> f)
+	public static PubGame? ToGame(Dictionary<string, object?> f)
 	{
 		if (f.GetValueOrDefault("id") is not string id) return null;
 

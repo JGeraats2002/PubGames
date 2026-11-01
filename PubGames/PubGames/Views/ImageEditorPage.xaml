@@ -7,13 +7,16 @@
 
 	<Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12" RowSpacing="10">
 
-		<!-- Undo takes back the last change; the ⓘ explains the editor. -->
-		<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+		<!-- Select picks several things to group; Undo takes back the last change; the ⓘ explains the editor. -->
+		<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
 			<Label x:Name="Heading" Text="{loc:T ImageEditor_CreateImage}" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
-			<Button Grid.Column="1" Text="{loc:T ImageEditor_Undo}" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
+			<Button Grid.Column="1" x:Name="SelectButton" Text="{loc:T ImageEditor_Select}" Clicked="OnSelectClicked" HeightRequest="48" Padding="14,0" FontSize="13"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button SemanticProperties.Description="{loc:T ImageEditor_Help}" Grid.Column="2" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
+			<Button Grid.Column="2" Text="{loc:T ImageEditor_Undo}" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
+			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
+			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			<Button SemanticProperties.Description="{loc:T ImageEditor_Help}" Grid.Column="3" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
 			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
 			        BorderColor="{StaticResource Border}" BorderWidth="1" />
 		</Grid>

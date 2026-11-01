@@ -21,6 +21,12 @@ public interface IMessageService
 
 	Task MarkReadAsync(InboxMessage message);
 
+	/// <summary>
+	/// Sends a tip or a report, filled in by the caller (to, text, kind and what
+	/// it's about); the sender is the signed-in user. Throws like SendAsync.
+	/// </summary>
+	Task SendAsync(InboxMessage message);
+
 	Task DeleteAsync(InboxMessage message);
 }
 
@@ -97,6 +103,23 @@ public class MessageService : IMessageService
 	}
 
 	/// <inheritdoc />
+	public async Task SendAsync(InboxMessage message)
+	{
+		message.Text = message.Text.Trim();
+		if (message.Text.Length == 0)
+			throw new InvalidOperationException(L.T("Write a message first."));
+		if (message.Text.Length > InboxMessage.MaxLength)
+			throw new InvalidOperationException(L.F("Messages can be {0} characters at most.", InboxMessage.MaxLength));
+		var user = _auth.CurrentUser!;
+		message.ToEmail = TeamMember.NormalizeEmail(message.ToEmail);
+		message.FromEmail = MyEmail;
+		message.FromName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Email : user.DisplayName;
+		message.SentAt = DateTime.UtcNow;
+		message.IsRead = false;
+		await SaveAsync(message);
+	}
+
+	/// <inheritdoc />
 	public async Task MarkReadAsync(InboxMessage message)
 	{
 		if (message.IsRead) return;
@@ -143,6 +166,21 @@ public class MessageService : IMessageService
 			fields["gameName"] = m.GameName;
 			fields["language"] = m.Language;
 		}
+		if (m.Kind is MessageKind.Tip or MessageKind.DraftTakeover)
+		{
+			fields["gameId"] = m.GameId;
+			fields["gameName"] = m.GameName;
+		}
+		if (m.Kind is MessageKind.Report or MessageKind.DraftTakeover)
+		{
+			fields["aboutEmail"] = m.AboutEmail;
+			fields["aboutName"] = m.AboutName;
+		}
+		if (m.Kind == MessageKind.Report)
+		{
+			fields["reportCategory"] = m.ReportCategory;
+			fields["pageName"] = m.PageName;
+		}
 		await _firestore.SetAsync(Collection, m.Id, fields);
 		await _local.SaveMessageAsync(m);
 	}
@@ -166,7 +204,11 @@ public class MessageService : IMessageService
 			OffersResubmit = f.GetValueOrDefault("offersResubmit") as bool? ?? false,
 			GameId = f.GetValueOrDefault("gameId") as string,
 			GameName = f.GetValueOrDefault("gameName") as string,
-			Language = f.GetValueOrDefault("language") as string
+			Language = f.GetValueOrDefault("language") as string,
+			AboutEmail = f.GetValueOrDefault("aboutEmail") as string,
+			AboutName = f.GetValueOrDefault("aboutName") as string,
+			ReportCategory = f.GetValueOrDefault("reportCategory") as string,
+			PageName = f.GetValueOrDefault("pageName") as string
 		};
 	}
 }

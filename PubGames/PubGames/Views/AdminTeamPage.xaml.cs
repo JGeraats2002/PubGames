@@ -18,6 +18,7 @@ public partial class AdminTeamPage : ContentPage
 		InitializeComponent();
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.Team);
+		ReportButton.Attach(this, () => new ReportContext(L.T("Team")));
 	}
 
 	/// <summary>Every time the page shows: the team is loaded fresh.</summary>

@@ -234,7 +234,8 @@ public partial class FirestoreImageStore : IImageStore
 				var next = 0;
 				foreach (var item in board.Items.Where(i => i.Kind == Models.DrawKind.Text))
 				{
-					if (next < texts.Count && !string.IsNullOrWhiteSpace(texts[next])) item.Text = texts[next];
+					// A longer translation goes on below instead of running over what's around it.
+					if (next < texts.Count && !string.IsNullOrWhiteSpace(texts[next])) item.Text = Models.DrawItem.FitTranslation(texts[next], item.Text);
 					next++;
 				}
 

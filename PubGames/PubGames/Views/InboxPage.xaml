@@ -8,13 +8,32 @@
              x:DataType="vm:InboxViewModel"
              Title="{loc:T Inbox_Inbox}">
 
-	<Grid RowDefinitions="Auto,Auto,*" Padding="20" RowSpacing="12">
+	<Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="12">
 
 		<Button Text="{loc:T Inbox_NewMessage}" Clicked="OnNewMessageClicked" />
 
-		<Label Grid.Row="1" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+		<!-- Filter by what a message is about; reports and review decisions come first. -->
+		<ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+			<HorizontalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Filters}">
+				<BindableLayout.ItemTemplate>
+					<DataTemplate x:DataType="vm:InboxFilter">
+						<Button Text="{Binding Text}" Clicked="OnFilterClicked" HeightRequest="48" Padding="12,0" FontSize="12"
+						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1">
+							<Button.Triggers>
+								<DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+									<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+									<Setter Property="TextColor" Value="White" />
+								</DataTrigger>
+							</Button.Triggers>
+						</Button>
+					</DataTemplate>
+				</BindableLayout.ItemTemplate>
+			</HorizontalStackLayout>
+		</ScrollView>
 
-		<CollectionView Grid.Row="2" ItemsSource="{Binding Messages}">
+		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+
+		<CollectionView Grid.Row="3" ItemsSource="{Binding Messages}">
 			<CollectionView.EmptyView>
 				<Label Text="{loc:T Inbox_NoMessages}"
 				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
@@ -36,12 +55,34 @@
 									<Label Text="{loc:T Inbox_New}" TextColor="White" FontSize="11" />
 								</Border>
 							</Grid>
-							<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+							<!-- What it's about; reports and review decisions stand out in red. -->
+							<HorizontalStackLayout Spacing="8">
+								<Border StrokeThickness="0" Padding="6,1" BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+									<Border.StrokeShape>
+										<RoundRectangle CornerRadius="4" />
+									</Border.StrokeShape>
+									<Border.Triggers>
+										<DataTrigger TargetType="Border" Binding="{Binding IsHighPriority}" Value="True">
+											<Setter Property="BackgroundColor" Value="{StaticResource Danger}" />
+										</DataTrigger>
+									</Border.Triggers>
+									<Label Text="{Binding CategoryLabel}" FontSize="11">
+										<Label.Triggers>
+											<DataTrigger TargetType="Label" Binding="{Binding IsHighPriority}" Value="True">
+												<Setter Property="TextColor" Value="White" />
+											</DataTrigger>
+										</Label.Triggers>
+									</Label>
+								</Border>
+								<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+							</HorizontalStackLayout>
 							<Label Text="{Binding ShownText}" FontSize="14" />
 							<HorizontalStackLayout Spacing="8">
 								<Button Text="{loc:T Inbox_EditAndSubmitAgain}" Clicked="OnResubmitClicked" IsVisible="{Binding OffersResubmit}"
 								        FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="{loc:T Inbox_CheckTranslation}" Clicked="OnCheckTranslationClicked" IsVisible="{Binding IsTranslationCheck}"
+								        FontSize="12" Padding="10,0" HeightRequest="48" />
+								<Button Text="{loc:T Inbox_TakeOver}" Clicked="OnTakeOverClicked" IsVisible="{Binding IsDraftTakeover}"
 								        FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="{loc:T Inbox_Reply}" Clicked="OnReplyClicked" IsVisible="{Binding CanReply}"
 								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"

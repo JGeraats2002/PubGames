@@ -20,7 +20,8 @@ public partial class ImageEditorPage : ContentPage
 			(DrawKind.Die, L.T("Die")), (DrawKind.Drink, L.T("Drink")), (DrawKind.Hand, L.T("Hand")), (DrawKind.Number, L.T("Number")),
 			(DrawKind.Person, L.T("Person")), (DrawKind.Table, L.T("Table")), (DrawKind.Text, L.T("Text"))
 		}.OrderBy(choice => choice.Text, StringComparer.CurrentCultureIgnoreCase),
-		(DrawKind.Check, "✓"), (DrawKind.Cross, "✕")
+		// One mark, switched between right (✓) and wrong (✕) in its choices.
+		(DrawKind.Check, "✓ / ✕")
 	];
 
 	private const float MinScale = 0.3f;
@@ -50,6 +51,16 @@ public partial class ImageEditorPage : ContentPage
 
 	/// <summary>Covers may have a coloured background; rules pictures are always on white.</summary>
 	private readonly bool _cover;
+
+	/// <summary>Select is on: tapping things picks them (or leaves them out again), to group them.</summary>
+	private bool _selecting;
+
+	/// <summary>The group that's selected: it can only be moved, copied, removed or ungrouped. Null: no group.</summary>
+	private string? _group;
+
+	// Moving a group with one finger: where the finger went down and where each of its items was.
+	private PointF _groupGrab;
+	private Dictionary<DrawItem, PointF>? _groupStart;
 
 	/// <summary>
 	/// Opens the editor for a cover (square, with a background colour) or a rules picture (wide), with an
@@ -160,6 +171,7 @@ public partial class ImageEditorPage : ContentPage
 	/// </summary>
 	private void AddItem(DrawKind kind)
 	{
+		StopSelecting();
 		Checkpoint();
 		DrawItem item;
 		if (kind == DrawKind.Table)
@@ -202,6 +214,7 @@ public partial class ImageEditorPage : ContentPage
 
 			_board.Load(earlier);
 			OnSizeAllocated(Width, Height);
+			StopSelecting();
 			Select(null);
 			return;
 		}
@@ -216,8 +229,49 @@ public partial class ImageEditorPage : ContentPage
 	private void Select(DrawItem? item)
 	{
 		_board.Selected = item;
+		_group = null;
+		if (!_selecting)
+			_board.Marked.Clear();
 		ShowOptions();
 		Canvas.Invalidate();
+	}
+
+	/// <summary>Selects a whole group: every item in it gets a frame, and its choices are move, copy, remove and ungroup.</summary>
+	private void SelectGroup(string group)
+	{
+		_board.Selected = null;
+		_group = group;
+		_board.Marked.Clear();
+		_board.Marked.AddRange(_board.Items.Where(i => i.Group == group));
+		ShowOptions();
+		Canvas.Invalidate();
+	}
+
+	/// <summary>The items of the selected group, bottom to top.</summary>
+	private List<DrawItem> GroupItems() => _group is null ? [] : _board.Items.Where(i => i.Group == _group).ToList();
+
+	/// <summary>
+	/// Select: on, tapping things picks them to group them (a group is picked
+	/// as a whole); off again, nothing is picked.
+	/// </summary>
+	private void OnSelectClicked(object? sender, EventArgs e)
+	{
+		_selecting = !_selecting;
+		SelectButton.Text = _selecting ? L.T("Stop selecting") : L.T("Select");
+		_board.Selected = null;
+		_group = null;
+		_board.Marked.Clear();
+		ShowOptions();
+		Canvas.Invalidate();
+	}
+
+	/// <summary>Stops selecting, without anything picked.</summary>
+	private void StopSelecting()
+	{
+		if (!_selecting) return;
+		_selecting = false;
+		SelectButton.Text = L.T("Select");
+		_board.Marked.Clear();
 	}
 
 	/// <summary>After a choice changed: shows it on the drawing and in the highlighted buttons.</summary>
@@ -245,7 +299,35 @@ public partial class ImageEditorPage : ContentPage
 
 		var point = ToBoard(e.Touches[0]);
 		var item = _board.ItemAt(point);
-		if (item != _board.Selected)
+
+		if (_selecting)
+		{
+			// Picking: a tap adds the thing (with its whole group) or leaves it out again.
+			if (item is null) return;
+			var members = item.Group is { } picked ? _board.Items.Where(i => i.Group == picked).ToList() : [item];
+			if (members.All(_board.Marked.Contains))
+				_board.Marked.RemoveAll(members.Contains);
+			else
+				_board.Marked.AddRange(members.Where(m => !_board.Marked.Contains(m)));
+			ShowOptions();
+			Canvas.Invalidate();
+			return;
+		}
+
+		if (item?.Group is { } group)
+		{
+			// A group is only moved as a whole.
+			if (_group != group)
+				SelectGroup(group);
+			Checkpoint();
+			_groupGrab = point;
+			_groupStart = GroupItems().ToDictionary(i => i, i => new PointF(i.X, i.Y));
+			_pinching = false;
+			return;
+		}
+		_groupStart = null;
+
+		if (item != _board.Selected || _group is not null)
 			Select(item);
 		if (item is not null)
 		{
@@ -261,7 +343,27 @@ public partial class ImageEditorPage : ContentPage
 	/// </summary>
 	private void OnCanvasTouchMoved(object? sender, TouchEventArgs e)
 	{
-		if (_board.Selected is not { } item || e.Touches.Length == 0) return;
+		if (e.Touches.Length == 0 || _selecting) return;
+		if (_group is not null && _groupStart is { } start)
+		{
+			// The whole group moves along; it isn't resized or turned.
+			if (e.Touches.Length > 1) return;
+			var point = ToBoard(e.Touches[0]);
+			var dx = point.X - _groupGrab.X;
+			var dy = point.Y - _groupGrab.Y;
+			// As far as the item nearest an edge can go, so the group keeps its shape.
+			dx = Math.Clamp(dx, -start.Values.Min(p => p.X), DrawingBoard.Width - start.Values.Max(p => p.X));
+			dy = Math.Clamp(dy, -start.Values.Min(p => p.Y), _board.Height - start.Values.Max(p => p.Y));
+			foreach (var (member, at) in start)
+			{
+				member.X = at.X + dx;
+				member.Y = at.Y + dy;
+			}
+			_moved = true;
+			Canvas.Invalidate();
+			return;
+		}
+		if (_board.Selected is not { } item) return;
 
 		if (e.Touches.Length >= 2)
 		{
@@ -316,6 +418,17 @@ public partial class ImageEditorPage : ContentPage
 	{
 		Options.Clear();
 
+		if (_selecting)
+		{
+			ShowSelectingOptions();
+			return;
+		}
+		if (_group is not null)
+		{
+			ShowGroupOptions();
+			return;
+		}
+
 		if (_board.Selected is not { } item)
 		{
 			Options.Add(Hint(_board.Items.Count == 0
@@ -338,7 +451,8 @@ public partial class ImageEditorPage : ContentPage
 		switch (item.Kind)
 		{
 			case DrawKind.Text:
-				var entry = new Entry { Text = item.Text, Placeholder = L.T("Type the text"), MaxLength = 40 };
+				// Enter starts a new line, so longer texts go below each other instead of off the image.
+				var entry = new Editor { Text = item.Text, Placeholder = L.T("Type the text (Enter for a new line)"), MaxLength = 120, AutoSize = EditorAutoSizeOption.TextChanges };
 				// One step back for Undo per time the text is typed in, not per letter.
 				var typing = false;
 				entry.TextChanged += (_, args) =>
@@ -429,6 +543,13 @@ public partial class ImageEditorPage : ContentPage
 				Options.Add(Chips(L.T("Number"), ["1", "2", "3", "4", "5", "6", "7", "8", "9"], i => item.Value == i + 1, i => item.Value = i + 1));
 				Options.Add(ColorChips(item));
 				break;
+
+			case DrawKind.Check:
+			case DrawKind.Cross:
+				// One mark: right or wrong, switched here.
+				Options.Add(Chips(L.T("Mark"), [L.T("✓ Right"), L.T("✕ Wrong")], i => item.Kind == (i == 0 ? DrawKind.Check : DrawKind.Cross),
+					i => item.Kind = i == 0 ? DrawKind.Check : DrawKind.Cross));
+				break;
 		}
 
 		// Help with lining things up; dragging on the image stays free.
@@ -477,6 +598,76 @@ public partial class ImageEditorPage : ContentPage
 			Select(null);
 		};
 		Options.Add(delete);
+	}
+
+	/// <summary>Select is on: how many are picked, and Group once there are two or more.</summary>
+	private void ShowSelectingOptions()
+	{
+		var count = _board.Marked.Count;
+		Options.Add(new Label { Text = L.T("Select"), FontAttributes = FontAttributes.Bold, FontSize = 16 });
+		Options.Add(Hint(count == 0
+			? L.T("Tap the things you want to group. Tap again to leave one out.")
+			: L.F("{0} selected. Tap more, or group them.", count)));
+		if (count >= 2)
+			Options.Add(ActionButton(L.T("Group"), filled: true, () =>
+			{
+				Checkpoint();
+				var group = Guid.NewGuid().ToString("N")[..8];
+				foreach (var item in _board.Marked)
+					item.Group = group;
+				StopSelecting();
+				SelectGroup(group);
+			}));
+	}
+
+	/// <summary>A group is selected: drag to move it; copy, remove or ungroup it.</summary>
+	private void ShowGroupOptions()
+	{
+		var members = GroupItems();
+		Options.Add(new Label { Text = L.F("Group of {0}", members.Count), FontAttributes = FontAttributes.Bold, FontSize = 16 });
+		Options.Add(Hint(L.T("Drag the group to move it. To change one thing in it, ungroup it first.")));
+		Options.Add(ActionButton(L.T("Copy"), filled: false, () =>
+		{
+			Checkpoint();
+			var group = Guid.NewGuid().ToString("N")[..8];
+			foreach (var member in members)
+			{
+				var copy = member.Clone();
+				copy.Group = group;
+				copy.X = Math.Min(copy.X + 50, DrawingBoard.Width);
+				copy.Y = Math.Min(copy.Y + 50, _board.Height);
+				_board.Items.Add(copy);
+			}
+			SelectGroup(group);
+		}));
+		Options.Add(ActionButton(L.T("Ungroup"), filled: false, () =>
+		{
+			Checkpoint();
+			foreach (var member in members)
+				member.Group = null;
+			Select(null);
+		}));
+		Options.Add(ActionButton(L.T("Remove group from image"), filled: false, () =>
+		{
+			Checkpoint();
+			_board.Items.RemoveAll(members.Contains);
+			Select(null);
+		}, danger: true));
+	}
+
+	/// <summary>A wide button for an action below the drawing.</summary>
+	private static Button ActionButton(string text, bool filled, Action tapped, bool danger = false)
+	{
+		var button = new Button { Text = text, HeightRequest = 48, FontSize = 13, HorizontalOptions = LayoutOptions.Start, Padding = new Thickness(14, 0) };
+		if (!filled)
+		{
+			button.BackgroundColor = Colors.Transparent;
+			button.TextColor = Resource(danger ? "Danger" : "Primary");
+			button.BorderColor = Resource(danger ? "Danger" : "Border");
+			button.BorderWidth = 1;
+		}
+		button.Clicked += (_, _) => tapped();
+		return button;
 	}
 
 	// ----- Alignment and exact place -----

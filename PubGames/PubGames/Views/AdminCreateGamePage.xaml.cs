@@ -29,6 +29,7 @@ public partial class AdminCreateGamePage : ContentPage
 		BindingContext = _vm = vm;
 		_testRun = testRun;
 		InfoButton.Attach(this, () => Help.CreateGame(_vm.IsModerator, _vm.ScoringType));
+		ReportButton.Attach(this, () => new ReportContext(L.F("Game form: {0}", _vm.Name)));
 		_vm.AddPlaceChosen += OnAddPlaceChosen;
 		// Another page of the form (a tab, or the page a missing choice is on): the keyboard closes.
 		_vm.PropertyChanged += (_, e) =>
@@ -98,7 +99,18 @@ public partial class AdminCreateGamePage : ContentPage
 		{
 			var discard = L.T("Don't save");
 			var save = _vm.SaveButtonText;
-			var choice = await ChoicePopup.AskAsync(this, L.T("Save your changes?"), null, L.T("Keep editing"), discard, save);
+			var draft = L.T("Save as draft");
+			var choice = _vm.CanSaveDraft
+				? await ChoicePopup.AskAsync(this, L.T("Save your changes?"), null, L.T("Keep editing"), discard, draft, save)
+				: await ChoicePopup.AskAsync(this, L.T("Save your changes?"), null, L.T("Keep editing"), discard, save);
+			if (choice == draft)
+			{
+				await _vm.SaveDraftCommand.ExecuteAsync(null);
+				if (_vm.HasUnsavedChanges) return; // not saved: the message says why
+				_leaving = true;
+				await Shell.Current.GoToAsync("..");
+				return;
+			}
 			if (choice == save)
 			{
 				await _vm.SaveCommand.ExecuteAsync(null);

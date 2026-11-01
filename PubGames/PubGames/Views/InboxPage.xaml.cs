@@ -14,6 +14,7 @@ public partial class InboxPage : ContentPage
 		InitializeComponent();
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.Inbox);
+		ReportButton.Attach(this, () => new ReportContext(L.T("Inbox")));
 	}
 
 	/// <summary>Every time the page shows: the messages are loaded fresh.</summary>
@@ -57,6 +58,25 @@ public partial class InboxPage : ContentPage
 			L.T("It will be removed from your Inbox. This can't be undone."), L.T("Delete"), L.T("Keep"));
 		if (confirmed)
 			await _vm.DeleteAsync(message);
+	}
+
+	/// <summary>A filter above the messages: only that category (or all).</summary>
+	private void OnFilterClicked(object? sender, EventArgs e)
+	{
+		if (sender is Button { BindingContext: InboxFilter filter })
+			_vm.Choose(filter);
+	}
+
+	/// <summary>A draft to take over: after asking, it's yours to finish, and it opens in the form.</summary>
+	private async void OnTakeOverClicked(object? sender, EventArgs e)
+	{
+		if (sender is not Button { BindingContext: InboxMessage message }) return;
+		if (!await DisplayAlertAsync(L.T("Take over this draft?"),
+				L.F("From now on you change and finish \"{0}\"; {1} gets a message.", message.GameName ?? string.Empty, message.AboutName ?? message.AboutEmail ?? string.Empty),
+				L.T("Take over"), L.T("Cancel")))
+			return;
+		if (await _vm.TakeOverAsync(message) is { } draftId)
+			await Shell.Current.GoToAsync(nameof(AdminCreateGamePage), new Dictionary<string, object> { ["draftId"] = draftId });
 	}
 
 	/// <summary>A translation to check: opens the game on the Languages page, in that language.</summary>

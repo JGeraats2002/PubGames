@@ -139,8 +139,10 @@ service cloud.firestore {
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && request.resource.data.isRead == false
-        // Only admins send review decisions.
-        && (request.resource.data.kind == 'Message' || isAdmin());
+        // Everyone sends messages, tips about drafts and reports; only admins send review decisions.
+        && (request.resource.data.kind in ['Message', 'Tip', 'Report'] || isAdmin())
+        // Reports only go to the owners, so the one reported never sees them.
+        && (request.resource.data.kind != 'Report' || request.resource.data.toEmail in builtInAdminEmails());
 
       // The recipient can only mark it read.
       allow update: if isOnTeam()
@@ -185,6 +187,23 @@ service cloud.firestore {
         && request.resource.data.version is int
         && request.resource.data.sectionsJson is string
         && request.resource.data.sectionsJson.size() <= 50000;
+    }
+
+    // Games that are being made (drafts/{id}): the whole team sees them, so nobody makes a game twice.
+    // Only the owner (who made it or took it over) saves it; anyone on the team takes over a draft nobody
+    // changed for 3 days, and then only the owner fields change. The owner (or a built-in admin) removes it.
+    match /drafts/{draftId} {
+      allow read: if isOnTeam();
+      allow create: if isOnTeam()
+        && request.resource.data.id == draftId
+        && request.resource.data.ownerEmail == myEmail();
+      allow update: if isOnTeam()
+        && request.resource.data.id == draftId
+        && request.resource.data.ownerEmail == myEmail()
+        && (resource.data.ownerEmail == myEmail()
+            || (request.time > resource.data.updatedAt + duration.value(3, 'd')
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerEmail', 'ownerName', 'updatedAt'])));
+      allow delete: if isOnTeam() && (resource.data.ownerEmail == myEmail() || isBuiltInAdmin());
     }
 
     // Player profiles: what others see when they add you by your personal code.

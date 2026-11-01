@@ -123,8 +123,9 @@ public partial class AdminLibraryViewModel : ObservableObject
 	/// sign-in, the categories and the Inbox - from the app (dependency injection).
 	/// </summary>
 	public AdminLibraryViewModel(ILocalDatabaseService local, ICloudSyncService cloud, ITeamService team,
-		IPermissionService permissions, IAuthService auth, ICategoryService categories, IMessageService messages)
+		IPermissionService permissions, IAuthService auth, ICategoryService categories, IMessageService messages, DraftService drafts)
 	{
+		_drafts = drafts;
 		_local = local;
 		_cloud = cloud;
 		_team = team;
@@ -137,6 +138,73 @@ public partial class AdminLibraryViewModel : ObservableObject
 
 	private string MyEmail => TeamMember.NormalizeEmail(_auth.CurrentUser?.Email ?? string.Empty);
 
+	/// <summary>Games being made, seen by the whole team.</summary>
+	private readonly DraftService _drafts;
+
+	/// <summary>Every draft, the newest change first, so nobody makes the same game twice.</summary>
+	public ObservableCollection<GameDraft> Drafts { get; } = new();
+
+	/// <summary>There are drafts: their list shows.</summary>
+	[ObservableProperty]
+	private bool hasDrafts;
+
+	/// <summary>Whether a draft is the signed-in user's: they open it to change and finish it.</summary>
+	public bool IsMine(GameDraft draft) => draft.OwnerEmail == MyEmail;
+
+	/// <summary>The drafts from the cloud; offline the list stays as it was.</summary>
+	private async Task LoadDraftsAsync()
+	{
+		try
+		{
+			var drafts = await _drafts.PullAllAsync();
+			Drafts.Clear();
+			foreach (var draft in drafts)
+				Drafts.Add(draft);
+			HasDrafts = Drafts.Count > 0;
+		}
+		catch (Exception)
+		{
+			// Offline (or the rules not deployed yet): no drafts shown.
+		}
+	}
+
+	/// <summary>Takes over a draft nobody worked on for 3 days; its owner gets a message. Null when it worked, otherwise why not.</summary>
+	public async Task<string?> TakeOverAsync(GameDraft draft)
+	{
+		var previous = draft.OwnerEmail;
+		try
+		{
+			await _drafts.TakeOverAsync(draft);
+		}
+		catch (Exception ex)
+		{
+			return ex is HttpRequestException ? L.T("No connection - try again when you're online.") : L.T("This draft can't be taken over (any more): someone worked on it in the last 3 days, or took it over first.");
+		}
+		try
+		{
+			await _messages.SendAsync(previous, L.F("I've taken over your draft \"{0}\", because nobody had worked on it for 3 days.", draft.Name));
+		}
+		catch (Exception)
+		{
+			// The take-over counts; the message is a courtesy.
+		}
+		return null;
+	}
+
+	/// <summary>Sends a tip about a draft to its owner. Null when sent, otherwise why not.</summary>
+	public async Task<string?> SendTipAsync(GameDraft draft, string text)
+	{
+		try
+		{
+			await _messages.SendAsync(new InboxMessage { ToEmail = draft.OwnerEmail, Text = text, Kind = MessageKind.Tip, GameId = draft.Id, GameName = draft.Name });
+			return null;
+		}
+		catch (Exception ex)
+		{
+			return ex is HttpRequestException ? L.T("No connection - try again when you're online.") : ex.Message;
+		}
+	}
+
 	/// <summary>
 	/// Shows the games as saved on the phone, then refreshes them (and the requests) from the cloud.
 	/// </summary>
@@ -147,6 +215,8 @@ public partial class AdminLibraryViewModel : ObservableObject
 		var canReview = me is not null && _permissions.CanReviewRequests(me);
 
 		await ShowLocalAsync(canReview);
+		if (me is not null)
+			await LoadDraftsAsync();
 
 		try
 		{

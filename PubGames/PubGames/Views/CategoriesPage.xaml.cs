@@ -23,6 +23,7 @@ public partial class CategoriesPage : ContentPage
 		InitializeComponent();
 		BindingContext = _vm = vm;
 		InfoButton.Attach(this, () => Help.Categories(_vm.IsAdmin));
+		ReportButton.Attach(this, () => new ReportContext(L.T("Categories")));
 	}
 
 	/// <summary>Also runs when coming back from choosing a category's games, so the counts update.</summary>

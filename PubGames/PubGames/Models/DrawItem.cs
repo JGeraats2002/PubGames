@@ -47,8 +47,14 @@ public class DrawItem
 
 	private const float Line = 6;
 
-	/// <summary>What the item is: an arrow, text, a card, a die, a hand ...</summary>
-	public DrawKind Kind { get; init; }
+	/// <summary>What the item is: an arrow, text, a card, a die, a hand ... (a mark switches between ✓ and ✕).</summary>
+	public DrawKind Kind { get; set; }
+
+	/// <summary>
+	/// Items with the same group id belong together: they're selected, moved,
+	/// copied and removed as one. Null: not in a group.
+	/// </summary>
+	public string? Group { get; set; }
 
 	/// <summary>The centre, in the drawing's own units (see DrawingBoard).</summary>
 	public float X { get; set; }
@@ -185,6 +191,7 @@ public class DrawItem
 		DrawKind.Drink => DrinkShapes[Shape],
 		DrawKind.Number => L.F("Number {0}", Value),
 		DrawKind.Check => L.T("Check mark"),
+		DrawKind.Cross => L.T("Cross mark"),
 		_ => Kind.ToString()
 	};
 
@@ -201,7 +208,7 @@ public class DrawItem
 	public SizeF HalfSize => Kind switch
 	{
 		DrawKind.Arrow => ArrowHalfSize(),
-		DrawKind.Text => new(Math.Max(50, Text.Length * 15 + 20), 38),
+		DrawKind.Text => TextHalfSize(),
 		DrawKind.Card => Deck ? new(88, 118) : new(75, 105),
 		DrawKind.Die => Shape == 0 ? new(75, 75) : new(80, 112),
 		DrawKind.Coaster => new(78, 78),
@@ -211,6 +218,42 @@ public class DrawItem
 		DrawKind.Person => new(60, 95),
 		_ => new(55, 55)
 	};
+
+	/// <summary>Text: as wide as its longest line, as high as its lines (Enter starts a new line).</summary>
+	private SizeF TextHalfSize()
+	{
+		var lines = Text.Split('\n');
+		var longest = lines.Max(line => line.Length);
+		return new(Math.Max(50, longest * 15 + 20), Math.Max(38, lines.Length * 29 + 9));
+	}
+
+	/// <summary>
+	/// A translated text for a picture, with lines no longer than the
+	/// original's longest line, so it doesn't run past what's around it: where
+	/// a line would be longer, it goes on below (at a space). The original's
+	/// own line breaks stay.
+	/// </summary>
+	public static string FitTranslation(string translated, string original)
+	{
+		var width = Math.Max(10, original.Split('\n').Max(line => line.Trim().Length));
+		var lines = new List<string>();
+		foreach (var paragraph in translated.Replace("\r", string.Empty).Split('\n'))
+		{
+			var line = string.Empty;
+			foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+			{
+				if (line.Length > 0 && line.Length + 1 + word.Length > width)
+				{
+					lines.Add(line);
+					line = word;
+				}
+				else
+					line = line.Length == 0 ? word : $"{line} {word}";
+			}
+			lines.Add(line);
+		}
+		return string.Join("\n", lines);
+	}
 
 	/// <summary>Whether a point on the drawing is on this item (a little slack makes small things easier to grab).</summary>
 	public bool Contains(PointF point)
@@ -961,6 +1004,9 @@ public class DrawingBoard : IDrawable
 	/// <summary>The item that's selected in the editor (shown with a frame), or null.</summary>
 	public DrawItem? Selected { get; set; }
 
+	/// <summary>Several items picked in the editor, or a group: each shown with a frame.</summary>
+	public List<DrawItem> Marked { get; } = new();
+
 	/// <summary>
 	/// The drawing as text, saved with the picture so it can be opened in the
 	/// editor again later (see IImageStore.GetDrawingAsync).
@@ -992,6 +1038,7 @@ public class DrawingBoard : IDrawable
 	public byte[] ToPng()
 	{
 		Selected = null;
+		Marked.Clear();
 		var height = (int)(ExportWidth * Height / Width);
 		using var context = new Microsoft.Maui.Graphics.Platform.PlatformBitmapExportContext(ExportWidth, height, 1f);
 		Draw(context.Canvas, new RectF(0, 0, ExportWidth, height));
@@ -1023,7 +1070,7 @@ public class DrawingBoard : IDrawable
 		canvas.FillColor = BackgroundColors[Math.Clamp(Background, 0, BackgroundColors.Length - 1)];
 		canvas.FillRectangle(0, 0, Width, Height);
 		foreach (var item in Items)
-			item.Draw(canvas, item == Selected);
+			item.Draw(canvas, item == Selected || Marked.Contains(item));
 		canvas.RestoreState();
 	}
 }

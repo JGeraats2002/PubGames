@@ -67,7 +67,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 
 	/// <summary>Changing an existing game (not making a new one).</summary>
 	[ObservableProperty]
-	[NotifyPropertyChangedFor(nameof(PageTitle), nameof(SaveButtonText), nameof(CanDelete))]
+	[NotifyPropertyChangedFor(nameof(PageTitle), nameof(SaveButtonText), nameof(CanDelete), nameof(CanSaveDraft))]
 	private bool isEditing;
 
 	/// <summary>Explains to a moderator what happens with their submission (and why a previous one was rejected).</summary>
@@ -694,8 +694,9 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// team, the picture store and the categories - from the app (dependency injection).
 	/// </summary>
 	public AdminCreateGameViewModel(ILocalDatabaseService local, ICloudSyncService cloud, IPermissionService permissions,
-		IAuthService auth, ITeamService team, IImageStore images, ICategoryService categories)
+		IAuthService auth, ITeamService team, IImageStore images, ICategoryService categories, DraftService drafts)
 	{
+		_drafts = drafts;
 		_auth = auth;
 		_team = team;
 		_categories = categories;
@@ -720,6 +721,102 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 	/// <summary>Images uploaded while this form was open; the ones the saved game doesn't show are deleted again.</summary>
 	private readonly List<string> _uploadedHere = new();
 
+	// ----- Drafts -----
+
+	/// <summary>Drafts: games being made, seen by the whole team (see GameDraft).</summary>
+	private readonly DraftService _drafts;
+
+	/// <summary>The draft this form was opened from (or saved as); null when it isn't a draft (yet).</summary>
+	private string? _draftId;
+
+	/// <summary>When the draft was started and by whom, kept when it's saved again.</summary>
+	private DateTime? _draftCreatedAt;
+	private string? _draftCreatedBy;
+
+	/// <summary>A new game (not a change to a published one, nor a review request) can be saved as a draft.</summary>
+	public bool CanSaveDraft => !IsEditing && _request is null;
+
+	/// <summary>
+	/// Saves the form as a draft: the whole team sees it, and only you change
+	/// and finish it. Whatever isn't filled in yet stays empty. The form stays open.
+	/// </summary>
+	[RelayCommand]
+	private async Task SaveDraftAsync()
+	{
+		if (!CanSaveDraft) return;
+		if (string.IsNullOrWhiteSpace(Name))
+		{
+			StatusMessage = L.T("Give the game a name first, so the team knows what you're making.");
+			CurrentPage = GeneralPage;
+			return;
+		}
+		var game = FormAsGame(null);
+		// Unfinished scoring isn't a reason not to save the draft.
+		StatusMessage = L.T("Saving the draft...");
+		try
+		{
+			_draftId = await _drafts.SaveAsync(_draftId, game, _draftCreatedAt, _draftCreatedBy);
+			_draftCreatedAt ??= DateTime.UtcNow;
+			_draftCreatedBy ??= _drafts.MyEmail;
+			_savedForm = FormSnapshot();
+			StatusMessage = L.T("Saved as a draft. The team sees it in the library; only you can finish it.");
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = ex is HttpRequestException ? L.T("No connection - try again when you're online.") : L.F("The draft wasn't saved: {0}", ex.Message);
+		}
+	}
+
+	/// <summary>Opens your own draft: fills the form with the game as it was saved.</summary>
+	private async Task LoadDraftAsync(string draftId)
+	{
+		GameDraft? draft;
+		try
+		{
+			draft = await _drafts.GetAsync(draftId);
+		}
+		catch (Exception)
+		{
+			StatusMessage = L.T("No connection - the draft can't be opened offline.");
+			return;
+		}
+		if (draft is null)
+		{
+			StatusMessage = L.T("This draft isn't there any more: it was finished or removed.");
+			return;
+		}
+		_draftId = draft.Id;
+		_draftCreatedAt = draft.CreatedAt;
+		_draftCreatedBy = draft.CreatedByEmail;
+		var game = draft.Game;
+		Name = game.Name;
+		ShowRules(game.RulesText);
+		CoverImageUrl = game.CoverImageUrl;
+		IsPaid = game.IsPaid;
+		Price = game.IsPaid ? game.Price : 0.99m;
+		ShowScoring(game.ScoringType, game.ScoringSettings);
+		ShowPlayers(game.MinPlayers, game.MaxPlayers);
+		SelectCategories(game.CategoryIds);
+		ShowAddedSections();
+		ShowLanguages(game.SourceLanguage, game.Translations);
+		ReviewInfo = L.T("This is your draft. Save as draft keeps your changes; publishing or submitting it takes it off the drafts list.");
+	}
+
+	/// <summary>The game is published or submitted: it isn't a draft any more.</summary>
+	private async Task FinishDraftAsync()
+	{
+		if (_draftId is not { } id) return;
+		try
+		{
+			await _drafts.DeleteAsync(id);
+			_draftId = null;
+		}
+		catch (Exception)
+		{
+			// Offline: it stays on the list until its owner removes it.
+		}
+	}
+
 	/// <summary>The game or request was loaded into the form already.</summary>
 	private bool _loaded;
 
@@ -737,6 +834,8 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			await LoadRequestAsync(requestId);
 		else if (query.TryGetValue("gameId", out var gid) && gid is string gameId)
 			await LoadGameAsync(gameId);
+		else if (query.TryGetValue("draftId", out var did) && did is string draftId)
+			await LoadDraftAsync(draftId);
 
 		// From a "translation to check" message: straight to that language on the Languages page.
 		if (query.TryGetValue("language", out var code) && code is string { Length: > 0 } languageCode)
@@ -747,6 +846,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 			CurrentPage = LanguagesPage;
 		}
 		_savedForm = FormSnapshot();
+		OnPropertyChanged(nameof(CanSaveDraft));
 	}
 
 	/// <summary>The form as it was opened (or last saved); null while still loading.</summary>
@@ -1276,6 +1376,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		await ImageCleanup.AfterSaveAsync(_local, _images, game,
 			(_editing is null ? Enumerable.Empty<string>() : ImageCleanup.RefsOf(_editing)).Concat(_uploadedHere));
 
+		await FinishDraftAsync();
 		StatusMessage = string.Empty;
 		Finished?.Invoke(this, null);
 	}
@@ -1344,6 +1445,7 @@ public partial class AdminCreateGameViewModel : ObservableObject, IQueryAttribut
 		StatusMessage = L.T("Submitting for review...");
 		if (!await TrySaveRequestAsync(request)) return;
 
+		await FinishDraftAsync();
 		StatusMessage = string.Empty;
 		Finished?.Invoke(this, request.Type == ReviewRequestType.NewGame
 			? L.F("\"{0}\" has been submitted for review. An admin will decide whether it's published; you'll get the decision in your Inbox.", request.SubjectName)

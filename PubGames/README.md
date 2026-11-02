@@ -34,7 +34,7 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
   `PubGames/PubGames/bin/Release/net10.0-android36.0/publish/com.pubgems.pubgames-Signed.aab`
   (kopie: `Builds/pubgames-v6-1.5.aab`). Versie 5 (1.4) is niet geüpload; versie 6 bevat alles van versie 5.
   Versie 4 (1.3) staat in closed testing (kopie: `Builds/pubgames-v4-1.3.aab`). Closed test loopt met 12+ testers.
-- Functions (ook `translateAgreements` en `announceStaleDrafts`) en firestore.rules zijn gedeployed (01-11-2026). De wijzigingen voor versie 6 zijn nog niet gecommit.
+- Functions (ook `translateAgreements` en `announceStaleDrafts`) en firestore.rules zijn gedeployed (01-11-2026). Alles is gecommit en gepusht (02-11-2026).
 - Alles is door de gebruiker getest (afvinklijst https://claude.ai/artifact/2bdNcCQqsLQbSR2ihAuRBD),
   behalve één hertest: X3 (Vertalingen › Aanpassen › afbeelding opent de echte afbeelding in de editor).
 

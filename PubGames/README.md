@@ -88,6 +88,69 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
       en voor tekst op een gekleurd vlak `OnPrimary` (niet White). De inlogpagina houdt de merkkleuren (`Brand`).
       Plaatjes houden hun eigen kleuren. Een andere keuze bouwt de schermen opnieuw op (zoals bij een andere taal).
 
+### IN UITVOERING (02-11-2026): veiligheid – herstellen en rem (A, B, C, D). E en F wachten.
+
+**Stand:** alleen ontworpen, nog **niets gebouwd of gewijzigd** in code. Gebruiker gaf toestemming voor A, B, C en D.
+Wens gebruiker: verwijderde spellen krijgen **10 dagen** timer; ze blijven zichtbaar voor spelers met boven de regels
+"Over X dagen, Y uur en Z minuten wordt dit spel verwijderd". Daarna weg; **betaalde spellen blijven voor altijd bij wie
+ze los kocht** (niet via de Pass, niet via teamlidmaatschap), en zo'n spel kan dan niet meer gewijzigd worden.
+
+Bevindingen: spellen kunnen nu al niet echt gewist worden (rules: geen delete op games; verwijderen = status Deleted).
+Wel blijvende schade mogelijk: inhoud overschrijven, plaatjes/categorieën/hoofdcategorieën echt wissen (rules staan
+delete toe), geen "wie deed het", en alles kan via REST buiten de app om (dus beveiliging in rules/functions).
+
+**Ontwerp (zo bouwen):**
+- `GameStatus` uitbreiden **aan het eind** (SQLite slaat int op): `Deleting` (10 dagen) en `Retired` (definitief, alleen
+  voor kopers, bevroren). `PubGame` krijgt `DeleteAt` (DateTime?) en `RestoreStatus` (string?). `CloudSyncService.GameFields`
+  /`ToGame` lezen/schrijven `deleteAt`, `restoreStatus` (alleen als niet null).
+- Verwijderen (admin `AdminCreateGameViewModel.DeleteAsync` en goedkeuren Deletion in `ReviewRequestViewModel` ~r.559):
+  `UpdateFieldsAsync(games, id, {status:"Deleting", deleteAt: nu+10d, restoreStatus: oude status})`.
+- Rules games: lezen als `Published`, of `Deleting` met `restoreStatus=='Published'`, of team, of (`get` alleen)
+  `Retired` en gameId in `entitlements/{uid}.games`. Create/update door admin alleen als huidige status niet
+  Deleting/Retired is; nieuwe status in Draft/PendingPublishApproval/Published/PendingDeletionApproval, of `Deleting` met
+  deleteAt ≈ request.time+10d (±1u), restoreStatus == oude status en affectedKeys hasOnly status/deleteAt/restoreStatus.
+  Niemand zet zelf `Deleted`/`Retired` (alleen functions).
+- Speler-app: `PullPublishedGamesAsync` ook `status==Deleting && restoreStatus==Published` (nieuwe
+  `FirestoreClient.WhereEqualAllAsync` met compositeFilter AND) en per los gekocht spel-id dat er niet bij zit een GET
+  (Retired → bewaren; 403 negeren). `LocalDatabaseService.GetGamesAsync` (nu alleen Published) ook Deleting/Retired; filter
+  in `GameLibraryViewModel`: Deleting alleen met RestoreStatus Published, Retired alleen als `Current.Games` het id heeft.
+  `StoreService.Owns`/`Entitlements.Owns`: Retired alleen bij los gekocht. Tijdens Deleting is het Play-product inactief
+  (`syncGameProduct` verkoopt alleen Published): Unlock-knop verbergen, melding "kan niet meer gekocht worden".
+- Regelspagina (`GameRulesPage`/`GameRulesViewModel`): banner bovenaan (ScoreWarningTint) met aftellen, elke minuut
+  ververst (Dispatcher-timer); Retired: "uit de bibliotheek, blijft van jou omdat je het kocht". Teksthulp MAUI-vrij in
+  `Models/DeletionCountdown.cs` (enkelvoud/meervoud: "1 day"/"{0} days" enz.) + xUnit-test (link in tests-csproj).
+- Admin: formulier bevroren voor Deleting/Retired (melding, opslaan blokkeren); `CategoryService.DeleteAsync` slaat
+  bevroren spellen over (anders weigeren de rules); `PubGame` statuslabel voor beide.
+- **A Geschiedenis:** functions `onDocumentWrittenWithAuthContext` (firebase-functions 6.6 heeft dit) op games, categories,
+  categoryGroups, images, team. Alleen `event.authType === "app_user"` (writes van functions zelf overslaan); wie =
+  `admin.auth().getUser(event.authId).email` (niet te vervalsen, geen app-wijziging nodig). Overslaan: image-creates,
+  team-updates met alleen displayName/language/agreedRules/suspended*, ids met "_", geen echte wijziging. Schrijft
+  `history/{id}` {collection, docId, name, kind: created|changed|deleted|deleting, byEmail, at, removedCategoryIds,
+  restored} en `historyData/{id}` {before}. Rules: history alleen lezen door eigenaars; historyData niet.
+  Callables (alleen eigenaar): `restoreFromHistory({historyId})` zet `before` terug (bij spel ook gewiste plaatjes die
+  het gebruikt; bij categorie terug op spellen via removedCategoryIds; bij hoofdcategorie ook zijn categorieën) en
+  `restoreGame({gameId})` (Deleting → restoreStatus). `finishDeletions` elk uur: Deleting met deleteAt verstreken →
+  `Retired` als iemand het in entitlements heeft, anders `Deleted` (query alleen op status, filter in code: geen index).
+  `cleanHistory` dagelijks: ouder dan 10 dagen weg. `translateGame`/`notifyTranslationChecks`: Deleting/Retired als
+  Deleted behandelen. Pure helpers in `shared.js` (isWorthKeeping, historyKind, removedCategories, pictureRefs,
+  brakeReason) met tests in `test/shared.test.js`.
+  App: nieuwe pagina **Prullenbak** (`TrashPage`, Admin-tab, alleen eigenaars, zichtbaarheid in `AppShell` zoals
+  TeamContent): "Wordt verwijderd" (aftellen, wie, Herstellen) en "Wijzigingen laatste 10 dagen" (filter Alles /
+  Verwijderingen; Zet terug met bevestiging). Aanroepen via `FunctionsClient.CallAsync`.
+- **B Rem:** in de history-trigger, per niet-eigenaar binnen 1 uur (query op byEmail, tijd filteren in code): >3 spellen
+  op Deleting, >3 teamleden weg, >2 hoofdcategorieën, >10 categorieën, >25 plaatjes, >40 spelwijzigingen → `team/{email}`
+  `suspended:true` (+ suspendedAt/Reason) en elke eigenaar een Inbox-bericht (kind "Report", fromName "Pub Games", Engels).
+  Rules: `isTeamMember()` eist `member().get('suspended', false) != true`; admins mogen `suspended` van moderators niet
+  wijzigen. App: `TeamMember.IsSuspended`; geblokkeerde = speler; Team-pagina badge "Gepauzeerd" + eigenaarsknop
+  "Pauze opheffen".
+- **C Back-ups:** gebruiker zelf in console (Engelse knopnamen, Nederlandse uitleg): Firestore point-in-time recovery
+  (7 dagen) aan + dagelijkse back-up. Evt. `gcloud firestore databases update --database="(default)" --enable-pitr` en
+  `gcloud firestore backups schedules create --database="(default)" --recurrence=daily --retention=14d`.
+- **D:** `geraatsdeveloping@gmail.com` als tweede eigenaar in `AuthConfig.AdminEmails`, `firestore.rules`
+  builtInAdminEmails en `functions/index.js` OWNER_EMAILS. Gebruiker zet tweestapsverificatie aan op beide accounts.
+- Daarna: ⓘ-teksten (Prullenbak, verwijderen, Team-pauze) en alle nieuwe teksten in 9 talen; bouwen in kladmap; tests;
+  gebruiker deployt `firebase deploy --only functions,firestore:rules --project pubgames-92835`.
+
 ### Volgende stappen
 
 1. Wachten tot Google de closed-test-release goedkeurt (Publishing overview).

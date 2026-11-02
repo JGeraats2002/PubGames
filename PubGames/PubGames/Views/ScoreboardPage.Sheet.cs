@@ -136,7 +136,7 @@ public partial class ScoreboardPage
 			// The best total right now stands out.
 			sum.BindingContext = rows[column];
 			sum.Triggers.Add(When<Label>(nameof(ParticipantRow.IsLeader),
-				(Label.TextColorProperty, Colors.White), (BackgroundColorProperty, Color("PrimaryDark"))));
+				(Label.TextColorProperty, Color("OnPrimary")), (BackgroundColorProperty, Color("PrimaryDark"))));
 			Board.Add(sum, column + 1, line);
 		}
 

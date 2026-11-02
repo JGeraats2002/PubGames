@@ -4,11 +4,12 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:PubGames.Models"
+             xmlns:views="clr-namespace:PubGames.Views"
              x:Class="PubGames.Views.CategoryClouds">
 
 	<VerticalStackLayout Spacing="8">
 
-		<Border x:Name="Header" Padding="12,9" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
+		<Border x:Name="Header" Padding="12,9" StrokeThickness="1" Stroke="{DynamicResource Border}" BackgroundColor="Transparent">
 			<Border.StrokeShape>
 				<RoundRectangle CornerRadius="8" />
 			</Border.StrokeShape>
@@ -17,38 +18,38 @@
 			</Border.GestureRecognizers>
 			<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 				<Label x:Name="Summary" FontSize="14" LineBreakMode="TailTruncation" VerticalOptions="Center" />
-				<Label x:Name="Arrow" Grid.Column="1" Text="▾" FontSize="16" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+				<Label x:Name="Arrow" Grid.Column="1" Text="▾" FontSize="16" TextColor="{DynamicResource TextSecondary}" VerticalOptions="Center" />
 			</Grid>
 		</Border>
 
-		<FlexLayout x:Name="Clouds" Wrap="Wrap" IsVisible="False">
+		<!-- WrapLayout, not FlexLayout: every cloud gets its full width, so no name is cut off ("Kaarte" for "Kaarten"). -->
+		<views:WrapLayout x:Name="Clouds" IsVisible="False">
 			<BindableLayout.ItemTemplate>
 				<DataTemplate x:DataType="models:CategoryChoice">
-					<!-- Shrink 0: FlexLayout would otherwise squeeze a cloud and cut its name off ("Dic" for Dice). -->
-					<Border FlexLayout.Shrink="0" Margin="0,0,8,8" Padding="12,6" StrokeThickness="1" Stroke="{StaticResource Border}" BackgroundColor="Transparent">
+					<Border Margin="0,0,8,8" Padding="12,6" StrokeThickness="1" Stroke="{DynamicResource Border}" BackgroundColor="Transparent">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="16" />
 						</Border.StrokeShape>
 						<Border.Triggers>
 							<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-								<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-								<Setter Property="Stroke" Value="{StaticResource Primary}" />
+								<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+								<Setter Property="Stroke" Value="{DynamicResource Primary}" />
 							</DataTrigger>
 						</Border.Triggers>
 						<Border.GestureRecognizers>
 							<TapGestureRecognizer Tapped="OnCloudTapped" CommandParameter="{Binding .}" />
 						</Border.GestureRecognizers>
-						<Label Text="{Binding Category.ShownName}" FontSize="13" LineBreakMode="NoWrap">
+						<Label Text="{Binding Category.ShownName}" FontSize="13" LineBreakMode="NoWrap" HorizontalOptions="Center">
 							<Label.Triggers>
 								<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-									<Setter Property="TextColor" Value="White" />
+									<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 								</DataTrigger>
 							</Label.Triggers>
 						</Label>
 					</Border>
 				</DataTemplate>
 			</BindableLayout.ItemTemplate>
-		</FlexLayout>
+		</views:WrapLayout>
 
 	</VerticalStackLayout>
 

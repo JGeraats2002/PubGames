@@ -13,8 +13,8 @@
 		<!-- The tabs at the top: the open page filled, the others outlined. -->
 		<Style x:Key="TabButton" TargetType="Button">
 			<Setter Property="BackgroundColor" Value="Transparent" />
-			<Setter Property="TextColor" Value="{StaticResource Primary}" />
-			<Setter Property="BorderColor" Value="{StaticResource Border}" />
+			<Setter Property="TextColor" Value="{DynamicResource Primary}" />
+			<Setter Property="BorderColor" Value="{DynamicResource Border}" />
 			<Setter Property="BorderWidth" Value="1" />
 			<Setter Property="Padding" Value="2,0" />
 			<Setter Property="HeightRequest" Value="48" />
@@ -26,14 +26,14 @@
 		<Style x:Key="SectionTitle" TargetType="Label">
 			<Setter Property="FontSize" Value="15" />
 			<Setter Property="FontAttributes" Value="Bold" />
-			<Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+			<Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
 			<Setter Property="VerticalOptions" Value="Center" />
 			<Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
 		</Style>
 		<Style x:Key="RemoveSectionButton" TargetType="Button">
 			<Setter Property="Text" Value="✕" />
 			<Setter Property="BackgroundColor" Value="Transparent" />
-			<Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+			<Setter Property="TextColor" Value="{DynamicResource TextSecondary}" />
 			<Setter Property="BorderWidth" Value="0" />
 			<Setter Property="Padding" Value="8,0" />
 			<Setter Property="HeightRequest" Value="48" />
@@ -50,32 +50,32 @@
 		<Button Text="{loc:T AdminCreateGame_General}" Style="{StaticResource TabButton}" Clicked="OnGeneralTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsGeneralPage}" Value="True">
-					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-					<Setter Property="TextColor" Value="White" />
+					<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+					<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
 		<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Scoring}" Style="{StaticResource TabButton}" Clicked="OnScoringTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsScoringPage}" Value="True">
-					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-					<Setter Property="TextColor" Value="White" />
+					<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+					<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
 		<Button Grid.Column="2" Text="{loc:T AdminCreateGame_Rules}" Style="{StaticResource TabButton}" Clicked="OnRulesTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsRulesPage}" Value="True">
-					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-					<Setter Property="TextColor" Value="White" />
+					<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+					<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
 		<Button Grid.Column="3" Text="{loc:T AdminCreateGame_Languages}" Style="{StaticResource TabButton}" Clicked="OnLanguagesTabClicked">
 			<Button.Triggers>
 				<DataTrigger TargetType="Button" Binding="{Binding IsLanguagesPage}" Value="True">
-					<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-					<Setter Property="TextColor" Value="White" />
+					<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+					<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 				</DataTrigger>
 			</Button.Triggers>
 		</Button>
@@ -83,17 +83,17 @@
 		     It stays here above the form, so it's in reach however far down the page is scrolled. -->
 		<Button Grid.Row="1" Grid.ColumnSpan="4" Margin="0,8,0,0" Text="{loc:T AdminCreateGame_AddYourRules}" Clicked="OnAddSectionClicked"
 		        IsVisible="{Binding CanAddSection}"
-		        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-		        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+		        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+		        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 	</Grid>
 
-	<BoxView Grid.Row="0" HeightRequest="1" Color="{StaticResource Border}" VerticalOptions="End" />
+	<BoxView Grid.Row="0" HeightRequest="1" Color="{DynamicResource Border}" VerticalOptions="End" />
 
 	<ScrollView x:Name="FormScroll" Grid.Row="1">
 		<VerticalStackLayout Padding="20,8,20,20" Spacing="14">
 
 			<!-- Moderators: what happens with their submission, or why it was rejected. -->
-			<Border IsVisible="{Binding HasReviewInfo}" BackgroundColor="{StaticResource SurfaceMuted}"
+			<Border IsVisible="{Binding HasReviewInfo}" BackgroundColor="{DynamicResource SurfaceMuted}"
 			        StrokeThickness="0" Padding="12,10">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
@@ -124,11 +124,11 @@
 					<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 						<Button Text="{Binding CoverButtonText}" Clicked="OnCoverClicked"
 						        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
-						        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}"
-						        BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource TextSecondary}"
+						        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 						<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Remove}" Command="{Binding RemoveCoverCommand}" IsVisible="{Binding HasCover}"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-						        BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}"
+						        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 					</Grid>
 				</VerticalStackLayout>
 
@@ -140,7 +140,7 @@
 				<!-- Each limit has its own switch. Both off: any number of players. Players filter games by this. -->
 				<VerticalStackLayout Spacing="14">
 					<Label Text="{loc:T AdminCreateGame_NumberOfPlayers}" Style="{StaticResource SectionTitle}" Margin="0,10,0,0" />
-					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+					<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
@@ -195,7 +195,7 @@
 						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
 						        CommandParameter="{x:Static vm:GameFormSection.Subgame}" />
 					</Grid>
-					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+					<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
@@ -250,7 +250,7 @@
 						<Button Grid.Column="1" Style="{StaticResource RemoveSectionButton}" Clicked="OnRemoveSectionClicked"
 						        CommandParameter="{x:Static vm:GameFormSection.Ties}" />
 					</Grid>
-					<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+					<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
@@ -271,8 +271,8 @@
 							<VerticalStackLayout Spacing="10" IsVisible="{Binding HasNoTies}">
 								<Label Text="{loc:T AdminCreateGame_TheDuelSRules}" FontAttributes="Bold" Margin="0,6,0,0" />
 								<Button Text="{loc:T AdminCreateGame_CopyTheGameSRules}" Clicked="OnCopyGameRulesClicked"
-								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-								        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+								        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+								        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 
 								<Label Text="{loc:T AdminCreateGame_DuelScoringType}" />
 								<views:ScoringEditorView BindingContext="{Binding DuelScoring}" />
@@ -313,7 +313,7 @@
 			     reads and types as one text. Hold a picture to edit, move or remove it. -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsRulesPage}">
 				<Label Text="{loc:T AdminCreateGame_HowToPlay}" Style="{StaticResource SectionTitle}" />
-				<Border Stroke="{StaticResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
+				<Border Stroke="{DynamicResource Border}" StrokeThickness="1" Padding="12,10" MinimumHeightRequest="140">
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="8" />
 					</Border.StrokeShape>
@@ -336,19 +336,19 @@
 				</Border>
 				<Button Text="{loc:T AdminCreateGame_AddPictureAtTheCursor}" Clicked="OnInsertRulesImageClicked"
 				        IsEnabled="{Binding IsUploading, Converter={StaticResource InvertedBoolConverter}}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Border}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+				        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 			</VerticalStackLayout>
 
 			<!-- ===== Page 4: translations =====
 			     The cloud translates the original sentence by sentence; here a person checks each language and
 			     changes, adds or removes what isn't right. The text itself isn't typed in freely. -->
 			<VerticalStackLayout Spacing="14" IsVisible="{Binding IsLanguagesPage}">
-				<Label Text="{Binding WrittenInMyLanguageHint}" IsVisible="{Binding WrittenInMyLanguage}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+				<Label Text="{Binding WrittenInMyLanguageHint}" IsVisible="{Binding WrittenInMyLanguage}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 				<Label Text="{Binding ToCheckOverview}" FontSize="13" FontAttributes="Bold" />
 
 				<!-- Sentences that came into the original from a translation: for someone who speaks the original's language. -->
-				<Border IsVisible="{Binding HasAddedToOriginal}" BackgroundColor="{StaticResource ScoreWarningTint}" StrokeThickness="0" Padding="12,10">
+				<Border IsVisible="{Binding HasAddedToOriginal}" BackgroundColor="{DynamicResource ScoreWarningTint}" StrokeThickness="0" Padding="12,10">
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="8" />
 					</Border.StrokeShape>
@@ -360,7 +360,7 @@
 									<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 										<VerticalStackLayout Spacing="2">
 											<Label Text="{Binding Sentence}" FontSize="14" />
-											<Label FontSize="12" TextColor="{StaticResource TextSecondary}">
+											<Label FontSize="12" TextColor="{DynamicResource TextSecondary}">
 												<Label.FormattedText>
 													<FormattedString>
 														<Span Text="{Binding LanguageName}" />
@@ -382,16 +382,16 @@
 
 				<Picker Title="{loc:T AdminCreateGame_ChooseALanguage}" ItemsSource="{Binding TranslationLanguages}" ItemDisplayBinding="{Binding Name}"
 				        SelectedItem="{Binding TranslationLanguage}" />
-				<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,10">
+				<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12,10">
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="8" />
 					</Border.StrokeShape>
 					<VerticalStackLayout Spacing="6">
 						<Label Text="{Binding TranslationStatus}" FontSize="13" />
-						<Label Text="{Binding CheckStatus}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Warning}">
+						<Label Text="{Binding CheckStatus}" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource Warning}">
 							<Label.Triggers>
 								<DataTrigger TargetType="Label" Binding="{Binding IsChecked}" Value="True">
-									<Setter Property="TextColor" Value="{StaticResource Accent}" />
+									<Setter Property="TextColor" Value="{DynamicResource Accent}" />
 								</DataTrigger>
 							</Label.Triggers>
 						</Label>
@@ -409,7 +409,7 @@
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="vm:PictureText">
 								<VerticalStackLayout Spacing="2">
-									<Label Text="{Binding Original}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+									<Label Text="{Binding Original}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 									<Entry Text="{Binding Text}" />
 								</VerticalStackLayout>
 							</DataTemplate>
@@ -421,32 +421,32 @@
 				<VerticalStackLayout Spacing="8" IsVisible="{Binding HasSentences}">
 					<Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" IsVisible="{Binding IsBrowsing}">
 						<Button Text="{loc:T AdminCreateGame_Add}" Command="{Binding StartAddingCommand}" HeightRequest="48"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 						<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Change}" Command="{Binding StartChangingCommand}" HeightRequest="48"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 						<Button Grid.Column="2" Text="{loc:T AdminCreateGame_Remove}" Command="{Binding StartRemovingCommand}" HeightRequest="48"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Danger}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Danger}" BorderWidth="1" />
 					</Grid>
 					<Button Text="{loc:T AdminCreateGame_TranslationIsFine}" Command="{Binding ApproveTranslationCommand}"
 					        IsVisible="{Binding CanApproveTranslation}" />
 
 					<!-- Adding: tap the sentence to add after, or add at the start. -->
 					<VerticalStackLayout Spacing="8" IsVisible="{Binding IsAdding}">
-						<Label Text="{loc:T AdminCreateGame_TapWhereToAdd}" FontSize="13" TextColor="{StaticResource Warning}" />
+						<Label Text="{loc:T AdminCreateGame_TapWhereToAdd}" FontSize="13" TextColor="{DynamicResource Warning}" />
 						<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
 							<Button Text="{loc:T AdminCreateGame_AddAtTheStart}" Clicked="OnAddAtStartClicked" HeightRequest="48"
-							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+							        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 							<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Cancel}" Command="{Binding CancelModeCommand}" HeightRequest="48"
-							        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+							        BackgroundColor="Transparent" TextColor="{DynamicResource TextSecondary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 						</Grid>
 					</VerticalStackLayout>
 
 					<!-- Changing or removing: tap the sentence or picture. -->
 					<VerticalStackLayout Spacing="8" IsVisible="{Binding IsSelecting}">
-						<Label Text="{loc:T AdminCreateGame_TapToChange}" FontSize="13" TextColor="{StaticResource Warning}" IsVisible="{Binding IsChangingWords}" />
-						<Label Text="{loc:T AdminCreateGame_TapToRemove}" FontSize="13" TextColor="{StaticResource Warning}" IsVisible="{Binding IsRemovingWords}" />
+						<Label Text="{loc:T AdminCreateGame_TapToChange}" FontSize="13" TextColor="{DynamicResource Warning}" IsVisible="{Binding IsChangingWords}" />
+						<Label Text="{loc:T AdminCreateGame_TapToRemove}" FontSize="13" TextColor="{DynamicResource Warning}" IsVisible="{Binding IsRemovingWords}" />
 						<Button Text="{loc:T AdminCreateGame_Cancel}" Command="{Binding CancelModeCommand}" HeightRequest="48"
-						        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource TextSecondary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 					</VerticalStackLayout>
 				</VerticalStackLayout>
 
@@ -456,31 +456,31 @@
 						<DataTemplate x:DataType="vm:SentenceRow">
 							<VerticalStackLayout Spacing="0">
 								<Grid IsVisible="{Binding IsSentence}">
-								<Border Padding="10,8" StrokeThickness="1" Stroke="{StaticResource Border}">
+								<Border Padding="10,8" StrokeThickness="1" Stroke="{DynamicResource Border}">
 									<Border.StrokeShape>
 										<RoundRectangle CornerRadius="8" />
 									</Border.StrokeShape>
 									<Border.Triggers>
 										<DataTrigger TargetType="Border" Binding="{Binding IsAuto}" Value="True">
-											<Setter Property="BackgroundColor" Value="{StaticResource ScoreWarningTint}" />
+											<Setter Property="BackgroundColor" Value="{DynamicResource ScoreWarningTint}" />
 										</DataTrigger>
 										<DataTrigger TargetType="Border" Binding="{Binding IsReview}" Value="True">
-											<Setter Property="BackgroundColor" Value="{StaticResource ScoreWarningTint}" />
-											<Setter Property="Stroke" Value="{StaticResource ScoreWarning}" />
+											<Setter Property="BackgroundColor" Value="{DynamicResource ScoreWarningTint}" />
+											<Setter Property="Stroke" Value="{DynamicResource ScoreWarning}" />
 										</DataTrigger>
 										<DataTrigger TargetType="Border" Binding="{Binding IsAdded}" Value="True">
-											<Setter Property="Stroke" Value="{StaticResource Accent}" />
+											<Setter Property="Stroke" Value="{DynamicResource Accent}" />
 										</DataTrigger>
 									</Border.Triggers>
 									<Border.GestureRecognizers>
 										<TapGestureRecognizer Tapped="OnSentenceTapped" CommandParameter="{Binding .}" />
 									</Border.GestureRecognizers>
 									<VerticalStackLayout Spacing="4">
-										<Label Text="{Binding Original}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding Original}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 										<!-- One label per sentence; its words can be tapped while choosing what to change or remove. -->
 										<views:WordsLabel Words="{Binding Words}" FontSize="15"
 										                  TapCommand="{Binding TapWordCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}" />
-										<Label Text="{Binding StatusLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding StatusLabel}" FontSize="11" TextColor="{DynamicResource TextSecondary}" />
 										<!-- The original changed after a person checked it: the new automatic translation to compare with. -->
 										<VerticalStackLayout Spacing="6" IsVisible="{Binding HasSuggestion}">
 											<Label FontSize="13">
@@ -496,7 +496,7 @@
 												        Command="{Binding TakeSuggestionCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}"
 												        CommandParameter="{Binding .}" />
 												<Button Grid.Column="1" Text="{loc:T AdminCreateGame_KeepItAsItIs}" HeightRequest="48" FontSize="13"
-												        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1"
+												        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1"
 												        Command="{Binding KeepTranslationCommand, Source={RelativeSource AncestorType={x:Type vm:AdminCreateGameViewModel}}, x:DataType=vm:AdminCreateGameViewModel}"
 												        CommandParameter="{Binding .}" />
 											</Grid>
@@ -522,7 +522,7 @@
 											<BindableLayout.ItemTemplate>
 												<DataTemplate x:DataType="vm:PictureText">
 													<VerticalStackLayout Spacing="2">
-														<Label Text="{Binding Original}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+														<Label Text="{Binding Original}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 														<Entry Text="{Binding Text}" />
 													</VerticalStackLayout>
 												</DataTemplate>
@@ -545,59 +545,59 @@
 
 				<Button Text="{loc:T AdminCreateGame_UseTheAutomaticTranslationAgain}" Command="{Binding UseAutomaticTranslationCommand}"
 				        IsVisible="{Binding CanUseAutomaticTranslation}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+				        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>
 
 			<!-- A new game: saved as a draft the whole team sees, so nobody makes it twice; only you finish it. -->
 			<Button Text="{loc:T AdminCreateGame_SaveAsDraft}" Margin="0,24,0,0" Command="{Binding SaveDraftCommand}" IsVisible="{Binding CanSaveDraft}"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+			        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 
 			<!-- On every page, away from the save button so they're never tapped by mistake. -->
 			<Button Text="{loc:T AdminCreateGame_WithdrawRequest}" Margin="0,24,0,0" Clicked="OnWithdrawClicked" IsVisible="{Binding CanWithdraw}"
-			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}"
+			        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 
 			<Button Text="{Binding DeleteButtonText}" Clicked="OnDeleteClicked" IsVisible="{Binding CanDelete}"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-			        BorderColor="{StaticResource Danger}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}"
+			        BorderColor="{DynamicResource Danger}" BorderWidth="1" />
 
 		</VerticalStackLayout>
 	</ScrollView>
 
 	<!-- Always in view at the bottom: what's missing or happening, and the main action. Saving says what to fix
 	     and opens the page it's on. -->
-	<VerticalStackLayout x:Name="SaveBar" Grid.Row="2" BackgroundColor="{StaticResource SurfaceLight}" Spacing="0">
-		<BoxView HeightRequest="1" Color="{StaticResource Border}" />
+	<VerticalStackLayout x:Name="SaveBar" Grid.Row="2" BackgroundColor="{DynamicResource SurfaceLight}" Spacing="0">
+		<BoxView HeightRequest="1" Color="{DynamicResource Border}" />
 		<VerticalStackLayout Padding="20,8,20,12" Spacing="8">
 			<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding HasStatusMessage}">
-				<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{StaticResource Primary}"
+				<ActivityIndicator IsRunning="{Binding IsUploading}" IsVisible="{Binding IsUploading}" Color="{DynamicResource Primary}"
 				                   HeightRequest="20" WidthRequest="20" VerticalOptions="Center" />
-				<Label Grid.Column="1" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontSize="13" />
+				<Label Grid.Column="1" Text="{Binding StatusMessage}" TextColor="{DynamicResource Warning}" FontSize="13" />
 			</Grid>
 			<Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
 				<!-- On Translations: undo what was changed there. -->
 				<Button Text="{loc:T AdminCreateGame_Discard}" Clicked="OnDiscardTranslationsClicked" HeightRequest="52" IsVisible="{Binding IsLanguagesPage}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Danger}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Danger}" BorderWidth="1" />
 				<!-- Play the game as filled in now, with made-up players; nothing is saved. -->
 				<Button Grid.Column="1" Text="{loc:T AdminCreateGame_Test}" Clicked="OnTestClicked" HeightRequest="52" Padding="14,0"
 				        SemanticProperties.Description="{loc:T AdminCreateGame_TestDescription}"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 				<Button Grid.Column="2" Text="{Binding SaveButtonText}" Command="{Binding SaveCommand}" HeightRequest="52" />
 			</Grid>
 		</VerticalStackLayout>
 	</VerticalStackLayout>
 
 	<!-- While a picture is being moved; stays in view at the bottom whatever is scrolled. -->
-	<Border x:Name="MoveBar" Grid.Row="2" IsVisible="False" BackgroundColor="{StaticResource SurfaceMuted}"
+	<Border x:Name="MoveBar" Grid.Row="2" IsVisible="False" BackgroundColor="{DynamicResource SurfaceMuted}"
 	        StrokeThickness="0" Padding="16,10">
 		<VerticalStackLayout Spacing="8">
 			<Label Text="{loc:T AdminCreateGame_MovingPicture}" FontSize="13" FontAttributes="Bold" />
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8">
 				<Button Text="{loc:T AdminCreateGame_Cancel}" Clicked="OnCancelMoveClicked" HeightRequest="48"
-				        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
-				        BorderColor="{StaticResource Border}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}"
+				        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 				<Button Grid.Column="1" Text="{loc:T AdminCreateGame_PlaceHere}" Clicked="OnPlaceHereClicked" HeightRequest="48" />
 			</Grid>
 		</VerticalStackLayout>

@@ -15,14 +15,14 @@
 			<SearchBar Placeholder="{loc:T CategoryGames_SearchGames}" Text="{Binding SearchText}" />
 			<Button Grid.Column="1" Text="{Binding Filters.ButtonText}" Clicked="OnFilterClicked"
 			        HeightRequest="48" Padding="14,0" FontSize="13" VerticalOptions="Center"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+			        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 		</Grid>
 
 
 		<CollectionView Grid.Row="2" ItemsSource="{Binding VisibleGames}">
 			<CollectionView.EmptyView>
-				<Label Text="{loc:T CategoryGames_NoGamesFound}" TextColor="{StaticResource TextSecondary}" />
+				<Label Text="{loc:T CategoryGames_NoGamesFound}" TextColor="{DynamicResource TextSecondary}" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="vm:GameChoice">
@@ -32,7 +32,7 @@
 							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
 						</Grid.GestureRecognizers>
 						<Border WidthRequest="44" HeightRequest="44" StrokeThickness="0"
-						        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+						        BackgroundColor="{DynamicResource SurfaceMuted}" VerticalOptions="Center">
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="8" />
 							</Border.StrokeShape>
@@ -47,7 +47,7 @@
 			</CollectionView.ItemTemplate>
 		</CollectionView>
 
-		<Label Grid.Row="3" Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontSize="12" />
+		<Label Grid.Row="3" Text="{Binding StatusMessage}" TextColor="{DynamicResource Warning}" FontSize="12" />
 
 		<Button Grid.Row="4" Text="{loc:T CategoryGames_SaveGamesInCategory}" Clicked="OnSaveClicked" IsEnabled="{Binding CanSave}" />
 

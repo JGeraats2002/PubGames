@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 Tout le monde a rempli toute la feuille. Terminez la manche avec {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 à côté du ⓘ signale un admin ou un modérateur qui ne respecte pas les règles : choisis qui, de quel type, et explique ce qui s'est passé. Le signalement indique la page où il a été fait et va uniquement au propriétaire. Un faux signalement peut entraîner ton propre bannissement.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} a demandé la suppression de ce jeu - en attente de vérification",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} a envoyé des modifications - en attente de vérification"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} a envoyé des modifications - en attente de vérification",
+ "Account_Appearance": "Apparence",
+ "Appearance": "Apparence",
+ "Light mode": "Mode clair",
+ "Dark mode": "Mode sombre",
+ "Same as phone": "Comme le téléphone",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "Mode clair, mode sombre, ou comme ton téléphone (le choix par défaut) : l'appli devient alors sombre quand ton téléphone le devient. Ton choix est mémorisé pour ton compte sur ce téléphone. Les images gardent toujours leurs propres couleurs.",
+ "Scrolling": "Défilement",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "Tout ce qui se trouve au-dessus d'Annuler et Utiliser cette image défile, pour que tu puisses toujours atteindre chaque choix sur un petit écran : balaie à côté de l'image. Un doigt sur l'image elle-même déplace ce qui s'y trouve, pas la page."
 }

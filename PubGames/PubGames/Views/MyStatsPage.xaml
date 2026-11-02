@@ -16,16 +16,16 @@
 			<SearchBar Placeholder="{loc:T MyStats_SearchGames}" Text="{Binding SearchText}" />
 			<Button Grid.Column="1" Text="{Binding Filters.ButtonText}" Clicked="OnFilterClicked"
 			        HeightRequest="48" Padding="14,0" FontSize="13" VerticalOptions="Center"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+			        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 		</Grid>
 
 
-		<Label Grid.Row="2" Text="{Binding Message}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+		<Label Grid.Row="2" Text="{Binding Message}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 
 		<CollectionView Grid.Row="3" ItemsSource="{Binding VisibleGames}">
 			<CollectionView.EmptyView>
-				<Label Text="{loc:T MyStats_NoGamesMatch}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<Label Text="{loc:T MyStats_NoGamesMatch}" TextColor="{DynamicResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="vm:StatsGameRow">
@@ -35,7 +35,7 @@
 							<TapGestureRecognizer Tapped="OnGameTapped" CommandParameter="{Binding .}" />
 						</Grid.GestureRecognizers>
 						<Border WidthRequest="44" HeightRequest="44" StrokeThickness="0"
-						        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+						        BackgroundColor="{DynamicResource SurfaceMuted}" VerticalOptions="Center">
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="8" />
 							</Border.StrokeShape>
@@ -45,7 +45,7 @@
 							<Label Text="{Binding Name}" />
 						</VerticalStackLayout>
 						<Label Grid.Column="2" Text="{Binding Stats.Played, StringFormat={loc:T MyStats_0Played}}" VerticalOptions="Center"
-						       TextColor="{StaticResource Primary}" />
+						       TextColor="{DynamicResource Primary}" />
 					</Grid>
 				</DataTemplate>
 			</CollectionView.ItemTemplate>

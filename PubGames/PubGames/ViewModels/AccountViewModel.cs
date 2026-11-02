@@ -21,6 +21,9 @@ public partial class AccountViewModel : ObservableObject
 	/// <summary>The app's language, on the Language row.</summary>
 	public string LanguageName => AppLanguage.Current.Name;
 
+	/// <summary>Light, dark or like the phone, on the Appearance row.</summary>
+	public string AppearanceName => Appearance.Name(Appearance.Current);
+
 	private readonly IAuthService _auth;
 	private readonly ITeamService _team;
 	private readonly IProfileService _profiles;

@@ -21,6 +21,8 @@ public partial class App : Application
 		// Before any page is made: every text is looked up in the app's language.
 		AppLanguage.Initialize();
 		InitializeComponent();
+		// Light or dark (the phone's, or the choice made under Account), before any page is made.
+		Appearance.Initialize(this);
 		_services = services;
 		_auth = auth;
 		_team = team;
@@ -30,12 +32,19 @@ public partial class App : Application
 
 		// Another language was chosen in Settings (the language page has already closed): every screen is
 		// built again in it, back on Account.
-		AppLanguage.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(async () =>
-		{
-			await ShowRootPageAsync();
-			if (Windows.FirstOrDefault()?.Page is Shell shell)
-				await shell.GoToAsync("//main/account");
-		});
+		AppLanguage.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(() => _ = RebuildOnAccountAsync());
+
+		// Light or dark chosen under Account: the screens are built again too, so the screens made in code
+		// (like the scoreboard) get the new colours as well.
+		Appearance.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(() => _ = RebuildOnAccountAsync());
+	}
+
+	/// <summary>Builds every screen again (after a new language or appearance) and goes back to Account.</summary>
+	private async Task RebuildOnAccountAsync()
+	{
+		await ShowRootPageAsync();
+		if (Windows.FirstOrDefault()?.Page is Shell shell)
+			await shell.GoToAsync("//main/account");
 	}
 
 	/// <summary>Always start on the login page; it restores a saved session and hands over to the shell.</summary>
@@ -78,12 +87,14 @@ public partial class App : Application
 		if (!_auth.IsSignedIn)
 		{
 			AppLanguage.UseAccount(null);
+			Appearance.UseAccount(null);
 			await SetRootPageAsync(window, _services.GetRequiredService<LoginPage>());
 			return;
 		}
 
 		// Each account has its own language, also when several sign in on this phone.
 		AppLanguage.UseAccount(_auth.AccountId);
+		Appearance.UseAccount(_auth.AccountId);
 		var me = await _team.RefreshMyMembershipAsync();
 		// Admins and moderators: the newest agreements, so the shell knows whether they still have to agree.
 		if (me is not null)

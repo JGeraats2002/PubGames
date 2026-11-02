@@ -11,8 +11,8 @@
 		<!-- The two pages: the open one filled, the other outlined. -->
 		<Style x:Key="TabButton" TargetType="Button">
 			<Setter Property="BackgroundColor" Value="Transparent" />
-			<Setter Property="TextColor" Value="{StaticResource Primary}" />
-			<Setter Property="BorderColor" Value="{StaticResource Border}" />
+			<Setter Property="TextColor" Value="{DynamicResource Primary}" />
+			<Setter Property="BorderColor" Value="{DynamicResource Border}" />
 			<Setter Property="BorderWidth" Value="1" />
 			<Setter Property="Padding" Value="4,0" />
 			<Setter Property="HeightRequest" Value="40" />
@@ -27,23 +27,23 @@
 			<Button Text="{Binding UnfinishedTabText}" Style="{StaticResource TabButton}" Clicked="OnUnfinishedTabClicked">
 				<Button.Triggers>
 					<DataTrigger TargetType="Button" Binding="{Binding ShowsUnfinished}" Value="True">
-						<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-						<Setter Property="TextColor" Value="White" />
+						<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+						<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 					</DataTrigger>
 				</Button.Triggers>
 			</Button>
 			<Button Grid.Column="1" Text="{Binding FinishedTabText}" Style="{StaticResource TabButton}" Clicked="OnFinishedTabClicked">
 				<Button.Triggers>
 					<DataTrigger TargetType="Button" Binding="{Binding ShowsFinished}" Value="True">
-						<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-						<Setter Property="TextColor" Value="White" />
+						<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+						<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 					</DataTrigger>
 				</Button.Triggers>
 			</Button>
 		</Grid>
 
 		<!-- How long the open page's games are kept on this phone. -->
-		<Border Grid.Row="1" BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12,8">
+		<Border Grid.Row="1" BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12,8">
 			<Border.StrokeShape>
 				<RoundRectangle CornerRadius="8" />
 			</Border.StrokeShape>
@@ -59,23 +59,23 @@
 		<Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
 			<Button Text="{Binding SelectButtonText}" Clicked="OnSelectClicked" HorizontalOptions="Start"
 			        HeightRequest="48" Padding="14,0" FontSize="13"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 			<Button Grid.Column="1" Text="{loc:T SavedGames_SelectAll}" Clicked="OnSelectAllClicked" IsVisible="{Binding IsSelecting}"
 			        HeightRequest="48" Padding="10,0" FontSize="13"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 			<Button Grid.Column="2" Text="{loc:T SavedGames_DeselectAll}" Clicked="OnDeselectAllClicked" IsVisible="{Binding IsSelecting}"
 			        HeightRequest="48" Padding="10,0" FontSize="13"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 		</Grid>
 
 		<ScrollView Grid.Row="3">
 			<VerticalStackLayout Spacing="8">
 				<Label Text="{Binding EmptyText}" IsVisible="{Binding IsEmpty}"
-				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				       TextColor="{DynamicResource TextSecondary}" Margin="0,20,0,0" />
 				<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="vm:SavedGameRow">
-							<Border Padding="12,8" Stroke="{StaticResource Border}" StrokeThickness="1">
+							<Border Padding="12,8" Stroke="{DynamicResource Border}" StrokeThickness="1">
 								<Border.StrokeShape>
 									<RoundRectangle CornerRadius="10" />
 								</Border.StrokeShape>
@@ -84,7 +84,7 @@
 								</Border.GestureRecognizers>
 								<Border.Triggers>
 									<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-										<Setter Property="Stroke" Value="{StaticResource Primary}" />
+										<Setter Property="Stroke" Value="{DynamicResource Primary}" />
 										<Setter Property="StrokeThickness" Value="3" />
 									</DataTrigger>
 								</Border.Triggers>
@@ -94,9 +94,9 @@
 									<VerticalStackLayout Grid.Column="1" Spacing="2">
 										<Label Text="{Binding Game.GameName}" FontAttributes="Bold" LineBreakMode="TailTruncation" />
 										<Label Text="{Binding Game.Players}" FontSize="12" LineBreakMode="TailTruncation" />
-										<Label Text="{Binding Game.Details}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding Game.Details}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 									</VerticalStackLayout>
-									<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center"
+									<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center"
 									       IsVisible="{Binding IsBrowsing, Source={RelativeSource AncestorType={x:Type vm:SavedGamesViewModel}}, x:DataType=vm:SavedGamesViewModel}" />
 								</Grid>
 							</Border>
@@ -107,7 +107,7 @@
 		</ScrollView>
 
 		<Button Grid.Row="4" Text="{Binding DeleteButtonText}" Clicked="OnDeleteClicked" IsVisible="{Binding HasSelection}"
-		        BackgroundColor="{StaticResource Danger}" />
+		        BackgroundColor="{DynamicResource Danger}" />
 
 	</Grid>
 

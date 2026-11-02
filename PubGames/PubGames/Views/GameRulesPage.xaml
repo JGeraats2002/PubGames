@@ -16,7 +16,7 @@
 			<Button Text="{loc:T GameRules_UnlockToPlay}" Clicked="OnUnlockClicked" IsVisible="{Binding IsLocked}" />
 
 			<!-- How many subgames make up the game (1 unless changed); used by both Skip rules and Start game. -->
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12" IsVisible="{Binding IsUnlocked}">
+			<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12" IsVisible="{Binding IsUnlocked}">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
@@ -24,19 +24,19 @@
 					<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
 						<Label Text="{loc:T GameRules_Play}" VerticalOptions="Center" />
 						<Button SemanticProperties.Description="{loc:T GameRules_OneSubgameFewer}" Grid.Column="1" Text="−" Clicked="OnFewerSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 						<Label Grid.Column="2" Text="{Binding SubgameCountText}" FontAttributes="Bold" WidthRequest="100"
 						       HorizontalTextAlignment="Center" VerticalOptions="Center" />
 						<Button SemanticProperties.Description="{loc:T GameRules_OneSubgameMore}" Grid.Column="3" Text="+" Clicked="OnMoreSubgamesClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="18"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 					</Grid>
 				</VerticalStackLayout>
 			</Border>
 
 			<!-- For groups who already know the game. -->
 			<Button Text="{loc:T GameRules_SkipRules}" Command="{Binding StartGameCommand}" IsVisible="{Binding IsUnlocked}"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+			        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 
 			<!-- Square and as wide as the page, on every phone; the same part of the picture as the icon in the game lists. -->
 			<Border StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}" Margin="0,6,0,0"
@@ -48,8 +48,8 @@
 			</Border>
 
 			<Label Text="{Binding GameName}" FontSize="24" FontAttributes="Bold" Margin="0,6,0,0" />
-			<Label Text="{Binding PlayerCountLabel}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
-			<Label Text="{Binding PlayersSummary}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+			<Label Text="{Binding PlayerCountLabel}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
+			<Label Text="{Binding PlayersSummary}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 
 			<Label Text="{loc:T GameRules_HowToPlay}" FontSize="16" Margin="0,10,0,0" />
 			<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding RulesBlocks}">

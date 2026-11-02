@@ -17,7 +17,7 @@
 				<Label Text="{loc:T PlayerEntry_WhoSPlaying}" FontSize="22" VerticalOptions="Center" />
 				<Button Grid.Column="1" Text="{Binding SavedGamesButtonText}" Clicked="OnSavedGamesClicked"
 				        HeightRequest="48" Padding="14,0" FontSize="13" VerticalOptions="Center"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 			</Grid>
 
 			<CollectionView ItemsSource="{Binding SelectedPlayers}">
@@ -31,7 +31,7 @@
 									CommandParameter="{Binding .}" />
 							</Grid.GestureRecognizers>
 							<Border WidthRequest="36" HeightRequest="36" StrokeThickness="0" Padding="0"
-							        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+							        BackgroundColor="{DynamicResource SurfaceMuted}" VerticalOptions="Center">
 								<Border.StrokeShape>
 									<RoundRectangle CornerRadius="18" />
 								</Border.StrokeShape>
@@ -44,11 +44,11 @@
 							</Border>
 							<Label Grid.Column="1" Text="{Binding Name}" VerticalOptions="Center" LineBreakMode="TailTruncation" />
 							<Button SemanticProperties.Description="{loc:T PlayerEntry_RenamePlayer}" Grid.Column="2" Text="✎" Clicked="OnRenameClicked" WidthRequest="48" HeightRequest="48" Padding="0"
-							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+							        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 							<Button SemanticProperties.Description="{loc:T PlayerEntry_MoveUp}" Grid.Column="3" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="48" HeightRequest="48" Padding="0"
-							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+							        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 							<Button SemanticProperties.Description="{loc:T PlayerEntry_MoveDown}" Grid.Column="4" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="48" HeightRequest="48" Padding="0"
-							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+							        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 						</Grid>
 					</DataTemplate>
 				</CollectionView.ItemTemplate>
@@ -65,20 +65,20 @@
 				       Keyboard="Text" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" MaxLength="12" />
 				<Button Grid.Column="1" Text="{loc:T PlayerEntry_Add}" Command="{Binding AddByCodeCommand}" />
 			</Grid>
-			<Label Text="{Binding StatusMessage}" IsVisible="{Binding HasStatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+			<Label Text="{Binding StatusMessage}" IsVisible="{Binding HasStatusMessage}" TextColor="{DynamicResource Warning}" FontAttributes="Bold" />
 
 			<Label Text="{loc:T PlayerEntry_SavedPlayers}" FontSize="16" IsVisible="{Binding HasSavedPlayers}" />
-			<FlexLayout BindableLayout.ItemsSource="{Binding SavedPlayers}" Wrap="Wrap">
+			<views:WrapLayout BindableLayout.ItemsSource="{Binding SavedPlayers}">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="models:Player">
 						<!-- Tap: add to the game. Hold: delete from the saved players (asks first). -->
-						<Frame Margin="0,0,6,6" Padding="4,4,10,4" CornerRadius="16" BorderColor="{StaticResource Border}">
+						<Frame Margin="0,0,6,6" Padding="4,4,10,4" CornerRadius="16" BorderColor="{DynamicResource Border}">
 							<Frame.Behaviors>
 								<views:TapAndHoldBehavior Tapped="OnSavedPlayerTapped" Held="OnSavedPlayerHeld" />
 							</Frame.Behaviors>
 							<HorizontalStackLayout Spacing="6">
 								<Border WidthRequest="24" HeightRequest="24" StrokeThickness="0" Padding="0"
-								        BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+								        BackgroundColor="{DynamicResource SurfaceMuted}" VerticalOptions="Center">
 									<Border.StrokeShape>
 										<RoundRectangle CornerRadius="12" />
 									</Border.StrokeShape>
@@ -94,7 +94,7 @@
 						</Frame>
 					</DataTemplate>
 				</BindableLayout.ItemTemplate>
-			</FlexLayout>
+			</views:WrapLayout>
 
 			<Button Text="{loc:T PlayerEntry_ChooseAGame}" Clicked="OnChooseGameClicked" Margin="0,20,0,0" />
 

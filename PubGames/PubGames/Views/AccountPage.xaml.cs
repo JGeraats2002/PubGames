@@ -1,4 +1,5 @@
 using PubGames.Models;
+using PubGames.Services;
 using PubGames.ViewModels;
 
 namespace PubGames.Views;
@@ -43,6 +44,21 @@ public partial class AccountPage : ContentPage
 	/// <summary>Opens the language screen, to show the app in another language.</summary>
 	private async void OnLanguageTapped(object? sender, TappedEventArgs e) =>
 		await Shell.Current.GoToAsync(nameof(LanguagePage));
+
+	/// <summary>
+	/// Chooses light, dark or like the phone (the first, and the default). The current choice has a ✓.
+	/// Another choice builds the screens again in it (see App).
+	/// </summary>
+	private async void OnAppearanceTapped(object? sender, TappedEventArgs e)
+	{
+		string Label(AppearanceChoice choice) => (choice == Appearance.Current ? "✓ " : string.Empty) + Appearance.Name(choice);
+
+		// More than three buttons are shown under each other in reverse, so the first choice ends up on top.
+		var labels = Appearance.All.Reverse().Select(Label).ToArray();
+		var picked = await ChoicePopup.AskAsync(this, L.T("Appearance"), null, L.T("Cancel"), labels);
+		if (picked is null) return;
+		Appearance.Set(Appearance.All.First(choice => Label(choice) == picked));
+	}
 
 	/// <summary>Opens Feedback, to send feedback to the admins.</summary>
 	private async void OnFeedbackTapped(object? sender, TappedEventArgs e) =>

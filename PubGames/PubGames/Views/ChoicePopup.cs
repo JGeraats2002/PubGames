@@ -40,7 +40,7 @@ public class ChoicePopup : ContentPage
 				Text = text, FontSize = 13, Padding = new Thickness(6, 0), HeightRequest = 48, LineBreakMode = LineBreakMode.WordWrap,
 				// The main choice filled in; the others as outlines.
 				BackgroundColor = last ? Resource("Primary") : Colors.Transparent,
-				TextColor = last ? Colors.White : isCancelButton || stacked ? Resource("TextPrimary") : Resource("Danger"),
+				TextColor = last ? Resource("OnPrimary") : isCancelButton || stacked ? Resource("TextPrimary") : Resource("Danger"),
 				BorderColor = last ? Resource("Primary") : Resource("Border"), BorderWidth = 1
 			};
 			button.Clicked += async (_, _) => await CloseAsync(isCancelButton ? null : text);

@@ -11,20 +11,20 @@
 
 		<VerticalStackLayout Spacing="6">
 			<!-- Final only: the winner(s) or loser(s), big and in words. -->
-			<Border IsVisible="{Binding IsFinal}" BackgroundColor="{StaticResource ScoreLimit}" StrokeThickness="0" Padding="16,12">
+			<Border IsVisible="{Binding IsFinal}" BackgroundColor="{DynamicResource ScoreLimit}" StrokeThickness="0" Padding="16,12">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="10" />
 				</Border.StrokeShape>
-				<Label Text="{Binding Headline}" FontSize="22" FontAttributes="Bold" TextColor="White" HorizontalTextAlignment="Center" />
+				<Label Text="{Binding Headline}" FontSize="22" FontAttributes="Bold" TextColor="{DynamicResource OnPrimary}" HorizontalTextAlignment="Center" />
 			</Border>
-			<Label Text="{Binding Subtitle}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+			<Label Text="{Binding Subtitle}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 		</VerticalStackLayout>
 
 		<ScrollView Grid.Row="1">
 			<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Rows}">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="models:PlayerStanding">
-						<Border Padding="12,8" Stroke="{StaticResource Border}">
+						<Border Padding="12,8" Stroke="{DynamicResource Border}">
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="8" />
 							</Border.StrokeShape>
@@ -34,7 +34,7 @@
 								       VerticalOptions="Center" IsVisible="{Binding ShowPlace}" />
 								<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
 									<Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" />
-									<Label Text="{Binding Total}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+									<Label Text="{Binding Total}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 								</VerticalStackLayout>
 							</Grid>
 						</Border>

@@ -12,7 +12,7 @@
 		<VerticalStackLayout Spacing="6">
 			<Label Text="{Binding Heading}" FontSize="24" FontAttributes="Bold" HorizontalTextAlignment="Center"
 			       SemanticProperties.HeadingLevel="Level1" />
-			<Label Text="{Binding Explanation}" FontSize="13" TextColor="{StaticResource TextSecondary}"
+			<Label Text="{Binding Explanation}" FontSize="13" TextColor="{DynamicResource TextSecondary}"
 			       HorizontalTextAlignment="Center" />
 		</VerticalStackLayout>
 
@@ -34,10 +34,10 @@
 						        StrokeThickness="3" Stroke="Transparent" StrokeShape="Ellipse">
 							<Border.Triggers>
 								<DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-									<Setter Property="Stroke" Value="{StaticResource Primary}" />
+									<Setter Property="Stroke" Value="{DynamicResource Primary}" />
 								</DataTrigger>
 							</Border.Triggers>
-							<Border StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse">
+							<Border StrokeThickness="1" Stroke="{DynamicResource Border}" StrokeShape="Ellipse">
 								<Image Source="{Binding Flag}" Aspect="AspectFill" />
 							</Border>
 						</Border>
@@ -45,7 +45,7 @@
 							<Label.Triggers>
 								<DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
 									<Setter Property="FontAttributes" Value="Bold" />
-									<Setter Property="TextColor" Value="{StaticResource Primary}" />
+									<Setter Property="TextColor" Value="{DynamicResource Primary}" />
 								</DataTrigger>
 							</Label.Triggers>
 						</Label>

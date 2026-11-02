@@ -24,16 +24,17 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
 | `tests/` | Automatische tests (zie Aantekeningen) |
 | `public/` | Website: privacybeleid, account verwijderen |
 | `PlayStore/` | Play Console-teksten (`README.md`, `listings.md`), icoon, feature graphic |
+| `Builds/` | Kopieën van geüploade `.aab`-bestanden (`pubgames-v<code>-<versie>.aab`); niet in git |
 
 ---
 
-## Waar we staan (31-10-2026)
+## Waar we staan (02-11-2026)
 
-- **Versie 5 (1.4)** is gebouwd, nog te uploaden bij **Closed testing**. Bestand:
+- **Versie 6 (1.5)** is gebouwd (02-11-2026), nog te uploaden bij **Closed testing**. Bestand:
   `PubGames/PubGames/bin/Release/net10.0-android36.0/publish/com.pubgems.pubgames-Signed.aab`
-  (kopie: `%USERPROFILE%\PubGamesBuilds\pubgames-v5-1.4.aab`). Versie 4 (1.3) staat in closed testing
-  (kopie: `pubgames-v4-1.3.aab`). Closed test loopt met 12+ testers.
-- Functions (ook `translateAgreements` en `announceStaleDrafts`) en firestore.rules zijn gedeployed (01-11-2026). Alles is gecommit en gepusht.
+  (kopie: `Builds/pubgames-v6-1.5.aab`). Versie 5 (1.4) is niet geüpload; versie 6 bevat alles van versie 5.
+  Versie 4 (1.3) staat in closed testing (kopie: `Builds/pubgames-v4-1.3.aab`). Closed test loopt met 12+ testers.
+- Functions (ook `translateAgreements` en `announceStaleDrafts`) en firestore.rules zijn gedeployed (01-11-2026). De wijzigingen voor versie 6 zijn nog niet gecommit.
 - Alles is door de gebruiker getest (afvinklijst https://claude.ai/artifact/2bdNcCQqsLQbSR2ihAuRBD),
   behalve één hertest: X3 (Vertalingen › Aanpassen › afbeelding opent de echte afbeelding in de editor).
 
@@ -51,7 +52,7 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
 - Ook in versie 5: toetsenbord weg = focus weg, overal in de app (`Platforms/Android/MainActivity.cs`).
   Handmatig plus/min telt een getypt bedrag pas op bij + of − (Volgende / Gereed tellen niets meer op).
   "+ Je regels toevoegen" staat vast onder de tabbladen van het spelformulier.
-- **Na versie 5, nog niet in een .aab (nodig: versie 6), nog niet door de gebruiker getest:**
+- **Nieuw in versie 6** (na versie 5 gebouwd):
   - Pagina **Afspraken** (laatste pagina van het Admin-tabblad, `Views/AgreementsPage`, `Models/AdminAgreements.cs`):
     regels voor admins en mods (rollen, prijzen gratis / €0,99 / €1,99, inhoud, drankspellen, kwaliteit, misbruik).
     Opent als eerste bij de eerste keer als admin/mod; tot "Gelezen en akkoord" zijn de andere admin-pagina's dicht
@@ -71,6 +72,21 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
     `announceStaleDrafts` (dagelijks 09:00) stuurt iedereen 1 bericht. Publiceren/indienen verwijdert het concept.
   - **Inbox:** filters per categorie met prioriteit (rapportage, beoordeling, concept, vertaling, tip, bericht).
   - **Rapporteren** (📣 naast ⓘ, `Views/ReportButton.cs`): wie, categorie, uitleg en pagina; alleen naar de eigenaar.
+  - **Testerfeedback 02-11:**
+    - Afbeeldingseditor: titel op een eigen regel boven Selecteren / Ongedaan / ⓘ; alles boven Annuleren / Gebruiken
+      scrolt als één geheel. Een vinger op de tekening houdt het scrollen tegen (`KeepTouchOnCanvas`).
+    - Bibliotheek (`GameLibraryPage`): lijst in een Grid in plaats van een stack, zodat hij scrolt en het laatste spel
+      bereikbaar is. (Yatzee ontbrak bij een tester omdat het nog niet gepubliceerd is: spelers zien alleen Published.)
+    - Categoriewolken en andere chips: `Views/WrapLayout.cs` in plaats van FlexLayout (die knipte de laatste letter af,
+      "Kaarte"). Elke chip krijgt zijn volle breedte, plus 4dp speling.
+    - Afspraken: "Gelezen en akkoord" staat onderaan, na de regels (scrollt mee), niet meer vast in beeld.
+    - Mail aan een nieuwe moderator (`TeamEmails.ModeratorAdded`): kort, met de afspraken in het Engels
+      (`AdminAgreements.EnglishSections`); alleen extra: spellen maken (mods met goedkeuring, admins direct), uitleg onder ⓘ.
+    - **Weergave** (Account › Weergave, `Services/Appearance.cs`): Zoals telefoon (standaard) / Lichte modus / Donkere
+      modus, per account op deze telefoon (zoals de taal). App.xaml heeft de lichte kleuren; `Appearance` zet bij donker
+      de donkere waarden in de resources. **Gebruik in XAML altijd `{DynamicResource Kleur}`** (niet StaticResource),
+      en voor tekst op een gekleurd vlak `OnPrimary` (niet White). De inlogpagina houdt de merkkleuren (`Brand`).
+      Plaatjes houden hun eigen kleuren. Een andere keuze bouwt de schermen opnieuw op (zoals bij een andere taal).
 
 ### Volgende stappen
 
@@ -146,7 +162,8 @@ statistieken, feedback, en betaalde spellen of een Pub Games Pass. 9 talen.
   bin/obj weggooien. Na een icoonwijziging `obj/.../resizetizer` weggooien.
 - Nieuwe `.aab`: `ApplicationVersion` en `ApplicationDisplayVersion` in `PubGames.csproj` ophogen, dan
   `dotnet publish PubGames/PubGames/PubGames.csproj -f net10.0-android36.0 -c Release`; upload het
-  `-Signed.aab` uit `bin/Release/net10.0-android36.0/publish/`.
+  `-Signed.aab` uit `bin/Release/net10.0-android36.0/publish/`. Gebouwd in een kladmap: zet de `.aab` terug in die
+  publish-map, en bewaar een kopie in `Builds/` als `pubgames-v<code>-<versie>.aab`.
 - De gebruiker heeft beperkte ruimte en Claude ziet de accountstatus niet: werk in stukken en houd deze
   README bij, zodat een nieuwe sessie zonder uitleg verder kan.
 

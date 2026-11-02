@@ -12,7 +12,7 @@
 		<ScrollView x:Name="PageScroll">
 			<VerticalStackLayout Spacing="16">
 				<!-- Why this page opened first: not agreed yet, or the agreements changed. -->
-				<Border x:Name="NoticeBox" BackgroundColor="{StaticResource ScoreWarningTint}" StrokeThickness="0" Padding="12,10">
+				<Border x:Name="NoticeBox" BackgroundColor="{DynamicResource ScoreWarningTint}" StrokeThickness="0" Padding="12,10">
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="8" />
 					</Border.StrokeShape>
@@ -32,15 +32,22 @@
 							</DataTemplate>
 						</BindableLayout.ItemTemplate>
 					</VerticalStackLayout>
+
+					<!-- At the end, after the rules: agreed says so; not yet, the admin pages stay closed until this is tapped. -->
+					<VerticalStackLayout Spacing="8" Margin="0,8,0,0">
+						<Label x:Name="AgreedLabel" Text="{loc:T Agreements_Agreed}" FontSize="13" FontAttributes="Bold"
+						       TextColor="{DynamicResource PrimaryDark}" HorizontalTextAlignment="Center" />
+						<Button x:Name="AgreeButton" Text="{loc:T Agreements_Agree}" Clicked="OnAgreeClicked" HeightRequest="52" />
+					</VerticalStackLayout>
 				</VerticalStackLayout>
 
 				<!-- The owner editing: every section's heading and text; ✕ removes one. -->
 				<VerticalStackLayout x:Name="EditPanel" Spacing="12" IsVisible="False">
-					<Label Text="{loc:T Agreements_EditHint}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+					<Label Text="{loc:T Agreements_EditHint}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 					<VerticalStackLayout x:Name="EditList" Spacing="12">
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="vm:EditableAgreement">
-								<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+								<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12">
 									<Border.StrokeShape>
 										<RoundRectangle CornerRadius="8" />
 									</Border.StrokeShape>
@@ -49,7 +56,7 @@
 											<Entry Text="{Binding Heading}" Placeholder="{loc:T Agreements_Heading}" FontAttributes="Bold" />
 											<Button Grid.Column="1" Text="✕" Clicked="OnRemoveSectionClicked" SemanticProperties.Description="{loc:T Agreements_RemoveSection}"
 											        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
-											        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+											        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 										</Grid>
 										<Editor Text="{Binding Text}" Placeholder="{loc:T Agreements_Text}" AutoSize="TextChanges" MinimumHeightRequest="96" />
 									</VerticalStackLayout>
@@ -59,23 +66,20 @@
 					</VerticalStackLayout>
 					<Button Text="{loc:T Agreements_AddSection}" Clicked="OnAddSectionClicked" HorizontalOptions="Start"
 					        HeightRequest="48" Padding="14,0" FontSize="13"
-					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+					        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 					<Button Text="{loc:T Agreements_BackToBuiltIn}" Clicked="OnBuiltInClicked" HorizontalOptions="Start"
 					        HeightRequest="48" Padding="14,0" FontSize="13"
-					        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
-					<Label x:Name="EditMessage" TextColor="{StaticResource Danger}" FontSize="13" IsVisible="False" />
+					        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
+					<Label x:Name="EditMessage" TextColor="{DynamicResource Danger}" FontSize="13" IsVisible="False" />
 				</VerticalStackLayout>
 			</VerticalStackLayout>
 		</ScrollView>
 
-		<!-- Agreed: says so. Not yet: the admin pages stay closed until this is tapped. Editing: Cancel and Save. -->
+		<!-- Editing: Cancel and Save stay in view. -->
 		<VerticalStackLayout Grid.Row="1" Spacing="8">
-			<Label x:Name="AgreedLabel" Text="{loc:T Agreements_Agreed}" FontSize="13" FontAttributes="Bold"
-			       TextColor="{StaticResource PrimaryDark}" HorizontalTextAlignment="Center" />
-			<Button x:Name="AgreeButton" Text="{loc:T Agreements_Agree}" Clicked="OnAgreeClicked" HeightRequest="52" />
 			<Grid x:Name="EditButtons" ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="False">
 				<Button Text="{loc:T Agreements_Cancel}" Clicked="OnCancelEditClicked" HeightRequest="52"
-				        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 				<Button Grid.Column="1" x:Name="SaveButton" Text="{loc:T Agreements_Save}" Clicked="OnSaveClicked" HeightRequest="52" />
 			</Grid>
 		</VerticalStackLayout>

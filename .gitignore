@@ -18,3 +18,6 @@ google-services.json
 
 # Cloud Functions packages
 functions/node_modules/
+
+# Uploaded app bundles (.aab), kept locally
+Builds/

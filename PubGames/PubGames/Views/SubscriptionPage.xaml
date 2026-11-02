@@ -17,15 +17,15 @@
 			<VerticalStackLayout BindableLayout.ItemsSource="{Binding Plans}" Spacing="8" Margin="0,8,0,0">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="vm:PassPlanRow">
-						<Border Stroke="{StaticResource Border}" Padding="14,10" StrokeShape="RoundRectangle 10">
+						<Border Stroke="{DynamicResource Border}" Padding="14,10" StrokeShape="RoundRectangle 10">
 							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
 								<Label Text="{Binding Name}" FontSize="17" FontAttributes="Bold" VerticalOptions="Center" />
 								<Button Grid.Column="1" Text="{Binding ButtonText}" Clicked="OnPlanClicked" Padding="14,0" HeightRequest="48" FontSize="13">
 									<Button.Triggers>
 										<DataTrigger TargetType="Button" Binding="{Binding IsCurrent}" Value="True">
 											<Setter Property="BackgroundColor" Value="Transparent" />
-											<Setter Property="TextColor" Value="{StaticResource Primary}" />
-											<Setter Property="BorderColor" Value="{StaticResource Primary}" />
+											<Setter Property="TextColor" Value="{DynamicResource Primary}" />
+											<Setter Property="BorderColor" Value="{DynamicResource Primary}" />
 											<Setter Property="BorderWidth" Value="1" />
 										</DataTrigger>
 									</Button.Triggers>
@@ -36,15 +36,15 @@
 				</BindableLayout.ItemTemplate>
 			</VerticalStackLayout>
 
-			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
-			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" />
+			<Label Text="{Binding StatusMessage}" TextColor="{DynamicResource Warning}" FontAttributes="Bold" />
+			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
 
 			<Button Text="{loc:T Subscription_ManageSubscription}" Clicked="OnManageClicked" IsVisible="{Binding HasPass}"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+			        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 			<Button Text="{loc:T Subscription_RestorePurchases}" Clicked="OnRestoreClicked"
-			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}"
+			        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 
 		</VerticalStackLayout>
 	</ScrollView>

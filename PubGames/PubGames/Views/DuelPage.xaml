@@ -6,7 +6,7 @@
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              x:Class="PubGames.Views.DuelPage"
              x:DataType="vm:DuelViewModel"
-             BackgroundColor="{StaticResource SurfaceLight}">
+             BackgroundColor="{DynamicResource SurfaceLight}">
 
 	<Grid x:Name="Root" RowDefinitions="Auto,*,Auto,Auto" Padding="16" RowSpacing="10">
 
@@ -15,10 +15,10 @@
 			<Grid ColumnDefinitions="*,Auto">
 				<Label Text="{loc:T Duel_Duel}" FontSize="24" FontAttributes="Bold" VerticalOptions="Center" />
 				<Button SemanticProperties.Description="{loc:T Duel_Help}" Grid.Column="1" Text="ⓘ" Clicked="OnInfoClicked" FontSize="20" WidthRequest="48" HeightRequest="48" Padding="0"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" />
 			</Grid>
 			<Label Text="{Binding Reason}" FontSize="15" FontAttributes="Bold" />
-			<Label Text="{Binding Status}" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource Primary}" Margin="0,4,0,0" />
+			<Label Text="{Binding Status}" FontSize="15" FontAttributes="Bold" TextColor="{DynamicResource Primary}" Margin="0,4,0,0" />
 		</VerticalStackLayout>
 
 		<!-- The players in turn order; the one whose turn it is has a thick border and is the only one who can enter a score. -->
@@ -26,20 +26,20 @@
 			<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="vm:DuelRow">
-						<Border Padding="12,8" Stroke="{StaticResource Border}" StrokeThickness="1">
+						<Border Padding="12,8" Stroke="{DynamicResource Border}" StrokeThickness="1">
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="10" />
 							</Border.StrokeShape>
 							<Border.Triggers>
 								<DataTrigger TargetType="Border" Binding="{Binding IsTurn}" Value="True">
-									<Setter Property="Stroke" Value="{StaticResource Primary}" />
+									<Setter Property="Stroke" Value="{DynamicResource Primary}" />
 									<Setter Property="StrokeThickness" Value="3" />
 								</DataTrigger>
 							</Border.Triggers>
 							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 								<VerticalStackLayout VerticalOptions="Center" Spacing="2">
 									<Label Text="{Binding Player.Name}" FontSize="17" FontAttributes="Bold" LineBreakMode="TailTruncation" />
-									<Label Text="{Binding RoundsWonText}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+									<Label Text="{Binding RoundsWonText}" FontSize="12" TextColor="{DynamicResource TextSecondary}"
 									       IsVisible="{Binding IsBestOf, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}" />
 								</VerticalStackLayout>
 
@@ -51,13 +51,13 @@
 									<Button Clicked="OnMinusClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="16"
 									        Text="{Binding MinusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 									<Label Text="{Binding Score}" FontSize="22" FontAttributes="Bold" MinimumWidthRequest="48"
 									       HorizontalTextAlignment="Center" VerticalOptions="Center" />
 									<Button Clicked="OnPlusClicked" WidthRequest="48" HeightRequest="48" Padding="0" FontSize="16"
 									        Text="{Binding PlusLabel, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
 									        IsVisible="{Binding HasButtons, Source={RelativeSource AncestorType={x:Type vm:DuelViewModel}}, x:DataType=vm:DuelViewModel}"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 								</HorizontalStackLayout>
 							</Grid>
 						</Border>
@@ -66,14 +66,14 @@
 			</VerticalStackLayout>
 		</ScrollView>
 
-		<Label Grid.Row="2" Text="{Binding Message}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+		<Label Grid.Row="2" Text="{Binding Message}" TextColor="{DynamicResource Warning}" FontAttributes="Bold" />
 
 		<!-- The duel ends by itself; Undo takes back a turn, Turn done passes it on. -->
 		<Grid Grid.Row="3" ColumnDefinitions="*,*,2*" ColumnSpacing="8">
 			<Button Text="{loc:T Duel_Cancel}" Clicked="OnCancelClicked" Padding="4,0"
-			        BackgroundColor="Transparent" TextColor="{StaticResource TextSecondary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource TextSecondary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 			<Button Grid.Column="1" Text="{loc:T Duel_Undo}" Clicked="OnUndoClicked" IsEnabled="{Binding CanUndo}" Padding="4,0"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 			<Button Grid.Column="2" Text="{loc:T Duel_TurnDone}" Clicked="OnTurnDoneClicked" IsVisible="{Binding HasTurnDone}" />
 		</Grid>
 

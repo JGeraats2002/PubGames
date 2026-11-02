@@ -5,44 +5,51 @@
              x:Class="PubGames.Views.ImageEditorPage"
              Title="{loc:T ImageEditor_CreateImage}">
 
-	<Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12" RowSpacing="10">
+	<Grid RowDefinitions="*,Auto" Padding="12" RowSpacing="10">
 
-		<!-- Select picks several things to group; Undo takes back the last change; the ⓘ explains the editor. -->
-		<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
-			<Label x:Name="Heading" Text="{loc:T ImageEditor_CreateImage}" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
-			<Button Grid.Column="1" x:Name="SelectButton" Text="{loc:T ImageEditor_Select}" Clicked="OnSelectClicked" HeightRequest="48" Padding="14,0" FontSize="13"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button Grid.Column="2" Text="{loc:T ImageEditor_Undo}" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-			<Button SemanticProperties.Description="{loc:T ImageEditor_Help}" Grid.Column="3" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
-		</Grid>
+		<!-- Everything above Cancel / Use scrolls as one, so nothing falls off a small screen. -->
+		<ScrollView x:Name="PageScroll">
+			<VerticalStackLayout Spacing="10">
 
-		<!-- What can be added to the drawing. -->
-		<ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-			<HorizontalStackLayout x:Name="AddButtons" Spacing="6" />
+				<!-- The title on its own line, so it keeps its size next to the buttons in every language. -->
+				<Label x:Name="Heading" Text="{loc:T ImageEditor_CreateImage}" FontSize="18" FontAttributes="Bold" LineBreakMode="WordWrap" />
+
+				<!-- Select picks several things to group; Undo takes back the last change; the ⓘ explains the editor. -->
+				<HorizontalStackLayout Spacing="8" HorizontalOptions="End">
+					<Button x:Name="SelectButton" Text="{loc:T ImageEditor_Select}" Clicked="OnSelectClicked" HeightRequest="48" Padding="14,0" FontSize="13"
+					        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+					        BorderColor="{DynamicResource Border}" BorderWidth="1" />
+					<Button Text="{loc:T ImageEditor_Undo}" Clicked="OnUndoClicked" HeightRequest="48" Padding="14,0" FontSize="13"
+					        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+					        BorderColor="{DynamicResource Border}" BorderWidth="1" />
+					<Button SemanticProperties.Description="{loc:T ImageEditor_Help}" Text="ⓘ" Clicked="OnInfoClicked" HeightRequest="48" WidthRequest="48" Padding="0" FontSize="16"
+					        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+					        BorderColor="{DynamicResource Border}" BorderWidth="1" />
+				</HorizontalStackLayout>
+
+				<!-- What can be added to the drawing. -->
+				<ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+					<HorizontalStackLayout x:Name="AddButtons" Spacing="6" />
+				</ScrollView>
+
+				<!-- The drawing: tap to select, drag to move, two fingers to resize and turn. -->
+				<Border Stroke="{DynamicResource Border}" StrokeThickness="1" Padding="0" HorizontalOptions="Center">
+					<GraphicsView x:Name="Canvas"
+					              StartInteraction="OnCanvasTouchStarted"
+					              DragInteraction="OnCanvasTouchMoved"
+					              EndInteraction="OnCanvasTouchEnded" />
+				</Border>
+
+				<!-- The choices for the selected item; filled in by the page. -->
+				<VerticalStackLayout x:Name="Options" Spacing="10" />
+
+			</VerticalStackLayout>
 		</ScrollView>
 
-		<!-- The drawing: tap to select, drag to move, two fingers to resize and turn. -->
-		<Border Grid.Row="2" Stroke="{StaticResource Border}" StrokeThickness="1" Padding="0" HorizontalOptions="Center">
-			<GraphicsView x:Name="Canvas"
-			              StartInteraction="OnCanvasTouchStarted"
-			              DragInteraction="OnCanvasTouchMoved"
-			              EndInteraction="OnCanvasTouchEnded" />
-		</Border>
-
-		<!-- The choices for the selected item; filled in by the page. -->
-		<ScrollView Grid.Row="3">
-			<VerticalStackLayout x:Name="Options" Spacing="10" />
-		</ScrollView>
-
-		<Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
+		<Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
 			<Button Text="{loc:T ImageEditor_Cancel}" Clicked="OnCancelClicked"
-			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}"
+			        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 			<Button Grid.Column="1" Text="{loc:T ImageEditor_UseThisImage}" Clicked="OnUseClicked" />
 		</Grid>
 

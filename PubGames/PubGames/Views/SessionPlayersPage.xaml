@@ -4,6 +4,7 @@
              xmlns:loc="clr-namespace:PubGames.Services"
              xmlns:vm="clr-namespace:PubGames.ViewModels"
              xmlns:models="clr-namespace:PubGames.Models"
+             xmlns:views="clr-namespace:PubGames.Views"
              x:Class="PubGames.Views.SessionPlayersPage"
              x:DataType="vm:SessionPlayersViewModel"
              Title="{loc:T SessionPlayers_ChangePlayers}">
@@ -13,34 +14,34 @@
 		<ScrollView>
 			<VerticalStackLayout Spacing="14">
 
-				<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+				<Label Text="{Binding StatusMessage}" FontSize="12" TextColor="{DynamicResource Warning}" />
 
 				<!-- Playing now, in seat order. -->
 				<Label Text="{loc:T SessionPlayers_PlayingNow}" FontSize="16" />
 				<VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Rows}">
 					<BindableLayout.EmptyView>
-						<Label Text="{loc:T SessionPlayers_NobodyIsPlayingYet}" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{loc:T SessionPlayers_NobodyIsPlayingYet}" TextColor="{DynamicResource TextSecondary}" />
 					</BindableLayout.EmptyView>
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="vm:ParticipantRow">
-							<Border Padding="10,6" Stroke="{StaticResource Border}">
+							<Border Padding="10,6" Stroke="{DynamicResource Border}">
 								<Border.StrokeShape>
 									<RoundRectangle CornerRadius="8" />
 								</Border.StrokeShape>
 								<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
-									<Label Text="{Binding Seat}" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+									<Label Text="{Binding Seat}" TextColor="{DynamicResource TextSecondary}" VerticalOptions="Center" />
 									<VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
 										<Label Text="{Binding Player.Name}" LineBreakMode="TailTruncation" />
-										<Label Text="{Binding Score, StringFormat={loc:T SessionPlayers_Score0}}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding Score, StringFormat={loc:T SessionPlayers_Score0}}" FontSize="11" TextColor="{DynamicResource TextSecondary}" />
 									</VerticalStackLayout>
 									<Button SemanticProperties.Description="{loc:T SessionPlayers_MoveUp}" Grid.Column="2" Text="▲" Clicked="OnMoveUpClicked" WidthRequest="48" HeightRequest="48" Padding="0"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 									<Button SemanticProperties.Description="{loc:T SessionPlayers_MoveDown}" Grid.Column="3" Text="▼" Clicked="OnMoveDownClicked" WidthRequest="48" HeightRequest="48" Padding="0"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 									<Button Grid.Column="4" Text="{loc:T SessionPlayers_Replace}" Clicked="OnReplaceClicked" HeightRequest="48" Padding="8,0" FontSize="12"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 									<Button SemanticProperties.Description="{loc:T SessionPlayers_RemovePlayer}" Grid.Column="5" Text="✕" Clicked="OnRemoveClicked" WidthRequest="48" HeightRequest="48" Padding="0"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 								</Grid>
 							</Border>
 						</DataTemplate>
@@ -49,10 +50,10 @@
 
 				<!-- Saved players who aren't playing. -->
 				<Label Text="{loc:T SessionPlayers_AddASavedPlayer}" FontSize="16" Margin="0,8,0,0" IsVisible="{Binding HasAvailablePlayers}" />
-				<FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding AvailablePlayers}">
+				<views:WrapLayout BindableLayout.ItemsSource="{Binding AvailablePlayers}">
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="models:Player">
-							<Border Margin="0,0,8,8" Padding="12,6" Stroke="{StaticResource Border}">
+							<Border Margin="0,0,8,8" Padding="12,6" Stroke="{DynamicResource Border}">
 								<Border.StrokeShape>
 									<RoundRectangle CornerRadius="16" />
 								</Border.StrokeShape>
@@ -63,7 +64,7 @@
 							</Border>
 						</DataTemplate>
 					</BindableLayout.ItemTemplate>
-				</FlexLayout>
+				</views:WrapLayout>
 
 				<!-- Someone who isn't a saved player yet. -->
 				<Label Text="{loc:T SessionPlayers_AddANewPlayer}" FontSize="16" Margin="0,8,0,0" />

@@ -10,23 +10,23 @@
 
 	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
 
-		<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
+		<Label Text="{Binding StatusMessage}" TextColor="{DynamicResource Warning}" FontAttributes="Bold" />
 
 		<CollectionView Grid.Row="1" ItemsSource="{Binding Blocked}">
 			<CollectionView.EmptyView>
-				<Label Text="{loc:T BlockedPlayers_YouHavenTBlockedAnyone}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<Label Text="{loc:T BlockedPlayers_YouHavenTBlockedAnyone}" TextColor="{DynamicResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="services:BlockedPlayer">
-					<Border Margin="0,0,0,8" Padding="12" Stroke="{StaticResource Border}" StrokeShape="RoundRectangle 8">
+					<Border Margin="0,0,0,8" Padding="12" Stroke="{DynamicResource Border}" StrokeShape="RoundRectangle 8">
 						<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 							<VerticalStackLayout VerticalOptions="Center">
 								<Label Text="{Binding Name}" FontAttributes="Bold" />
-								<Label Text="{Binding BlockedLabel}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding BlockedLabel}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 							</VerticalStackLayout>
 							<Button Grid.Column="1" Text="{loc:T BlockedPlayers_Unblock}" Clicked="OnUnblockClicked" VerticalOptions="Center"
-							        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-							        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="12,0" HeightRequest="48" />
+							        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+							        BorderColor="{DynamicResource Border}" BorderWidth="1" FontSize="12" Padding="12,0" HeightRequest="48" />
 						</Grid>
 					</Border>
 				</DataTemplate>

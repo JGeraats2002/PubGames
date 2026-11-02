@@ -371,7 +371,7 @@ public partial class ScoreboardPage : ContentPage
 	{
 		var seat = new Label { FontSize = fontSize, TextColor = Color("TextSecondary"), VerticalOptions = LayoutOptions.Center };
 		seat.SetBinding(Label.TextProperty, static (ParticipantRow r) => r.Seat);
-		seat.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Colors.White)));
+		seat.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Color("OnPrimary"))));
 		// Whose turn it is: an arrow instead of the seat number.
 		seat.Triggers.Add(When<Label>(nameof(ParticipantRow.IsTurn), (Label.TextProperty, "▶"), (Label.FontAttributesProperty, FontAttributes.Bold)));
 		return seat;
@@ -389,7 +389,7 @@ public partial class ScoreboardPage : ContentPage
 			MaxLines = 1,
 			VerticalOptions = LayoutOptions.Center
 		};
-		name.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Colors.White)));
+		name.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Color("OnPrimary"))));
 		return name;
 	}
 
@@ -406,7 +406,7 @@ public partial class ScoreboardPage : ContentPage
 			MaxLines = 1
 		};
 		score.SetBinding(Label.TextProperty, static (ParticipantRow r) => r.Score);
-		score.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Colors.White)));
+		score.Triggers.Add(When<Label>(nameof(ParticipantRow.IsAtLimit), (Label.TextColorProperty, Color("OnPrimary"))));
 		if (_vm.Rules.AllowsTypedAmount)
 		{
 			var tap = new TapGestureRecognizer();
@@ -448,7 +448,7 @@ public partial class ScoreboardPage : ContentPage
 			VerticalOptions = LayoutOptions.Center
 		};
 		badge.SetBinding(IsVisibleProperty, static (ParticipantRow r) => r.HasStatus);
-		badge.Triggers.Add(When<Border>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Colors.White)));
+		badge.Triggers.Add(When<Border>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Color("OnPrimary"))));
 		return badge;
 	}
 
@@ -609,11 +609,11 @@ public partial class ScoreboardPage : ContentPage
 			button.BorderColor = Color("Border");
 			button.BorderWidth = 1;
 			// Stays readable on the dark card of a player at a limit.
-			button.Triggers.Add(When<Button>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Colors.White)));
+			button.Triggers.Add(When<Button>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Color("OnPrimary"))));
 		}
 		else
 			button.Triggers.Add(When<Button>(nameof(ParticipantRow.IsAtLimit),
-				(Button.BorderColorProperty, Colors.White), (Button.BorderWidthProperty, 2.0)));
+				(Button.BorderColorProperty, Color("OnPrimary")), (Button.BorderWidthProperty, 2.0)));
 		button.SetBinding(IsEnabledProperty, static (ParticipantRow r) => r.CanEnter);
 		button.Clicked += async (_, _) =>
 		{
@@ -646,7 +646,7 @@ public partial class ScoreboardPage : ContentPage
 		};
 		box.TextChanged += (_, e) => _amountDrafts[row] = e.NewTextValue ?? string.Empty;
 		// Stays readable on the dark card of a player at a limit.
-		box.Triggers.Add(When<Entry>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Colors.White)));
+		box.Triggers.Add(When<Entry>(nameof(ParticipantRow.IsAtLimit), (BackgroundColorProperty, Color("OnPrimary"))));
 		box.SetBinding(IsEnabledProperty, static (ParticipantRow r) => r.CanEnter);
 		box.Focused += (_, _) => OnAmountBoxFocused(row);
 		box.Unfocused += (_, _) => OnAmountBoxUnfocused();

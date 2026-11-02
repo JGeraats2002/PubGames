@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 ملأ الجميع الورقة كاملة. أنهِ الجولة بـ {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 بجانب ⓘ يبلغ عن مشرف أو مراقب يخالف الاتفاقيات: اختر من ونوع المخالفة واشرح ما حدث. يذكر البلاغ الصفحة التي أُنشئ فيها ويذهب إلى المالك فقط. البلاغ الكاذب قد يؤدي إلى حظرك أنت.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 طلب {0} حذف هذه اللعبة - بانتظار المراجعة",
- "🔒 {0} submitted changes - waiting for review": "🔒 أرسل {0} تعديلات - بانتظار المراجعة"
+ "🔒 {0} submitted changes - waiting for review": "🔒 أرسل {0} تعديلات - بانتظار المراجعة",
+ "Account_Appearance": "المظهر",
+ "Appearance": "المظهر",
+ "Light mode": "الوضع الفاتح",
+ "Dark mode": "الوضع الداكن",
+ "Same as phone": "مثل الهاتف",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "الوضع الفاتح أو الوضع الداكن أو مثل هاتفك (الخيار الافتراضي): يصبح التطبيق داكنًا عندما يصبح هاتفك داكنًا. يُحفظ اختيارك لحسابك على هذا الهاتف. تحتفظ الصور دائمًا بألوانها الخاصة.",
+ "Scrolling": "التمرير",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "كل ما فوق «إلغاء» و«استخدام هذه الصورة» يتحرك بالتمرير، لذا يمكنك دائمًا الوصول إلى كل خيار على شاشة صغيرة: اسحب بجانب الصورة. الإصبع على الصورة نفسها يحرّك ما عليها، لا الصفحة."
 }

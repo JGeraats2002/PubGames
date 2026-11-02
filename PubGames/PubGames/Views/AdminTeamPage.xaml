@@ -11,18 +11,18 @@
 	<ContentPage.Resources>
 		<!-- One team member, used by both the admins and the moderators list. -->
 		<DataTemplate x:Key="MemberTemplate" x:DataType="models:TeamMember">
-			<Frame Margin="0,0,0,8" Padding="12" BorderColor="{StaticResource Border}">
+			<Frame Margin="0,0,0,8" Padding="12" BorderColor="{DynamicResource Border}">
 				<VerticalStackLayout Spacing="6">
 					<!-- The flag of the language they use the app in, to ask the right people to check a game. -->
 					<Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-						<Border WidthRequest="28" HeightRequest="28" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse"
+						<Border WidthRequest="28" HeightRequest="28" StrokeThickness="1" Stroke="{DynamicResource Border}" StrokeShape="Ellipse"
 						        IsVisible="{Binding HasLanguage}" VerticalOptions="Center"
 						        SemanticProperties.Description="{Binding LanguageName}">
 							<Image Source="{Binding LanguageFlag}" Aspect="AspectFill" />
 						</Border>
 						<Label Grid.Column="1" Text="{Binding Label}" VerticalOptions="Center" />
 					</Grid>
-					<Label FontSize="11" TextColor="{StaticResource TextSecondary}">
+					<Label FontSize="11" TextColor="{DynamicResource TextSecondary}">
 						<Label.FormattedText>
 							<FormattedString>
 								<Span Text="{Binding RoleName}" />
@@ -32,18 +32,18 @@
 						</Label.FormattedText>
 					</Label>
 					<!-- Whether they agreed to the admin agreements (the Agreements page). -->
-					<Label Text="{Binding AgreementText}" IsVisible="{Binding HasAgreementText}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+					<Label Text="{Binding AgreementText}" IsVisible="{Binding HasAgreementText}" FontSize="11" TextColor="{DynamicResource TextSecondary}" />
 
 					<HorizontalStackLayout Spacing="8" IsVisible="{Binding HasActions}">
 						<Button Text="{loc:T AdminTeam_MakeAdmin}" Clicked="OnMakeAdminClicked" IsVisible="{Binding CanPromote}"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-						        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+						        BorderColor="{DynamicResource Border}" BorderWidth="1" FontSize="12" />
 						<Button Text="{loc:T AdminTeam_MakeModerator}" Clicked="OnMakeModeratorClicked" IsVisible="{Binding CanDemote}"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-						        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+						        BorderColor="{DynamicResource Border}" BorderWidth="1" FontSize="12" />
 						<Button Text="{loc:T AdminTeam_Remove}" Clicked="OnRemoveClicked" IsVisible="{Binding CanRemove}"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-						        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}"
+						        BorderColor="{DynamicResource Border}" BorderWidth="1" FontSize="12" />
 					</HorizontalStackLayout>
 				</VerticalStackLayout>
 			</Frame>
@@ -55,8 +55,8 @@
 			<Setter Property="Padding" Value="4,0" />
 			<Setter Property="FontSize" Value="13" />
 			<Setter Property="BackgroundColor" Value="Transparent" />
-			<Setter Property="TextColor" Value="{StaticResource Primary}" />
-			<Setter Property="BorderColor" Value="{StaticResource Primary}" />
+			<Setter Property="TextColor" Value="{DynamicResource Primary}" />
+			<Setter Property="BorderColor" Value="{DynamicResource Primary}" />
 			<Setter Property="BorderWidth" Value="1" />
 		</Style>
 	</ContentPage.Resources>
@@ -64,10 +64,10 @@
 	<ScrollView>
 		<VerticalStackLayout Padding="20" Spacing="16">
 
-			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Danger}" FontSize="12" />
+			<Label Text="{Binding StatusMessage}" TextColor="{DynamicResource Danger}" FontSize="12" />
 
 			<Label Text="{loc:T AdminTeam_AddAModerator}" FontSize="16" />
-			<Frame Padding="12" BorderColor="{StaticResource Border}">
+			<Frame Padding="12" BorderColor="{DynamicResource Border}">
 				<VerticalStackLayout Spacing="8">
 					<Entry Placeholder="{loc:T AdminTeam_TheirGoogleAccountEmail}" Text="{Binding NewModeratorEmail}"
 					       Keyboard="Email" IsSpellCheckEnabled="False" IsTextPredictionEnabled="False" />
@@ -84,8 +84,8 @@
 				        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.All}">
 					<Button.Triggers>
 						<DataTrigger TargetType="Button" Binding="{Binding ShowingAll}" Value="True">
-							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-							<Setter Property="TextColor" Value="White" />
+							<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+							<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
@@ -93,8 +93,8 @@
 				        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.Admins}">
 					<Button.Triggers>
 						<DataTrigger TargetType="Button" Binding="{Binding ShowingAdmins}" Value="True">
-							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-							<Setter Property="TextColor" Value="White" />
+							<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+							<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
@@ -102,14 +102,14 @@
 				        Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:TeamFilter.Moderators}">
 					<Button.Triggers>
 						<DataTrigger TargetType="Button" Binding="{Binding ShowingModerators}" Value="True">
-							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-							<Setter Property="TextColor" Value="White" />
+							<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+							<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
 			</Grid>
 
-			<Label Text="{loc:T AdminTeam_NoOneMatchesYourSearch}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+			<Label Text="{loc:T AdminTeam_NoOneMatchesYourSearch}" FontSize="12" TextColor="{DynamicResource TextSecondary}"
 			       IsVisible="{Binding HasNoMatches}" />
 
 			<!-- Admins and moderators in two lists, each alphabetical. -->

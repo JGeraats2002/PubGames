@@ -72,6 +72,6 @@ public class WordsLabel : Label
 	{
 		var resources = Application.Current!.Resources;
 		span.BackgroundColor = selected ? (Color)resources["Primary"] : Colors.Transparent;
-		span.TextColor = selected ? Colors.White : (Color)resources["TextPrimary"];
+		span.TextColor = selected ? (Color)resources["OnPrimary"] : (Color)resources["TextPrimary"];
 	}
 }

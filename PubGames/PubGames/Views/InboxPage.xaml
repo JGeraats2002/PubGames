@@ -18,11 +18,11 @@
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="vm:InboxFilter">
 						<Button Text="{Binding Text}" Clicked="OnFilterClicked" HeightRequest="48" Padding="12,0" FontSize="12"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1">
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1">
 							<Button.Triggers>
 								<DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-									<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-									<Setter Property="TextColor" Value="White" />
+									<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+									<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 								</DataTrigger>
 							</Button.Triggers>
 						</Button>
@@ -31,50 +31,50 @@
 			</HorizontalStackLayout>
 		</ScrollView>
 
-		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{DynamicResource Warning}" />
 
 		<CollectionView Grid.Row="3" ItemsSource="{Binding Messages}">
 			<CollectionView.EmptyView>
 				<Label Text="{loc:T Inbox_NoMessages}"
-				       TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				       TextColor="{DynamicResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="models:InboxMessage">
-					<Border Margin="0,0,0,8" Padding="12" Stroke="{StaticResource Border}">
+					<Border Margin="0,0,0,8" Padding="12" Stroke="{DynamicResource Border}">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
 						<VerticalStackLayout Spacing="6">
 							<Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
 								<Label Text="{Binding Heading}" FontAttributes="Bold" />
-								<Border Grid.Column="1" IsVisible="{Binding IsUnread}" BackgroundColor="{StaticResource Accent}"
+								<Border Grid.Column="1" IsVisible="{Binding IsUnread}" BackgroundColor="{DynamicResource Accent}"
 								        StrokeThickness="0" Padding="6,1" VerticalOptions="Start">
 									<Border.StrokeShape>
 										<RoundRectangle CornerRadius="4" />
 									</Border.StrokeShape>
-									<Label Text="{loc:T Inbox_New}" TextColor="White" FontSize="11" />
+									<Label Text="{loc:T Inbox_New}" TextColor="{DynamicResource OnPrimary}" FontSize="11" />
 								</Border>
 							</Grid>
 							<!-- What it's about; reports and review decisions stand out in red. -->
 							<HorizontalStackLayout Spacing="8">
-								<Border StrokeThickness="0" Padding="6,1" BackgroundColor="{StaticResource SurfaceMuted}" VerticalOptions="Center">
+								<Border StrokeThickness="0" Padding="6,1" BackgroundColor="{DynamicResource SurfaceMuted}" VerticalOptions="Center">
 									<Border.StrokeShape>
 										<RoundRectangle CornerRadius="4" />
 									</Border.StrokeShape>
 									<Border.Triggers>
 										<DataTrigger TargetType="Border" Binding="{Binding IsHighPriority}" Value="True">
-											<Setter Property="BackgroundColor" Value="{StaticResource Danger}" />
+											<Setter Property="BackgroundColor" Value="{DynamicResource Danger}" />
 										</DataTrigger>
 									</Border.Triggers>
 									<Label Text="{Binding CategoryLabel}" FontSize="11">
 										<Label.Triggers>
 											<DataTrigger TargetType="Label" Binding="{Binding IsHighPriority}" Value="True">
-												<Setter Property="TextColor" Value="White" />
+												<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 											</DataTrigger>
 										</Label.Triggers>
 									</Label>
 								</Border>
-								<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" />
+								<Label Text="{Binding SentLabel}" FontSize="11" TextColor="{DynamicResource TextSecondary}" VerticalOptions="Center" />
 							</HorizontalStackLayout>
 							<Label Text="{Binding ShownText}" FontSize="14" />
 							<HorizontalStackLayout Spacing="8">
@@ -85,11 +85,11 @@
 								<Button Text="{loc:T Inbox_TakeOver}" Clicked="OnTakeOverClicked" IsVisible="{Binding IsDraftTakeover}"
 								        FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="{loc:T Inbox_Reply}" Clicked="OnReplyClicked" IsVisible="{Binding CanReply}"
-								        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
+								        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+								        BorderColor="{DynamicResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
 								<Button Text="{loc:T Inbox_Delete}" Clicked="OnDeleteClicked"
-								        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-								        BorderColor="{StaticResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
+								        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}"
+								        BorderColor="{DynamicResource Border}" BorderWidth="1" FontSize="12" Padding="10,0" HeightRequest="48" />
 							</HorizontalStackLayout>
 						</VerticalStackLayout>
 					</Border>

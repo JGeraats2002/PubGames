@@ -12,7 +12,7 @@
 
 			<!-- What other players see when they add you by your code. -->
 			<Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-				<Border WidthRequest="88" HeightRequest="88" StrokeThickness="0" BackgroundColor="{StaticResource SurfaceMuted}">
+				<Border WidthRequest="88" HeightRequest="88" StrokeThickness="0" BackgroundColor="{DynamicResource SurfaceMuted}">
 					<Border.StrokeShape>
 						<RoundRectangle CornerRadius="44" />
 					</Border.StrokeShape>
@@ -27,35 +27,35 @@
 					</Grid>
 				</Border>
 				<VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="4">
-					<Label Text="{Binding Email}" TextColor="{StaticResource TextSecondary}" FontSize="13" />
-					<Border IsVisible="{Binding IsTeamMember}" BackgroundColor="{StaticResource Accent}"
+					<Label Text="{Binding Email}" TextColor="{DynamicResource TextSecondary}" FontSize="13" />
+					<Border IsVisible="{Binding IsTeamMember}" BackgroundColor="{DynamicResource Accent}"
 					        StrokeThickness="0" Padding="10,4" HorizontalOptions="Start">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="6" />
 						</Border.StrokeShape>
-						<Label Text="{Binding RoleName}" TextColor="White" FontSize="12" />
+						<Label Text="{Binding RoleName}" TextColor="{DynamicResource OnPrimary}" FontSize="12" />
 					</Border>
 					<Button Text="{loc:T Profile_ChangePicture}" Command="{Binding ChangePhotoCommand}" HorizontalOptions="Start"
 					        HeightRequest="48" Padding="12,0" FontSize="13"
-					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-					        BorderColor="{StaticResource Border}" BorderWidth="1" />
+					        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+					        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 				</VerticalStackLayout>
 			</Grid>
 
-			<Label Text="{loc:T Profile_Name}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Label Text="{loc:T Profile_Name}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 			<Entry Text="{Binding ProfileName}" Placeholder="{loc:T Profile_YourName}" MaxLength="40" />
-			<Label Text="{loc:T Profile_Nickname}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Label Text="{loc:T Profile_Nickname}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 			<Entry Text="{Binding Nickname}" Placeholder="{loc:T Profile_WhatPlayersCallYou}" MaxLength="30" />
 			<Button Text="{loc:T Profile_SaveProfile}" Command="{Binding SaveProfileCommand}" />
 
 			<!-- The personal code: others add you with it, so the games count in your stats. -->
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" Margin="0,6,0,0">
+			<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" Margin="0,6,0,0">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
 				<Grid ColumnDefinitions="*,Auto">
 					<VerticalStackLayout VerticalOptions="Center">
-						<Label Text="{loc:T Profile_YourPlayerCode}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{loc:T Profile_YourPlayerCode}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 						<Label Text="{Binding Code}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
 					</VerticalStackLayout>
 					<Button Grid.Column="1" Text="{loc:T Profile_Copy}" Command="{Binding CopyCodeCommand}" VerticalOptions="Center"
@@ -64,27 +64,27 @@
 			</Border>
 
 			<!-- The owner only: the friend code, for friends to unlock a game for free. Works 15 minutes; New code makes one for 30. -->
-			<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" IsVisible="{Binding IsOwner}">
+			<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="14,10" IsVisible="{Binding IsOwner}">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
 				<Grid ColumnDefinitions="*,Auto">
 					<VerticalStackLayout VerticalOptions="Center">
-						<Label Text="{loc:T Profile_FriendCode}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{loc:T Profile_FriendCode}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 						<Label Text="{Binding FriendCode}" FontSize="26" FontAttributes="Bold" CharacterSpacing="4" />
-						<Label Text="{Binding FriendCodeValidity}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding FriendCodeValidity}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 					</VerticalStackLayout>
 					<VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
 						<Button Text="{loc:T Profile_Copy}" Command="{Binding CopyFriendCodeCommand}" HeightRequest="48" Padding="14,0" FontSize="13" />
 						<Button Text="{loc:T Profile_NewCode}" Command="{Binding RenewFriendCodeCommand}" HeightRequest="48" Padding="14,0" FontSize="13"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-						        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+						        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 					</VerticalStackLayout>
 				</Grid>
 			</Border>
 
-			<Label Text="{Binding ProfileMessage}" TextColor="{StaticResource Warning}" FontAttributes="Bold" />
-			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource Primary}" />
+			<Label Text="{Binding ProfileMessage}" TextColor="{DynamicResource Warning}" FontAttributes="Bold" />
+			<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource Primary}" />
 
 		</VerticalStackLayout>
 	</ScrollView>

@@ -10,7 +10,7 @@
 	<!-- The Account tab's main page: one row per heading, each opening its own page. -->
 	<ContentPage.Resources>
 		<Style x:Key="SettingsRow" TargetType="Border">
-			<Setter Property="Stroke" Value="{StaticResource Border}" />
+			<Setter Property="Stroke" Value="{DynamicResource Border}" />
 			<Setter Property="Padding" Value="14,12" />
 			<Setter Property="StrokeShape" Value="RoundRectangle 10" />
 		</Style>
@@ -25,7 +25,7 @@
 					<TapGestureRecognizer Tapped="OnProfileTapped" />
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-					<Border WidthRequest="56" HeightRequest="56" StrokeThickness="0" BackgroundColor="{StaticResource SurfaceMuted}"
+					<Border WidthRequest="56" HeightRequest="56" StrokeThickness="0" BackgroundColor="{DynamicResource SurfaceMuted}"
 					        StrokeShape="RoundRectangle 28">
 						<Grid>
 							<Label Text="{Binding Initials}" FontSize="20" IsVisible="{Binding HasNoPhoto}"
@@ -36,10 +36,10 @@
 					</Border>
 					<VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
 						<Label Text="{loc:T Account_Profile}" FontSize="18" FontAttributes="Bold" />
-						<Label Text="{Binding ProfileName}" FontSize="13" TextColor="{StaticResource TextSecondary}" LineBreakMode="TailTruncation" />
-						<Label Text="{Binding Code, StringFormat={loc:T Account_PlayerCode0}}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding ProfileName}" FontSize="13" TextColor="{DynamicResource TextSecondary}" LineBreakMode="TailTruncation" />
+						<Label Text="{Binding Code, StringFormat={loc:T Account_PlayerCode0}}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 					</VerticalStackLayout>
-					<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
@@ -51,11 +51,11 @@
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
 					<VerticalStackLayout Spacing="2">
 						<Label Text="{loc:T Account_MyStats}" FontSize="18" FontAttributes="Bold" />
-						<Label Text="{Binding Totals.Summary}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
-						<Label Text="{Binding StatsMessage}" FontSize="12" TextColor="{StaticResource TextSecondary}"
+						<Label Text="{Binding Totals.Summary}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
+						<Label Text="{Binding StatsMessage}" FontSize="12" TextColor="{DynamicResource TextSecondary}"
 						       IsVisible="{Binding HasStatsMessage}" />
 					</VerticalStackLayout>
-					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
@@ -66,7 +66,7 @@
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
 					<Label Text="{loc:T Account_PubGamesPass}" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
-					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
@@ -76,15 +76,29 @@
 					<TapGestureRecognizer Tapped="OnLanguageTapped" />
 				</Border.GestureRecognizers>
 				<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-					<Border WidthRequest="32" HeightRequest="32" StrokeThickness="1" Stroke="{StaticResource Border}"
+					<Border WidthRequest="32" HeightRequest="32" StrokeThickness="1" Stroke="{DynamicResource Border}"
 					        StrokeShape="Ellipse" VerticalOptions="Center">
 						<Image Source="{Binding LanguageFlag}" Aspect="AspectFill" />
 					</Border>
 					<VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
 						<Label Text="{loc:T Account_Language}" FontSize="18" FontAttributes="Bold" />
-						<Label Text="{Binding LanguageName}" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+						<Label Text="{Binding LanguageName}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
 					</VerticalStackLayout>
-					<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					<Label Grid.Column="2" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
+				</Grid>
+			</Border>
+
+			<!-- Light, dark or like the phone. -->
+			<Border Style="{StaticResource SettingsRow}">
+				<Border.GestureRecognizers>
+					<TapGestureRecognizer Tapped="OnAppearanceTapped" />
+				</Border.GestureRecognizers>
+				<Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+					<VerticalStackLayout Spacing="2">
+						<Label Text="{loc:T Account_Appearance}" FontSize="18" FontAttributes="Bold" />
+						<Label Text="{Binding AppearanceName}" FontSize="13" TextColor="{DynamicResource TextSecondary}" />
+					</VerticalStackLayout>
+					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
@@ -97,7 +111,7 @@
 					<VerticalStackLayout Spacing="2">
 						<Label Text="{loc:T Account_BlockedPlayers}" FontSize="18" FontAttributes="Bold" />
 					</VerticalStackLayout>
-					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
@@ -110,18 +124,18 @@
 					<VerticalStackLayout Spacing="2">
 						<Label Text="{loc:T Account_Feedback}" FontSize="18" FontAttributes="Bold" />
 					</VerticalStackLayout>
-					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{StaticResource Primary}" VerticalOptions="Center" />
+					<Label Grid.Column="1" Text="›" FontSize="22" TextColor="{DynamicResource Primary}" VerticalOptions="Center" />
 				</Grid>
 			</Border>
 
 			<!-- Signing out, on its own. -->
 			<Button Text="{loc:T Account_SignOut}" Clicked="OnSignOutClicked" Margin="0,16,0,0"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}"
+			        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 
 			<!-- Deleting the account and its data for good (required by Google Play for apps with accounts). -->
 			<Button Text="{loc:T Account_DeleteAccount}" Clicked="OnDeleteAccountClicked"
-			        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderWidth="0" FontSize="13" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderWidth="0" FontSize="13" />
 
 		</VerticalStackLayout>
 	</ScrollView>

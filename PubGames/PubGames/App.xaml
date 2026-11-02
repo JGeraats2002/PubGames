@@ -9,11 +9,16 @@
 			<services:InvertedBoolConverter x:Key="InvertedBoolConverter" />
 			<services:ImageRefConverter x:Key="ImageRefConverter" />
 
+			<!-- The colours of the light look. Services/Appearance.cs swaps them for the dark ones when the app is
+			     dark (the phone's setting, or the choice under Account), so pages use them as DynamicResource. -->
 			<Color x:Key="Primary">#3C3489</Color>
 			<Color x:Key="PrimaryDark">#26215C</Color>
+			<!-- Text and marks on a coloured fill (Primary, PrimaryDark, Accent, ScoreLimit, Danger). -->
+			<Color x:Key="OnPrimary">#FFFFFF</Color>
 			<Color x:Key="Accent">#0F6E56</Color>
 			<Color x:Key="Danger">#A32D2D</Color>
 			<Color x:Key="Warning">#854F0B</Color>
+			<Color x:Key="PageBackground">#FFFFFF</Color>
 			<Color x:Key="SurfaceLight">#FFFFFF</Color>
 			<Color x:Key="SurfaceMuted">#F1EFE8</Color>
 			<Color x:Key="TextPrimary">#2C2C2A</Color>
@@ -26,20 +31,66 @@
 			<Color x:Key="ScoreWarningTint">#FFF1CC</Color>
 			<Color x:Key="ScoreLimit">#0072B2</Color>
 
+			<!-- The sign-in page always has the brand colours, also when the app is dark. -->
+			<Color x:Key="Brand">#3C3489</Color>
+			<Color x:Key="BrandDark">#26215C</Color>
+
+			<!-- Every page gets the page colour, so text is readable whatever the phone's own theme is. -->
+			<Style TargetType="ContentPage" ApplyToDerivedTypes="True">
+				<Setter Property="BackgroundColor" Value="{DynamicResource PageBackground}" />
+			</Style>
+
 			<Style TargetType="Label">
-				<Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+				<Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
 			</Style>
 
 			<Style TargetType="Button">
-				<Setter Property="TextColor" Value="White" />
-				<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+				<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
+				<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
 				<Setter Property="CornerRadius" Value="8" />
 				<Setter Property="Padding" Value="16,10" />
 			</Style>
 
 			<Style TargetType="Entry">
-				<Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
-				<Setter Property="PlaceholderColor" Value="{StaticResource TextSecondary}" />
+				<Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
+				<Setter Property="PlaceholderColor" Value="{DynamicResource TextSecondary}" />
+			</Style>
+
+			<Style TargetType="Editor" ApplyToDerivedTypes="True">
+				<Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
+				<Setter Property="PlaceholderColor" Value="{DynamicResource TextSecondary}" />
+			</Style>
+
+			<Style TargetType="SearchBar">
+				<Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
+				<Setter Property="PlaceholderColor" Value="{DynamicResource TextSecondary}" />
+				<Setter Property="CancelButtonColor" Value="{DynamicResource TextSecondary}" />
+			</Style>
+
+			<Style TargetType="Picker">
+				<Setter Property="TextColor" Value="{DynamicResource TextPrimary}" />
+				<Setter Property="TitleColor" Value="{DynamicResource TextSecondary}" />
+			</Style>
+
+			<Style TargetType="CheckBox">
+				<Setter Property="Color" Value="{DynamicResource Primary}" />
+			</Style>
+
+			<Style TargetType="Switch">
+				<Setter Property="OnColor" Value="{DynamicResource Primary}" />
+			</Style>
+
+			<Style TargetType="Slider">
+				<Setter Property="MinimumTrackColor" Value="{DynamicResource Primary}" />
+				<Setter Property="ThumbColor" Value="{DynamicResource Primary}" />
+			</Style>
+
+			<Style TargetType="ActivityIndicator">
+				<Setter Property="Color" Value="{DynamicResource Primary}" />
+			</Style>
+
+			<Style TargetType="Frame">
+				<Setter Property="BackgroundColor" Value="{DynamicResource SurfaceLight}" />
 			</Style>
 
 		</ResourceDictionary>

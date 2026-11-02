@@ -11,15 +11,15 @@
 
 	<Grid RowDefinitions="Auto,*" Padding="20" RowSpacing="12">
 
-		<Label Text="{Binding SyncMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+		<Label Text="{Binding SyncMessage}" FontSize="12" TextColor="{DynamicResource Warning}" />
 
 		<CollectionView Grid.Row="1" ItemsSource="{Binding Requests}">
 			<CollectionView.EmptyView>
-				<Label Text="{loc:T ReviewRequests_NoRequestsWaitingForReview}" TextColor="{StaticResource TextSecondary}" Margin="0,20,0,0" />
+				<Label Text="{loc:T ReviewRequests_NoRequestsWaitingForReview}" TextColor="{DynamicResource TextSecondary}" Margin="0,20,0,0" />
 			</CollectionView.EmptyView>
 			<CollectionView.ItemTemplate>
 				<DataTemplate x:DataType="models:ReviewRequest">
-					<Border Margin="0,0,0,8" Padding="12" Stroke="{StaticResource Border}">
+					<Border Margin="0,0,0,8" Padding="12" Stroke="{DynamicResource Border}">
 						<Border.StrokeShape>
 							<RoundRectangle CornerRadius="8" />
 						</Border.StrokeShape>
@@ -33,16 +33,16 @@
 								<HorizontalStackLayout Spacing="4" IsVisible="{Binding TouchesTranslations}" BindableLayout.ItemsSource="{Binding TouchedLanguages}">
 									<BindableLayout.ItemTemplate>
 										<DataTemplate x:DataType="services:AppLanguageInfo">
-											<Border WidthRequest="20" HeightRequest="20" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse"
+											<Border WidthRequest="20" HeightRequest="20" StrokeThickness="1" Stroke="{DynamicResource Border}" StrokeShape="Ellipse"
 											        SemanticProperties.Description="{Binding Name}">
 												<Image Source="{Binding Flag}" Aspect="AspectFill" />
 											</Border>
 										</DataTemplate>
 									</BindableLayout.ItemTemplate>
 								</HorizontalStackLayout>
-								<Label Text="{Binding SubmittedLabel}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+								<Label Text="{Binding SubmittedLabel}" FontSize="11" TextColor="{DynamicResource TextSecondary}" />
 							</VerticalStackLayout>
-							<Label Grid.Column="1" Text="{loc:T ReviewRequests_Review}" VerticalOptions="Center" TextColor="{StaticResource Primary}" />
+							<Label Grid.Column="1" Text="{loc:T ReviewRequests_Review}" VerticalOptions="Center" TextColor="{DynamicResource Primary}" />
 						</Grid>
 					</Border>
 				</DataTemplate>

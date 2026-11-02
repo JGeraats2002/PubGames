@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 Todos preencheram a folha inteira. Termine a partida com {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 ao lado do ⓘ denuncia um admin ou moderador que não cumpre as regras: escolhe quem, de que tipo e explica o que aconteceu. A denúncia indica em que página foi feita e vai só para o proprietário. Uma denúncia falsa pode levar ao teu próprio banimento.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} pediu para excluir este jogo - aguardando revisão",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} enviou alterações - aguardando revisão"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} enviou alterações - aguardando revisão",
+ "Account_Appearance": "Aparência",
+ "Appearance": "Aparência",
+ "Light mode": "Modo claro",
+ "Dark mode": "Modo escuro",
+ "Same as phone": "Igual ao celular",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "Modo claro, modo escuro ou igual ao seu celular (a escolha padrão): o app fica escuro quando o celular fica. Sua escolha é lembrada para sua conta neste celular. As imagens sempre mantêm suas próprias cores.",
+ "Scrolling": "Rolagem",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "Tudo acima de Cancelar e Usar esta imagem rola junto, então numa tela pequena você sempre alcança cada opção: deslize ao lado da imagem. Um dedo na própria imagem move o que está nela, não a página."
 }

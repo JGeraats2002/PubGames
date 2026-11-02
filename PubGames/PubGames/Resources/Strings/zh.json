@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 所有人都已填完整张计分表。用{0}结束本小局。",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "ⓘ 旁边的 📣 用于举报违反约定的管理员或版主：选择对象和类型，并说明发生了什么。举报会注明发起页面，并且只发给所有者。虚假举报可能导致你自己被封禁。",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} 申请删除此游戏——等待审核",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} 提交了修改——等待审核"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} 提交了修改——等待审核",
+ "Account_Appearance": "外观",
+ "Appearance": "外观",
+ "Light mode": "浅色模式",
+ "Dark mode": "深色模式",
+ "Same as phone": "跟随手机",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "浅色模式、深色模式或跟随手机（默认选项）：手机变暗时，应用也会变暗。你的选择会在这部手机上为你的账户保存。图片始终保持其原本的颜色。",
+ "Scrolling": "滚动",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "“取消”和“使用此图片”上方的所有内容都可以滚动，因此在小屏幕上也总能找到每个选项：在图片旁边滑动。手指放在图片上时移动的是图片上的内容，而不是页面。"
 }

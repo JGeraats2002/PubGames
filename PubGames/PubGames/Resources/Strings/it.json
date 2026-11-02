@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 Tutti hanno compilato l'intero foglio. Chiudi la manche con {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 accanto alla ⓘ segnala un admin o un moderatore che non rispetta le regole: scegli chi, di che tipo e spiega cos'è successo. La segnalazione indica la pagina da cui è stata fatta e va solo al proprietario. Una segnalazione falsa può portare al tuo stesso ban.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} ha chiesto di eliminare questo gioco - in attesa di revisione",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} ha inviato modifiche - in attesa di revisione"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} ha inviato modifiche - in attesa di revisione",
+ "Account_Appearance": "Aspetto",
+ "Appearance": "Aspetto",
+ "Light mode": "Modalità chiara",
+ "Dark mode": "Modalità scura",
+ "Same as phone": "Come il telefono",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "Modalità chiara, modalità scura o come il tuo telefono (la scelta standard): l'app diventa scura quando lo diventa il telefono. La tua scelta viene ricordata per il tuo account su questo telefono. Le immagini mantengono sempre i propri colori.",
+ "Scrolling": "Scorrimento",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "Tutto ciò che sta sopra Annulla e Usa questa immagine scorre, così su uno schermo piccolo raggiungi sempre ogni scelta: scorri accanto all'immagine. Un dito sull'immagine sposta ciò che c'è sopra, non la pagina."
 }

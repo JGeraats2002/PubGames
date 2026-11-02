@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 Alle haben den ganzen Block ausgefüllt. Beende die Runde mit {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 neben dem ⓘ meldet einen Admin oder Moderator, der gegen die Regeln verstößt: Wähle wen und welche Art, und erkläre, was passiert ist. Die Meldung sagt, auf welcher Seite sie gemacht wurde, und geht nur an den Eigentümer. Eine falsche Meldung kann zu deiner eigenen Sperre führen.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} hat die Löschung dieses Spiels beantragt - wartet auf Prüfung",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} hat Änderungen eingereicht - wartet auf Prüfung"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} hat Änderungen eingereicht - wartet auf Prüfung",
+ "Account_Appearance": "Darstellung",
+ "Appearance": "Darstellung",
+ "Light mode": "Heller Modus",
+ "Dark mode": "Dunkler Modus",
+ "Same as phone": "Wie das Handy",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "Heller Modus, dunkler Modus oder wie dein Handy (die Standardwahl): Die App wird dann dunkel, wenn dein Handy dunkel wird. Deine Wahl wird für dein Konto auf diesem Handy gespeichert. Bilder behalten immer ihre eigenen Farben.",
+ "Scrolling": "Scrollen",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "Alles über Abbrechen und Dieses Bild verwenden scrollt mit, sodass du auf einem kleinen Bildschirm jede Auswahl erreichst: Wische neben dem Bild. Ein Finger auf dem Bild selbst verschiebt, was darauf ist, nicht die Seite."
 }

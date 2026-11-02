@@ -13,15 +13,15 @@
 		<Button Text="{Binding AddGroupButtonText}" Clicked="OnAddGroupClicked" />
 
 		<Button Grid.Row="1" Text="{Binding AddButtonText}" Clicked="OnAddClicked"
-		        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-		        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+		        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+		        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 
-		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{StaticResource Warning}" />
+		<Label Grid.Row="2" Text="{Binding StatusMessage}" FontSize="12" TextColor="{DynamicResource Warning}" />
 
 		<!-- Categories under their main category. -->
 		<CollectionView Grid.Row="3" ItemsSource="{Binding Sections}" IsGrouped="True">
 			<CollectionView.EmptyView>
-				<Label Text="{loc:T Categories_NoCategoriesYet}" TextColor="{StaticResource TextSecondary}" />
+				<Label Text="{loc:T Categories_NoCategoriesYet}" TextColor="{DynamicResource TextSecondary}" />
 			</CollectionView.EmptyView>
 			<CollectionView.GroupHeaderTemplate>
 				<DataTemplate x:DataType="vm:CategorySection">
@@ -31,10 +31,10 @@
 						</Grid.GestureRecognizers>
 						<Label Text="{Binding Name}" FontAttributes="Bold" VerticalOptions="Center" />
 						<!-- Tap to add a category to it, rename or delete it (moderators: to propose that). -->
-						<Label Grid.Column="1" Text="{loc:T Categories_Edit}" FontSize="12" TextColor="{StaticResource Primary}"
+						<Label Grid.Column="1" Text="{loc:T Categories_Edit}" FontSize="12" TextColor="{DynamicResource Primary}"
 						       VerticalOptions="Center" Padding="10,0" IsVisible="{Binding CanEdit}" />
 						<Label Grid.Row="1" Grid.ColumnSpan="2" Text="{loc:T Categories_NoCategoriesYet}" FontSize="12"
-						       TextColor="{StaticResource TextSecondary}" IsVisible="{Binding IsEmpty}" />
+						       TextColor="{DynamicResource TextSecondary}" IsVisible="{Binding IsEmpty}" />
 					</Grid>
 				</DataTemplate>
 			</CollectionView.GroupHeaderTemplate>
@@ -47,13 +47,13 @@
 						</Grid.GestureRecognizers>
 						<Label Text="{Binding Name}" VerticalOptions="Center" />
 						<Label Grid.Column="1" Text="{Binding CountLabel}" FontSize="12"
-						       TextColor="{StaticResource TextSecondary}" VerticalOptions="Center" Padding="0,0,6,0" />
+						       TextColor="{DynamicResource TextSecondary}" VerticalOptions="Center" Padding="0,0,6,0" />
 						<Button SemanticProperties.Description="{loc:T Categories_MoveUp}" Grid.Column="2" Text="▲" Clicked="OnCategoryUpClicked" IsVisible="{Binding CanReorder}"
 						        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="12"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 						<Button SemanticProperties.Description="{loc:T Categories_MoveDown}" Grid.Column="3" Text="▼" Clicked="OnCategoryDownClicked" IsVisible="{Binding CanReorder}"
 						        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="12"
-						        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+						        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 					</Grid>
 				</DataTemplate>
 			</CollectionView.ItemTemplate>

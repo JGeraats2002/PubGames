@@ -13,8 +13,8 @@
 
 		<ApplicationTitle>Pub Games</ApplicationTitle>
 		<ApplicationId>com.pubgems.pubgames</ApplicationId>
-		<ApplicationDisplayVersion>1.4</ApplicationDisplayVersion>
-		<ApplicationVersion>5</ApplicationVersion>
+		<ApplicationDisplayVersion>1.5</ApplicationDisplayVersion>
+		<ApplicationVersion>6</ApplicationVersion>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 	</PropertyGroup>

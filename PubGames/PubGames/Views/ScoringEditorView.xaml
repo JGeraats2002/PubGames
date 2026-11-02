@@ -13,7 +13,7 @@
 
 		<!-- Both plus / minus types: the numbers the scoreboard uses. Each limit and the warning has its own switch.
 		     Plus / minus has a step; Manual plus / minus has rules for the amounts players type in. -->
-		<Border IsVisible="{Binding HasScoreSettings}" BackgroundColor="{StaticResource SurfaceMuted}"
+		<Border IsVisible="{Binding HasScoreSettings}" BackgroundColor="{DynamicResource SurfaceMuted}"
 		        StrokeThickness="0" Padding="12">
 			<Border.StrokeShape>
 				<RoundRectangle CornerRadius="8" />
@@ -59,7 +59,7 @@
 								<VerticalStackLayout Spacing="4">
 								<Button Text="{Binding JoinerText}" Clicked="OnJoinerClicked" IsVisible="{Binding HasJoiner}"
 								        HorizontalOptions="Start" HeightRequest="48" Padding="14,0" FontSize="12" FontAttributes="Bold"
-								        BackgroundColor="{StaticResource PrimaryDark}" TextColor="White" />
+								        BackgroundColor="{DynamicResource PrimaryDark}" TextColor="{DynamicResource OnPrimary}" />
 								<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
 									<Picker Title="{loc:T ScoringEditorView_ChooseRule}" ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" VerticalOptions="Center" />
 									<Entry Grid.Column="1" Text="{Binding Value}" Placeholder="{Binding ValuePlaceholder}" Keyboard="Telephone"
@@ -68,7 +68,7 @@
 									       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding IsBetween}" />
 									<Button SemanticProperties.Description="{loc:T ScoringEditorView_RemoveRule}" Grid.Column="3" Text="✕" Clicked="OnRemoveAmountRuleClicked" WidthRequest="48" HeightRequest="48"
 									        Padding="0" FontSize="14" VerticalOptions="Center"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 								</Grid>
 								</VerticalStackLayout>
 							</DataTemplate>
@@ -77,7 +77,7 @@
 					<Label Text="{Binding AmountRulesPreview}" FontSize="12" FontAttributes="Bold" />
 					<Button Text="{loc:T ScoringEditorView_AddRule}" Clicked="OnAddAmountRuleClicked" HorizontalOptions="Start"
 					        HeightRequest="48" Padding="14,0" FontSize="13"
-					        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+					        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 				</VerticalStackLayout>
 			</VerticalStackLayout>
 		</Border>
@@ -87,7 +87,7 @@
 			<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Sections}">
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="vm:EditableSheetSection">
-						<Border BackgroundColor="{StaticResource SurfaceMuted}" StrokeThickness="0" Padding="12">
+						<Border BackgroundColor="{DynamicResource SurfaceMuted}" StrokeThickness="0" Padding="12">
 							<Border.StrokeShape>
 								<RoundRectangle CornerRadius="8" />
 							</Border.StrokeShape>
@@ -96,7 +96,7 @@
 									<Entry Text="{Binding Name}" Placeholder="{loc:T ScoringEditorView_ListName}" FontAttributes="Bold" />
 									<Button Grid.Column="1" SemanticProperties.Description="{loc:T ScoringEditorView_RemoveList}" Text="✕" Clicked="OnRemoveSectionClicked"
 										        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
-										        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+										        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 								</Grid>
 
 								<!-- The rows, each with a name and its own rules. -->
@@ -104,7 +104,7 @@
 								<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Rows}">
 									<BindableLayout.ItemTemplate>
 										<DataTemplate x:DataType="vm:EditableSheetRow">
-											<Border StrokeThickness="1" Stroke="{StaticResource Border}" Padding="8">
+											<Border StrokeThickness="1" Stroke="{DynamicResource Border}" Padding="8">
 												<Border.StrokeShape>
 													<RoundRectangle CornerRadius="6" />
 												</Border.StrokeShape>
@@ -113,7 +113,7 @@
 														<Entry Text="{Binding Name}" Placeholder="{loc:T ScoringEditorView_RowName}" />
 														<Button Grid.Column="1" SemanticProperties.Description="{loc:T ScoringEditorView_RemoveRow}" Text="✕" Clicked="OnRemoveRowClicked"
 															        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
-															        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+															        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 													</Grid>
 													<!-- A fixed score is ticked off on the scoreboard, like Full house (25); otherwise it's typed within the rules. -->
 													<Grid ColumnDefinitions="Auto,*,100" ColumnSpacing="8">
@@ -132,7 +132,7 @@
 																<VerticalStackLayout Spacing="4">
 																	<Button Text="{Binding JoinerText}" Clicked="OnJoinerClicked" IsVisible="{Binding HasJoiner}"
 																	        HorizontalOptions="Start" HeightRequest="48" Padding="14,0" FontSize="12" FontAttributes="Bold"
-																	        BackgroundColor="{StaticResource PrimaryDark}" TextColor="White" />
+																	        BackgroundColor="{DynamicResource PrimaryDark}" TextColor="{DynamicResource OnPrimary}" />
 																	<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="6">
 																		<Picker Title="{loc:T ScoringEditorView_ChooseRule}" ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" VerticalOptions="Center" />
 																		<Entry Grid.Column="1" Text="{Binding Value}" Placeholder="{Binding ValuePlaceholder}" Keyboard="Telephone"
@@ -141,7 +141,7 @@
 																		       WidthRequest="64" HorizontalTextAlignment="End" IsVisible="{Binding IsBetween}" />
 																		<Button SemanticProperties.Description="{loc:T ScoringEditorView_RemoveRule}" Grid.Column="3" Text="✕" Clicked="OnRemoveRowRuleClicked" WidthRequest="48" HeightRequest="48"
 																		        Padding="0" FontSize="14" VerticalOptions="Center"
-																		        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+																		        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 																	</Grid>
 																</VerticalStackLayout>
 															</DataTemplate>
@@ -150,7 +150,7 @@
 													<Label Text="{Binding RulesPreview}" FontSize="12" />
 													<Button Text="{loc:T ScoringEditorView_AddRule}" Clicked="OnAddRowRuleClicked" HorizontalOptions="Start" IsVisible="{Binding IsTyped}"
 														        HeightRequest="48" Padding="14,0" FontSize="12"
-														        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+														        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 												</VerticalStackLayout>
 											</Border>
 										</DataTemplate>
@@ -158,14 +158,14 @@
 								</VerticalStackLayout>
 								<Button Text="{loc:T ScoringEditorView_AddRow}" Clicked="OnAddRowClicked" HorizontalOptions="Start"
 									        HeightRequest="48" Padding="14,0" FontSize="13"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 
 								<!-- The bonuses: automatic at a total of the rows, or filled in per time. -->
 								<Label Text="{loc:T ScoringEditorView_Bonuses}" FontAttributes="Bold" FontSize="13" Margin="0,6,0,0" />
 								<VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Bonuses}">
 									<BindableLayout.ItemTemplate>
 										<DataTemplate x:DataType="vm:EditableSheetBonus">
-											<Border StrokeThickness="1" Stroke="{StaticResource Border}" Padding="8">
+											<Border StrokeThickness="1" Stroke="{DynamicResource Border}" Padding="8">
 												<Border.StrokeShape>
 													<RoundRectangle CornerRadius="6" />
 												</Border.StrokeShape>
@@ -174,7 +174,7 @@
 														<Entry Text="{Binding Name}" Placeholder="{loc:T ScoringEditorView_BonusName}" />
 														<Button Grid.Column="1" SemanticProperties.Description="{loc:T ScoringEditorView_RemoveBonus}" Text="✕" Clicked="OnRemoveBonusClicked"
 															        WidthRequest="48" HeightRequest="48" Padding="0" FontSize="14" VerticalOptions="Center"
-															        BackgroundColor="Transparent" TextColor="{StaticResource Danger}" BorderColor="{StaticResource Border}" BorderWidth="1" />
+															        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}" BorderColor="{DynamicResource Border}" BorderWidth="1" />
 													</Grid>
 													<Picker ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" />
 													<!-- Like the Yatzy bonus: only possible once the Yatzy row has a score. -->
@@ -198,7 +198,7 @@
 								</VerticalStackLayout>
 								<Button Text="{loc:T ScoringEditorView_AddBonus}" Clicked="OnAddBonusClicked" HorizontalOptions="Start"
 									        HeightRequest="48" Padding="14,0" FontSize="13"
-									        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+									        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 							</VerticalStackLayout>
 						</Border>
 					</DataTemplate>

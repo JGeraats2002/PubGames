@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 Todos han rellenado la hoja entera. Termina la partida con {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 junto a la ⓘ denuncia a un admin o moderador que se salta las normas: elige a quién, de qué tipo y explica lo que pasó. La denuncia indica en qué página se hizo y solo llega al propietario. Una denuncia falsa puede llevar a tu propia expulsión.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} ha pedido eliminar este juego - esperando revisión",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} ha enviado cambios - esperando revisión"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} ha enviado cambios - esperando revisión",
+ "Account_Appearance": "Apariencia",
+ "Appearance": "Apariencia",
+ "Light mode": "Modo claro",
+ "Dark mode": "Modo oscuro",
+ "Same as phone": "Igual que el teléfono",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "Modo claro, modo oscuro o igual que tu teléfono (la opción estándar): la app se vuelve oscura cuando tu teléfono lo hace. Tu elección se recuerda para tu cuenta en este teléfono. Las imágenes siempre mantienen sus propios colores.",
+ "Scrolling": "Desplazamiento",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "Todo lo que hay encima de Cancelar y Usar esta imagen se desplaza, así que en una pantalla pequeña siempre llegas a cada opción: desliza junto a la imagen. Un dedo sobre la imagen mueve lo que hay en ella, no la página."
 }

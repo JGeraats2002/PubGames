@@ -39,8 +39,8 @@
 
 		<Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
 			<Button Text="{loc:T Filter_ClearFilters}" Clicked="OnClearClicked"
-			        BackgroundColor="Transparent" TextColor="{StaticResource TextPrimary}"
-			        BorderColor="{StaticResource Border}" BorderWidth="1" />
+			        BackgroundColor="Transparent" TextColor="{DynamicResource TextPrimary}"
+			        BorderColor="{DynamicResource Border}" BorderWidth="1" />
 			<Button Grid.Column="1" Text="{loc:T Filter_ShowGames}" Clicked="OnDoneClicked" />
 		</Grid>
 

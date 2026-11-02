@@ -1819,5 +1819,13 @@
  "📋 Everyone filled in the whole sheet. End the subgame with {0}.": "📋 Iedereen heeft het hele scoreblad ingevuld. Sluit het deelspel af met {0}.",
  "📣 next to the ⓘ reports an admin or moderator who breaks the agreements: choose who, what kind and explain what happened. The report says which page it was made on and goes to the owner only. A false report can lead to your own ban.": "📣 naast de ⓘ rapporteert een admin of moderator die zich niet aan de afspraken houdt: kies wie, wat voor soort en leg uit wat er is gebeurd. In de rapportage staat op welke pagina hij gemaakt is, en hij gaat alleen naar de eigenaar. Een valse rapportage kan leiden tot je eigen ban.",
  "🔒 {0} asked to delete this game - waiting for review": "🔒 {0} heeft gevraagd dit spel te verwijderen - wacht op beoordeling",
- "🔒 {0} submitted changes - waiting for review": "🔒 {0} heeft wijzigingen ingediend - wacht op beoordeling"
+ "🔒 {0} submitted changes - waiting for review": "🔒 {0} heeft wijzigingen ingediend - wacht op beoordeling",
+ "Account_Appearance": "Weergave",
+ "Appearance": "Weergave",
+ "Light mode": "Lichte modus",
+ "Dark mode": "Donkere modus",
+ "Same as phone": "Zoals telefoon",
+ "Light mode, dark mode, or the same as your phone (the standard choice): the app then turns dark when your phone does. Your choice is remembered for your account on this phone. Pictures always keep their own colours.": "Lichte modus, donkere modus, of zoals je telefoon (de standaardkeuze): de app wordt dan donker als je telefoon dat wordt. Je keuze wordt onthouden voor je account op deze telefoon. Afbeeldingen houden altijd hun eigen kleuren.",
+ "Scrolling": "Scrollen",
+ "Everything above Cancel and Use this image scrolls, so on a small screen you can always reach every choice: swipe next to the image. A finger on the image itself moves what's on it, not the page.": "Alles boven Annuleren en Deze afbeelding gebruiken scrolt mee, zodat je op een klein scherm altijd elke keuze kunt bereiken: veeg naast de afbeelding. Een vinger op de afbeelding zelf verplaatst wat erop staat, niet de pagina."
 }

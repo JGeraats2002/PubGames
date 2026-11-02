@@ -12,7 +12,7 @@
 
 			<!-- Square and as wide as the page, like the cover everywhere else. -->
 			<Border StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}"
-			        BackgroundColor="{StaticResource SurfaceMuted}">
+			        BackgroundColor="{DynamicResource SurfaceMuted}">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="10" />
 				</Border.StrokeShape>

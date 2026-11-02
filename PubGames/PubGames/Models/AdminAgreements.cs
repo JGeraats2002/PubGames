@@ -31,15 +31,24 @@ public static class AdminAgreements
 	public static void Use(AgreementsText? text) => _text = text;
 
 	/// <summary>The agreements as they come with the app, in the app's language.</summary>
-	public static IReadOnlyList<HelpSection> BuiltInSections =>
+	public static IReadOnlyList<HelpSection> BuiltInSections => BuiltIn(L.T);
+
+	/// <summary>
+	/// The agreements in English, for the email to a new team member (emails are always in English): the
+	/// owner's text in English, or the built-in text.
+	/// </summary>
+	public static IReadOnlyList<HelpSection> EnglishSections => _text?.InLanguage("en") ?? BuiltIn(english => english);
+
+	/// <summary>The built-in agreements, each text passed through `text` (L.T for the app's language).</summary>
+	private static IReadOnlyList<HelpSection> BuiltIn(Func<string, string> text) =>
 	[
-		new(L.T("Roles"), L.T("Admins publish and change games directly: players see the change straight away. Moderators submit their changes for review; an admin approves or rejects them, and the decision arrives in the Inbox. Requests, Feedback and Team are for admins only.")),
-		new(L.T("Which price"), L.T("Free: well-known classics everyone already knows (like Mexen or Kingsen), with rules you can explain in a few minutes, few pictures and simple scoring. Free games make the app worth having without paying. €0.99: a fully worked-out game with pictures and set-up scoring, of about 15 to 45 minutes, or your own variant of a known game. €1.99: a big game, with extensive rules in several stages or subgames, a score sheet with many rows and bonuses, many pictures or 45 minutes or longer, or a unique game you won't find anywhere else.")),
-		new(L.T("Price agreements"), L.T("When in doubt, choose the lower price. A free game never becomes paid later; from paid to free is fine. Similar games get the same price. Moderators propose a price, an admin decides.")),
-		new(L.T("Content"), L.T("Nothing offensive, discriminating or sexual. No brand names, and no rules texts, pictures or logos copied from publishers: the rules of a game are free to use, their texts and names aren't (write Yatzy, not Yahtzee). Every picture is made in the image editor.")),
-		new(L.T("Drinking games"), L.T("The app is for adults (18+). Nobody is forced to drink: every drinking task has an alternative, like another task or a sip of water. No games about drinking as fast or as much as possible: Google Play doesn't allow encouraging excessive drinking.")),
-		new(L.T("Quality"), L.T("Before a game is published: the rules are complete and clear, the number of players and the categories are right, the scoring is tried out with Test as player, and the translations are checked.")),
-		new(L.T("Misuse"), L.T("Breaking these agreements can cost you your admin or moderator rights. In doubt? Ask an admin first."))
+		new(text("Roles"), text("Admins publish and change games directly: players see the change straight away. Moderators submit their changes for review; an admin approves or rejects them, and the decision arrives in the Inbox. Requests, Feedback and Team are for admins only.")),
+		new(text("Which price"), text("Free: well-known classics everyone already knows (like Mexen or Kingsen), with rules you can explain in a few minutes, few pictures and simple scoring. Free games make the app worth having without paying. €0.99: a fully worked-out game with pictures and set-up scoring, of about 15 to 45 minutes, or your own variant of a known game. €1.99: a big game, with extensive rules in several stages or subgames, a score sheet with many rows and bonuses, many pictures or 45 minutes or longer, or a unique game you won't find anywhere else.")),
+		new(text("Price agreements"), text("When in doubt, choose the lower price. A free game never becomes paid later; from paid to free is fine. Similar games get the same price. Moderators propose a price, an admin decides.")),
+		new(text("Content"), text("Nothing offensive, discriminating or sexual. No brand names, and no rules texts, pictures or logos copied from publishers: the rules of a game are free to use, their texts and names aren't (write Yatzy, not Yahtzee). Every picture is made in the image editor.")),
+		new(text("Drinking games"), text("The app is for adults (18+). Nobody is forced to drink: every drinking task has an alternative, like another task or a sip of water. No games about drinking as fast or as much as possible: Google Play doesn't allow encouraging excessive drinking.")),
+		new(text("Quality"), text("Before a game is published: the rules are complete and clear, the number of players and the categories are right, the scoring is tried out with Test as player, and the translations are checked.")),
+		new(text("Misuse"), text("Breaking these agreements can cost you your admin or moderator rights. In doubt? Ask an admin first."))
 	];
 
 	/// <summary>Where this phone remembers that an account agreed (also for owners, who have no place on the team list).</summary>

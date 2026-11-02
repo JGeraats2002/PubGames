@@ -117,6 +117,17 @@ public partial class ImageEditorPage : ContentPage
 		Canvas.HeightRequest = canvasWidth * ratio;
 	}
 
+	/// <summary>
+	/// A finger went down on the drawing: the page doesn't scroll until it's lifted, so dragging moves the item
+	/// and not the page. Android lets go of this by itself when the finger goes up.
+	/// </summary>
+	private void KeepTouchOnCanvas()
+	{
+#if ANDROID
+		(Canvas.Handler?.PlatformView as Android.Views.View)?.Parent?.RequestDisallowInterceptTouchEvent(true);
+#endif
+	}
+
 	/// <summary>The back button: the same as Cancel.</summary>
 	protected override bool OnBackButtonPressed()
 	{
@@ -295,6 +306,7 @@ public partial class ImageEditorPage : ContentPage
 	/// <summary>A finger touches the drawing: the item under it is selected and can be dragged.</summary>
 	private void OnCanvasTouchStarted(object? sender, TouchEventArgs e)
 	{
+		KeepTouchOnCanvas();
 		if (e.Touches.Length == 0) return;
 
 		var point = ToBoard(e.Touches[0]);
@@ -791,7 +803,7 @@ public partial class ImageEditorPage : ContentPage
 	{
 		var icon = new GraphicsView
 		{
-			Drawable = new AlignStripes(across, align, isOn ? Colors.White : Resource("TextPrimary")),
+			Drawable = new AlignStripes(across, align, isOn ? Resource("OnPrimary") : Resource("TextPrimary")),
 			WidthRequest = 30, HeightRequest = 26, InputTransparent = true
 		};
 		var chip = new Border
@@ -883,7 +895,7 @@ public partial class ImageEditorPage : ContentPage
 	/// </param>
 	private View Chips(string? title, string[] choices, Func<int, bool> isOn, Action<int> choose, bool keepAligned = true)
 	{
-		var row = new FlexLayout { Wrap = Microsoft.Maui.Layouts.FlexWrap.Wrap };
+		var row = new WrapLayout();
 		for (var choiceIndex = 0; choiceIndex < choices.Length; choiceIndex++)
 		{
 			var index = choiceIndex;
@@ -915,7 +927,7 @@ public partial class ImageEditorPage : ContentPage
 		{
 			Text = text, HeightRequest = 48, Padding = new Thickness(14, 0), FontSize = 13, CornerRadius = 24,
 			BackgroundColor = isOn ? Resource("Primary") : Colors.Transparent,
-			TextColor = isOn ? Colors.White : Resource("TextPrimary"),
+			TextColor = isOn ? Resource("OnPrimary") : Resource("TextPrimary"),
 			BorderColor = isOn ? Resource("Primary") : Resource("Border"), BorderWidth = 1
 		};
 		chip.Clicked += (_, _) => tapped();

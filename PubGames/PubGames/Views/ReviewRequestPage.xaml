@@ -13,10 +13,10 @@
 		<VerticalStackLayout Padding="20" Spacing="12">
 
 			<Label Text="{Binding Headline}" FontSize="17" />
-			<Label Text="{Binding SubmittedLabel}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+			<Label Text="{Binding SubmittedLabel}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 
 			<!-- Changes to a game: what exactly would change. -->
-			<Border IsVisible="{Binding HasChanges}" BackgroundColor="{StaticResource SurfaceMuted}"
+			<Border IsVisible="{Binding HasChanges}" BackgroundColor="{DynamicResource SurfaceMuted}"
 			        StrokeThickness="0" Padding="12,10" Margin="0,6,0,0">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
@@ -34,25 +34,25 @@
 			</Border>
 
 			<!-- Translations it touches, with who on the team uses the app in each language. -->
-			<Border IsVisible="{Binding HasTranslationChanges}" BackgroundColor="{StaticResource SurfaceMuted}"
+			<Border IsVisible="{Binding HasTranslationChanges}" BackgroundColor="{DynamicResource SurfaceMuted}"
 			        StrokeThickness="0" Padding="12,10">
 				<Border.StrokeShape>
 					<RoundRectangle CornerRadius="8" />
 				</Border.StrokeShape>
 				<VerticalStackLayout Spacing="10">
 					<Label Text="{loc:T ReviewRequest_Translations}" FontAttributes="Bold" />
-					<Label Text="{loc:T ReviewRequest_TranslationsHint}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+					<Label Text="{loc:T ReviewRequest_TranslationsHint}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 					<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding TranslationChanges}">
 						<BindableLayout.ItemTemplate>
 							<DataTemplate x:DataType="models:TranslationChange">
 								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-									<Border WidthRequest="28" HeightRequest="28" StrokeThickness="1" Stroke="{StaticResource Border}"
+									<Border WidthRequest="28" HeightRequest="28" StrokeThickness="1" Stroke="{DynamicResource Border}"
 									        StrokeShape="Ellipse" VerticalOptions="Start">
 										<Image Source="{Binding Flag}" Aspect="AspectFill" />
 									</Border>
 									<VerticalStackLayout Grid.Column="1" Spacing="2">
 										<Label Text="{Binding Label}" FontSize="14" FontAttributes="Bold" />
-										<Label Text="{Binding Speakers}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{Binding Speakers}" FontSize="12" TextColor="{DynamicResource TextSecondary}" />
 									</VerticalStackLayout>
 								</Grid>
 							</DataTemplate>
@@ -67,31 +67,31 @@
 				<VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding SentenceChanges}">
 					<BindableLayout.ItemTemplate>
 						<DataTemplate x:DataType="models:SentenceChange">
-							<Border Padding="12,10" StrokeThickness="1" Stroke="{StaticResource Border}">
+							<Border Padding="12,10" StrokeThickness="1" Stroke="{DynamicResource Border}">
 								<Border.StrokeShape>
 									<RoundRectangle CornerRadius="8" />
 								</Border.StrokeShape>
 								<VerticalStackLayout Spacing="6">
 									<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-										<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse">
+										<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{DynamicResource Border}" StrokeShape="Ellipse">
 											<Image Source="{Binding Flag}" Aspect="AspectFill" />
 										</Border>
 										<Label Grid.Column="1" Text="{Binding Heading}" FontSize="13" FontAttributes="Bold" VerticalOptions="Center" />
 									</Grid>
 									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasBefore}">
-										<Label Text="{loc:T ReviewRequest_Before}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
-										<Label Text="{Binding Before}" FontSize="14" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{loc:T ReviewRequest_Before}" FontSize="11" TextColor="{DynamicResource TextSecondary}" />
+										<Label Text="{Binding Before}" FontSize="14" TextColor="{DynamicResource TextSecondary}" />
 									</VerticalStackLayout>
 									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasBeforeImage}">
-										<Label Text="{loc:T ReviewRequest_Before}" FontSize="11" TextColor="{StaticResource TextSecondary}" />
+										<Label Text="{loc:T ReviewRequest_Before}" FontSize="11" TextColor="{DynamicResource TextSecondary}" />
 										<views:RulesImage ImageRef="{Binding BeforeImage}" />
 									</VerticalStackLayout>
 									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasAfter}">
-										<Label Text="{loc:T ReviewRequest_After}" FontSize="11" TextColor="{StaticResource Accent}" />
+										<Label Text="{loc:T ReviewRequest_After}" FontSize="11" TextColor="{DynamicResource Accent}" />
 										<Label Text="{Binding After}" FontSize="14" />
 									</VerticalStackLayout>
 									<VerticalStackLayout Spacing="2" IsVisible="{Binding HasAfterImage}">
-										<Label Text="{loc:T ReviewRequest_After}" FontSize="11" TextColor="{StaticResource Accent}" />
+										<Label Text="{loc:T ReviewRequest_After}" FontSize="11" TextColor="{DynamicResource Accent}" />
 										<views:RulesImage ImageRef="{Binding AfterImage}" />
 									</VerticalStackLayout>
 								</VerticalStackLayout>
@@ -100,23 +100,23 @@
 					</BindableLayout.ItemTemplate>
 				</VerticalStackLayout>
 				<Button Text="{Binding FullGameButtonText}" Command="{Binding ToggleFullGameCommand}" HeightRequest="48"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}" BorderColor="{StaticResource Primary}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}" BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>
 
-			<Label Text="{Binding StatusMessage}" TextColor="{StaticResource Warning}" />
+			<Label Text="{Binding StatusMessage}" TextColor="{DynamicResource Warning}" />
 
 			<!-- A moderator looking at another moderator's request: nothing to decide, but they can get in touch. -->
 			<VerticalStackLayout Spacing="8" IsVisible="{Binding IsReadOnly}">
 				<Label Text="{loc:T ReviewRequest_ThisIsWaitingForAn}" FontSize="13" />
 				<Button Text="{loc:T ReviewRequest_SendThemAMessage}" Clicked="OnMessageClicked"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Primary}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+				        BorderColor="{DynamicResource Primary}" BorderWidth="1" />
 			</VerticalStackLayout>
 
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding CanDecide}">
 				<Button Text="{loc:T ReviewRequest_Reject}" Clicked="OnRejectClicked"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Danger}"
-				        BorderColor="{StaticResource Danger}" BorderWidth="1" />
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Danger}"
+				        BorderColor="{DynamicResource Danger}" BorderWidth="1" />
 				<Button Grid.Column="1" Text="{Binding ApproveButtonText}" Clicked="OnApproveClicked"
 				        IsEnabled="{Binding CanApprove}" />
 			</Grid>
@@ -133,20 +133,20 @@
 						<DataTemplate x:DataType="models:ComparisonRow">
 							<VerticalStackLayout Spacing="6">
 								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsText}">
-									<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse" VerticalOptions="Start">
+									<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{DynamicResource Border}" StrokeShape="Ellipse" VerticalOptions="Start">
 										<Image Source="{Binding OriginalFlag, Source={RelativeSource AncestorType={x:Type vm:ReviewRequestViewModel}}, x:DataType=vm:ReviewRequestViewModel}" Aspect="AspectFill" />
 									</Border>
-									<Label Grid.Column="1" Text="{Binding Original}" FontSize="14" TextColor="{StaticResource TextSecondary}" />
+									<Label Grid.Column="1" Text="{Binding Original}" FontSize="14" TextColor="{DynamicResource TextSecondary}" />
 								</Grid>
 								<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding IsText}">
-									<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{StaticResource Border}" StrokeShape="Ellipse" VerticalOptions="Start">
+									<Border WidthRequest="22" HeightRequest="22" StrokeThickness="1" Stroke="{DynamicResource Border}" StrokeShape="Ellipse" VerticalOptions="Start">
 										<Image Source="{Binding CompareFlag, Source={RelativeSource AncestorType={x:Type vm:ReviewRequestViewModel}}, x:DataType=vm:ReviewRequestViewModel}" Aspect="AspectFill" />
 									</Border>
 									<Label Grid.Column="1" Text="{Binding Translation}" FontSize="15" />
 								</Grid>
-								<Label Text="{loc:T ReviewRequest_NotTranslated}" FontSize="12" TextColor="{StaticResource Warning}" IsVisible="{Binding HasNoTranslation}" />
+								<Label Text="{loc:T ReviewRequest_NotTranslated}" FontSize="12" TextColor="{DynamicResource Warning}" IsVisible="{Binding HasNoTranslation}" />
 								<views:RulesImage ImageRef="{Binding ImageRef}" IsVisible="{Binding IsImage}" />
-								<BoxView HeightRequest="1" Color="{StaticResource Border}" IsVisible="{Binding IsText}" />
+								<BoxView HeightRequest="1" Color="{DynamicResource Border}" IsVisible="{Binding IsText}" />
 							</VerticalStackLayout>
 						</DataTemplate>
 					</BindableLayout.ItemTemplate>
@@ -158,27 +158,27 @@
 			<!-- Changes to a game: switch the preview between the game as it is and with the changes. -->
 			<Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,16,0,0" IsVisible="{Binding CanSwitch}">
 				<Button Text="{loc:T ReviewRequest_Original}" Clicked="OnShowOriginalClicked" HeightRequest="48"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Primary}" BorderWidth="1">
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+				        BorderColor="{DynamicResource Primary}" BorderWidth="1">
 					<Button.Triggers>
 						<DataTrigger TargetType="Button" Binding="{Binding ShowingOriginal}" Value="True">
-							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-							<Setter Property="TextColor" Value="White" />
+							<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+							<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
 				<Button Grid.Column="1" Text="{loc:T ReviewRequest_WithChanges}" Clicked="OnShowChangedClicked" HeightRequest="48"
-				        BackgroundColor="Transparent" TextColor="{StaticResource Primary}"
-				        BorderColor="{StaticResource Primary}" BorderWidth="1">
+				        BackgroundColor="Transparent" TextColor="{DynamicResource Primary}"
+				        BorderColor="{DynamicResource Primary}" BorderWidth="1">
 					<Button.Triggers>
 						<DataTrigger TargetType="Button" Binding="{Binding ShowingOriginal}" Value="False">
-							<Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
-							<Setter Property="TextColor" Value="White" />
+							<Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />
+							<Setter Property="TextColor" Value="{DynamicResource OnPrimary}" />
 						</DataTrigger>
 					</Button.Triggers>
 				</Button>
 			</Grid>
-			<Label Text="{Binding PreviewTitle}" FontSize="12" TextColor="{StaticResource TextSecondary}" Margin="0,6,0,0" />
+			<Label Text="{Binding PreviewTitle}" FontSize="12" TextColor="{DynamicResource TextSecondary}" Margin="0,6,0,0" />
 			<Border StrokeThickness="0" HorizontalOptions="Fill" HeightRequest="{Binding Width, Source={RelativeSource Self}, x:DataType=Border}"
 			        IsVisible="{Binding PreviewHasCover}">
 				<Border.StrokeShape>
@@ -187,7 +187,7 @@
 				<Image Source="{Binding Preview.CoverImageUrl, Converter={StaticResource ImageRefConverter}}" Aspect="AspectFill" />
 			</Border>
 			<Label Text="{Binding Preview.Name}" FontSize="24" FontAttributes="Bold" />
-			<Label FontSize="13" TextColor="{StaticResource TextSecondary}">
+			<Label FontSize="13" TextColor="{DynamicResource TextSecondary}">
 				<Label.FormattedText>
 					<FormattedString>
 						<Span Text="{Binding Preview.PriceLabel}" />
@@ -196,7 +196,7 @@
 					</FormattedString>
 				</Label.FormattedText>
 			</Label>
-			<Label FontSize="13" TextColor="{StaticResource TextSecondary}">
+			<Label FontSize="13" TextColor="{DynamicResource TextSecondary}">
 				<Label.FormattedText>
 					<FormattedString>
 						<Span Text="{loc:T ReviewRequest_Players}" />
@@ -210,7 +210,7 @@
 			<Label Text="{loc:T ReviewRequest_HowToPlay}" FontSize="16" Margin="0,10,0,0" />
 			<VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding PreviewRules}">
 				<BindableLayout.EmptyView>
-					<Label Text="{loc:T ReviewRequest_NoRulesWritten}" TextColor="{StaticResource TextSecondary}" />
+					<Label Text="{loc:T ReviewRequest_NoRulesWritten}" TextColor="{DynamicResource TextSecondary}" />
 				</BindableLayout.EmptyView>
 				<BindableLayout.ItemTemplate>
 					<DataTemplate x:DataType="models:RulesBlock">
